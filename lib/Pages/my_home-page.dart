@@ -28,9 +28,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 // Toggle between Punjabi and Hindi prayers on button tap
                 setState(() {
                   isPunjabiSelected = !isPunjabiSelected;
-                  /// idk  how it worked
-                  // selectedPrayers =
-                  //     isPunjabiSelected ? punjabiPrayer : hindiPrayer;
                 });
               },
               child: Row(
@@ -88,7 +85,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   num: 5,
                   isPunjabiSelected: isPunjabiSelected,
                 ),
-
               ],
             ),
           ],

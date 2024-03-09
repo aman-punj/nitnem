@@ -14,7 +14,11 @@ class Menu_option extends StatefulWidget {
   final bool isPunjabiSelected;
 
   const Menu_option(
-      {super.key, required this.text1, required this.num, required this.text2, required this.isPunjabiSelected });
+      {super.key,
+      required this.text1,
+      required this.num,
+      required this.text2,
+      required this.isPunjabiSelected});
 
   @override
   State<Menu_option> createState() => _Menu_optionState();
@@ -27,52 +31,50 @@ class _Menu_optionState extends State<Menu_option> {
       padding: const EdgeInsets.all(10.0),
       child: GestureDetector(
           onTap: () {
-            if (widget.isPunjabiSelected ==true)
-            {
+            if (widget.isPunjabiSelected == true) {
               // sendRoute(context, RoutesNames.prayerPage);
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      PrayerPage(
+                  builder: (context) => PrayerPage(
                     prayerText: widget.isPunjabiSelected
                         ? punjabiPrayer[widget.num]
                         : hindiPrayer[widget.num],
-                    prayerName: widget.isPunjabiSelected
-                        ? widget.text1
-                        : widget.text2,
+                    prayerName:
+                        widget.isPunjabiSelected ? widget.text1 : widget.text2,
+                    num: widget.num,
                   ),
                 ),
               );
-            }
-            else {
+            } else {
               // sendRoute(context, RoutesNames.prayerPage);
               Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context)
-              =>
-                  PrayerPage(prayerText: hindiPrayer[widget.num] , prayerName: widget.isPunjabiSelected ? widget.text1 : widget.text2))
-            );
-          }
+                  MaterialPageRoute(
+                      builder: (context) => PrayerPage(
+                          prayerText: hindiPrayer[widget.num],
+                          prayerName: widget.isPunjabiSelected
+                              ? widget.text1
+                              : widget.text2,
+                          num: widget.num)));
+            }
           },
           child: Container(
             width: 1.sw,
-            padding:  EdgeInsets.all(20.h),
+            padding: EdgeInsets.all(20.h),
             decoration: BoxDecoration(
                 color: Colors.blueGrey,
-                borderRadius: BorderRadius.circular(12)
-            ),
+                borderRadius: BorderRadius.circular(12)),
             child: Center(
-              child: Text(widget.isPunjabiSelected? widget.text1: widget.text2,
-                style:  TextStyle(
+              child: Text(
+                widget.isPunjabiSelected ? widget.text1 : widget.text2,
+                style: TextStyle(
                     color: Colors.black,
                     fontSize: 20.sp,
-                    fontWeight: FontWeight.w700
-                ),
+                    fontWeight: FontWeight.w700),
               ),
             ),
           )),
-
     );
   }
 }
