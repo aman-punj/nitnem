@@ -30,8 +30,8 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v2
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
         with:
-          name: android-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: my-artifact
+          path: ./build/
