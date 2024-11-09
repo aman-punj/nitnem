@@ -65,6 +65,7 @@ class _PrayerPageState extends State<PrayerPage> {
   }
 
 
+
   void loadLyrics() async {
     try {
       String lyricsContent = await rootBundle.loadString('assets/audios/chaupai_sahib_text.lrc');
