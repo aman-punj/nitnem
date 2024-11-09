@@ -22,12 +22,15 @@ class PrayerPage extends StatefulWidget {
 }
 
 class _PrayerPageState extends State<PrayerPage> {
+
   int fontSize = 20;
   int currentIndex = -1;
   List<Map<String, dynamic>> parsedLyrics = [];
+
   final player = AudioPlayer();
   bool isPlaying = false;
   late Timer positionTimer;
+
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
 
@@ -63,6 +66,8 @@ class _PrayerPageState extends State<PrayerPage> {
       fontSize--;
     });
   }
+
+
 
   void loadLyrics() async {
     try {
