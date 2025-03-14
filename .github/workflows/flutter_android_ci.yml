@@ -40,5 +40,13 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: Releases
-          path: ./build/app/outputs/flutter-apk/app-release.apk
+          path: ./build/app/outputs/flutter-apk/app-release.apk\
 
+      - name:
+          if: success()  # This step will only run if the build is successful
+          uses: peter-evans/send-mail@v1
+          with:
+            from: 'apsingh.amanpreet@gmail.com'
+            to: 'bottomfragerxo@gmail.com'
+            subject: 'Flutter Build Successful'
+            body: 'Hello, the Flutter APK build was successful. You can download the build artifact from GitHub Actions.'

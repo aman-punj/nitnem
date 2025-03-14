@@ -113,10 +113,26 @@ class _PrayerPageState extends State<PrayerPage> {
     for (int i = 0; i < parsedLyrics.length; i++) {
       Duration lyricTime = parsedLyrics[i]['time'];
       if (position >= lyricTime) {
-        currentIndex = i;
+        setState(() {
+          currentIndex = i;
+          scrollToCurrentIndex();
+        });
       } else {
         break;
       }
+    }
+  }
+
+  void scrollToCurrentIndex() {
+    if (_scrollController.hasClients) {
+      final offset = currentIndex * 50.0; // Approximate height of each item
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final scrollTo = offset.clamp(0.0, maxScroll); // Ensure within bounds
+      _scrollController.animateTo(
+        scrollTo,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -127,6 +143,7 @@ class _PrayerPageState extends State<PrayerPage> {
       isPlaying = true;
     });
   }
+  final _scrollController = ScrollController();
 
   @override
   Widget build(BuildContext context) {
@@ -148,25 +165,26 @@ class _PrayerPageState extends State<PrayerPage> {
           padding: EdgeInsets.all(16.0.h),
           child: Column(
             children: [
-              // Container(
-              //   width: 1.sw,
-              //   decoration: BoxDecoration(
-              //     color: const Color(0xFFcccccc),
-              //     border: Border.all(color: Colors.black),
-              //     borderRadius: BorderRadius.circular(8.0),
-              //   ),
-              //   padding: EdgeInsets.all(16.0.h),
-              //   child: Text(
-              //     widget.prayerText,
-              //     style: TextStyle(fontSize: fontSize.sp, color: Colors.black),
-              //   ),
-              // ),
-              SizedBox(height: 16.0.h),
               if (parsedLyrics.isNotEmpty && currentIndex >= 0)
-                Text(
-                  parsedLyrics[currentIndex]['text'],
-                  style: TextStyle(fontSize: fontSize.sp, fontWeight: FontWeight.bold, color: Colors.blue),
-                  textAlign: TextAlign.center,
+                ListView.builder(
+                  controller: _scrollController,
+                  itemCount: parsedLyrics.length,
+                  shrinkWrap: true,
+                  itemBuilder: (context, index) {
+                    final isHighlighted = index == currentIndex;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        parsedLyrics[index]['text'],
+                        style: TextStyle(
+                          fontSize: fontSize.toDouble(),
+                          fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
+                          color: isHighlighted ? Colors.blue : Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    );
+                  },
                 ),
             ],
           ),
