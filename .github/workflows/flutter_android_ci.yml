@@ -2,13 +2,9 @@ name: Flutter Android CI/CD
 
 on:
   push:
-    branches:
-      - main
-      - development
+    branches: [main, development]
   pull_request:
-    branches:
-      - main
-      - development
+    branches: [main, development]
 
 jobs:
   build:
@@ -27,7 +23,7 @@ jobs:
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.2'
+          flutter-version: '3.27.4'
           channel: 'stable'
 
       - name: Install dependencies
@@ -40,13 +36,22 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: Releases
-          path: ./build/app/outputs/flutter-apk/app-release.apk\
+          path: build/app/outputs/flutter-apk/app-release.apk
 
-      - name:
-          if: success()  # This step will only run if the build is successful
-          uses: peter-evans/send-mail@v1
-          with:
-            from: 'apsingh.amanpreet@gmail.com'
-            to: 'bottomfragerxo@gmail.com'
-            subject: 'Flutter Build Successful'
-            body: 'Hello, the Flutter APK build was successful. You can download the build artifact from GitHub Actions.'
+      - name: Send success mail
+        if: success()
+        uses: peter-evans/send-mail@v1
+        with:
+          from: 'apsingh.amanpreet@gmail.com'
+          to: 'bottomfragerxo@gmail.com'
+          subject: '✅ Flutter Build Successful'
+          body: 'Hello,\n\nThe Flutter APK build was successful. You can download it from GitHub Actions artifacts.\n\n- GitHub Actions'
+
+      - name: Send failure mail
+        if: failure()
+        uses: peter-evans/send-mail@v1
+        with:
+          from: 'apsingh.amanpreet@gmail.com'
+          to: 'bottomfragerxo@gmail.com'
+          subject: '❌ Flutter Build Failed'
+          body: 'Hello,\n\nThe Flutter APK build has failed. Please check the GitHub Actions logs to debug the issue.\n\n- GitHub Actions'
