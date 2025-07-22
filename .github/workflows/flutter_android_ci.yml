@@ -55,14 +55,20 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          
           if [ "${{ needs.build.result }}" == "success" ]; then
-            MESSAGE="✅ Flutter Build succeeded. Here's the APK file."
+            MESSAGE="✅ Flutter Build succeeded for *$APP_NAME* on branch *$BRANCH_NAME*. Here's the APK file."
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
               -F chat_id="${TELEGRAM_CHAT_ID}" \
               -F caption="$MESSAGE" \
-              -F document=@"build/app/outputs/flutter-apk/app-release.apk"
+              -F parse_mode="Markdown" \
+              -F document=@"./apk/app-release.apk"
           else
-            MESSAGE="❌ Flutter Build failed. Check logs."
+            MESSAGE="❌ Flutter Build failed for *$APP_NAME* on branch *$BRANCH_NAME*. Please check the logs."
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
               -d chat_id="${TELEGRAM_CHAT_ID}" \
-              -d text="$MESSAGE"
+              -d text="$MESSAGE" \
+              -d parse_mode="Markdown"
+          fi
