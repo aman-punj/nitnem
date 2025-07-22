@@ -50,7 +50,7 @@ jobs:
           name: app-release
           path: ./apk
 
-      - name: Send Telegram Notification with APK
+      - name: Send Telegram Notification
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -60,7 +60,7 @@ jobs:
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
               -F chat_id="${TELEGRAM_CHAT_ID}" \
               -F caption="$MESSAGE" \
-              -F document=@"./apk/app-release.apk"
+              -F document=@"build/app/outputs/flutter-apk/app-release.apk"
           else
             MESSAGE="❌ Flutter Build failed. Check logs."
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
