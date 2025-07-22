@@ -35,7 +35,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: app-release.apk
+          name: app-release
           path: build/app/outputs/flutter-apk/app-release.apk
 
   notify:
@@ -44,17 +44,25 @@ jobs:
     if: always()
 
     steps:
-      - name: Send Telegram Notification
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release
+          path: ./apk
+
+      - name: Send Telegram Notification with APK
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           if [ "${{ needs.build.result }}" == "success" ]; then
-            MESSAGE="✅ Flutter Build succeeded. APK uploaded."
+            MESSAGE="✅ Flutter Build succeeded. Here's the APK file."
+            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+              -F chat_id="${TELEGRAM_CHAT_ID}" \
+              -F caption="$MESSAGE" \
+              -F document=@"./apk/app-release.apk"
           else
             MESSAGE="❌ Flutter Build failed. Check logs."
-          fi
-
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-            -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d text="$MESSAGE"
+            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+              -d chat_id="${TELEGRAM_CHAT_ID}" \
+              -d text="$MESSAGE"
