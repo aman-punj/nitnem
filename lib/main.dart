@@ -1,102 +1,204 @@
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:nitnem/screens/splash_screen.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: SplashScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
-  }
-}
+// /// Model for a single transcript segment
+// class TranscriptSegment {
+//   final double start;
+//   final double end;
+//   final String text;
+//
+//   TranscriptSegment({required this.start, required this.end, required this.text});
+//
+//   factory TranscriptSegment.fromJson(Map<String, dynamic> json) {
+//     return TranscriptSegment(
+//       start: json['start']?.toDouble() ?? 0.0,
+//       end: json['end']?.toDouble() ?? 0.0,
+//       text: json['text'] ?? '',
+//     );
+//   }
+// }
+//
+// /// Responsible for loading and parsing the transcript
+// class TranscriptService {
+//   Future<List<TranscriptSegment>> loadTranscript(String path) async {
+//     final jsonStr = await rootBundle.loadString(path);
+//     final Map<String, dynamic> jsonData = json.decode(jsonStr);
+//     final List<dynamic> segments = jsonData['segments'] ?? [];
+//     return segments.map((s) => TranscriptSegment.fromJson(s)).toList();
+//   }
+// }
+//
+// /// Controls audio playback and sync logic
+// class AudioController {
+//   final AudioPlayer _player = AudioPlayer();
+//
+//   AudioPlayer get player => _player;
+//
+//   Future<void> loadAudio(String assetPath) async {
+//     await _player.setAsset(assetPath);
+//   }
+//
+//   void dispose() {
+//     _player.dispose();
+//   }
+// }
+//
+// /// Main UI screen
+// class AudioLyricsScreen extends StatefulWidget {
+//   const AudioLyricsScreen({super.key});
+//
+//   @override
+//   State<AudioLyricsScreen> createState() => _AudioLyricsScreenState();
+// }
+//
+// class _AudioLyricsScreenState extends State<AudioLyricsScreen> {
+//   final AudioController _audioController = AudioController();
+//   final TranscriptService _transcriptService = TranscriptService();
+//   List<TranscriptSegment> _segments = [];
+//   int _currentSegmentIndex = -1;
+//   bool _isPlaying = false;
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//     _init();
+//   }
+//
+//   Future<void> _init() async {
+//     _segments = await _transcriptService.loadTranscript('assets/texts/Japji_Sahib.json');
+//     await _audioController.loadAudio('assets/audios/Japji_Sahib.mp3');
+//     _audioController.player.positionStream.listen(_updateLyrics);
+//     setState(() {});
+//   }
+//
+//   void _updateLyrics(Duration position) {
+//     final seconds = position.inMilliseconds / 1000.0;
+//     final index = _segments.indexWhere((s) => seconds >= s.start && seconds <= s.end);
+//     if (index != _currentSegmentIndex && index != -1) {
+//       setState(() {
+//         _currentSegmentIndex = index;
+//       });
+//     }
+//   }
+//
+//   void _togglePlayback() async {
+//     setState(() {
+//       _isPlaying = !_isPlaying;
+//     });
+//     if (_audioController.player.playing) {
+//       await _audioController.player.pause();
+//     } else {
+//       await _audioController.player.play();
+//     }
+//
+//   }
+//
+//   @override
+//   void dispose() {
+//     _audioController.dispose();
+//     super.dispose();
+//   }
+//
+//   @override
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.black,
+//       appBar: AppBar(
+//         title: const Text('Japji Sahib'),
+//         backgroundColor: Colors.black,
+//       ),
+//       body: _segments.isEmpty
+//           ? const Center(child: CircularProgressIndicator())
+//           : Column(
+//         children: [
+//           Expanded(
+//             child: ListView.builder(
+//               padding: const EdgeInsets.all(16),
+//               itemCount: _segments.length,
+//               itemBuilder: (context, index) {
+//                 final segment = _segments[index];
+//                 final isHighlighted = index == _currentSegmentIndex;
+//                 return Padding(
+//                   padding: const EdgeInsets.symmetric(vertical: 4.0),
+//                   child: Text(
+//                     segment.text,
+//                     style: TextStyle(
+//                       color: isHighlighted ? Colors.amber : Colors.white70,
+//                       fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
+//                       fontSize: 18,
+//                     ),
+//                   ),
+//                 );
+//               },
+//             ),
+//           ),
+//           StreamBuilder<Duration>(
+//             stream: _audioController.player.positionStream,
+//             builder: (context, snapshot) {
+//               final position = snapshot.data ?? Duration.zero;
+//               final total = _audioController.player.duration ?? Duration.zero;
+//
+//               return Column(
+//                 children: [
+//                   Slider(
+//                     activeColor: Colors.amber,
+//                     inactiveColor: Colors.white24,
+//                     min: 0,
+//                     max: total.inMilliseconds.toDouble(),
+//                     value: position.inMilliseconds.clamp(0, total.inMilliseconds).toDouble(),
+//                     onChanged: (value) {
+//                       _audioController.player.seek(Duration(milliseconds: value.toInt()));
+//                     },
+//                   ),
+//                   Padding(
+//                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
+//                     child: Row(
+//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                       children: [
+//                         Text(_formatDuration(position), style: const TextStyle(color: Colors.white70)),
+//                         Text(_formatDuration(total), style: const TextStyle(color: Colors.white70)),
+//                       ],
+//                     ),
+//                   ),
+//                 ],
+//               );
+//             },
+//           ),
+//           IconButton(
+//             icon: Icon(
+//               _isPlaying ? Icons.pause : Icons.play_arrow,
+//               size: 48,
+//               color: Colors.white,
+//             ),
+//             onPressed: _togglePlayback,
+//           ),
+//           const SizedBox(height: 20),
+//         ],
+//       ),
+//     );
+//   }
+//   String _formatDuration(Duration duration) {
+//     final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+//     final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+//     return '$minutes:$seconds';
+//   }
+//
+// }
