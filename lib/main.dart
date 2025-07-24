@@ -18,6 +18,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
+
 // /// Model for a single transcript segment
 // class TranscriptSegment {
 //   final double start;
