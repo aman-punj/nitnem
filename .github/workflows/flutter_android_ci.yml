@@ -62,10 +62,12 @@ jobs:
           APP_NAME="Nitnem"
           APK_PATH="./apk/app-release.apk"
 
+          
           if [ "${{ needs.build.result }}" == "success" ]; then
-            echo "Uploading APK to transfer.sh..."
-            APK_LINK=$(curl --upload-file "$APK_PATH" https://transfer.sh/app-release.apk)
+            echo "Uploading APK to file.io..."
 
+            APK_LINK=$(curl -s -F "file=@$APK_PATH" https://file.io | jq -r '.link')
+          
             MESSAGE="✅ Flutter Build succeeded for *$APP_NAME* on branch *$BRANCH_NAME*.\n\n[📥 Download APK]($APK_LINK)"
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
               -d chat_id="${TELEGRAM_CHAT_ID}" \
@@ -76,5 +78,3 @@ jobs:
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
               -d chat_id="${TELEGRAM_CHAT_ID}" \
               -d text="$MESSAGE" \
-              -d parse_mode="Markdown"
-          fi
