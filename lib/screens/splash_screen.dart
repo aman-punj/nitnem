@@ -31,39 +31,10 @@ class _SplashScreenState extends State<SplashScreen> {
         children: [
           // Background Image (Optional: put a Sikh symbol like Khanda here)
           Image.asset(
-            'assets/images/khanda_bg.png',
+            'assets/images/khanda_image.png',
             fit: BoxFit.cover,
             color: Colors.black.withOpacity(0.4),
             colorBlendMode: BlendMode.darken,
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // App Icon or Symbol
-              Image.asset(
-                'assets/images/khanda_white.png',
-                height: 100,
-                color: Colors.amberAccent,
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'ਨਿਤਨੇਮ - Nitnem',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.amberAccent,
-                  fontFamily: 'GurbaniAkhar', // Optional custom font
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Daily Sikh Prayers',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
-                ),
-              ),
-            ],
           ),
         ],
       ),

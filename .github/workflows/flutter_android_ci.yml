@@ -65,15 +65,24 @@ jobs:
 
           if [ "${{ needs.build.result }}" == "success" ]; then
             echo "Uploading APK to file.io..."
-            APK_LINK=$(curl -s -F "file=@$APK_PATH" https://file.io | jq -r '.link')
+            RESPONSE=$(curl -s -F "file=@$APK_PATH" https://file.io)
+            APK_LINK=$(echo "$RESPONSE" | jq -r '.link')
 
-            MESSAGE="✅ Flutter Build succeeded for *$APP_NAME* on branch *$BRANCH_NAME*.\n\n[📥 Download APK]($APK_LINK)"
+            echo "Upload response: $RESPONSE"
+            echo "APK link: $APK_LINK"
+
+            if [[ "$APK_LINK" != "null" && "$APK_LINK" != "" ]]; then
+              MESSAGE=$'✅ Flutter Build succeeded for *'"$APP_NAME"$'* on branch *'"$BRANCH_NAME"$'*.\n\n[📥 Download APK]('"$APK_LINK"$')'
+            else
+              MESSAGE=$'⚠️ Flutter Build succeeded, but failed to upload APK to file.io.\n\nPlease check artifacts manually.'
+            fi
+
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
               -d chat_id="${TELEGRAM_CHAT_ID}" \
               -d text="$MESSAGE" \
               -d parse_mode="Markdown"
           else
-            MESSAGE="❌ Flutter Build failed for *$APP_NAME* on branch *$BRANCH_NAME*. Please check the logs."
+            MESSAGE=$'❌ Flutter Build failed for *'"$APP_NAME"$'* on branch *'"$BRANCH_NAME"$'*.\n\nPlease check the logs.'
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
               -d chat_id="${TELEGRAM_CHAT_ID}" \
               -d text="$MESSAGE" \
