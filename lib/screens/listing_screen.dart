@@ -62,14 +62,12 @@ class ListingScreen extends StatelessWidget {
               leading: const Icon(Icons.language),
               title: const Text('Change Language'),
               onTap: () {
-                // TODO: implement language switch
               },
             ),
             ListTile(
               leading: const Icon(Icons.feedback),
               title: const Text('Feedback'),
               onTap: () {
-                // TODO: Navigate to feedback screen
               },
             ),
           ],

@@ -17,27 +17,79 @@ jobs:
       - name: Set Up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'oracle'
+          distribution: 'temurin'
           java-version: '17'
 
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.7'
+          flutter-version: 'latest'
           channel: 'stable'
+
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ~/.gradle/caches
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
 
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Flutter Doctor
+        run: flutter doctor -v
+
       - name: Build APK
         run: flutter build apk --release
+
+      - name: Verify APK exists
+        run: |
+          if [ ! -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
+            echo "APK file not found!"
+            exit 1
+          fi
+          ls -la build/app/outputs/flutter-apk/
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
+          name: app-release-${{ github.sha }}
           path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
 
+  # Option 1: GitHub Release (Recommended for tags)
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') && needs.build.result == 'success'
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release-${{ github.sha }}
+          path: ./apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./apk/app-release.apk
+          name: Release ${{ github.ref_name }}
+          body: |
+            🚀 **Nitnem App Release ${{ github.ref_name }}**
+            
+            📱 **What's New:**
+            - Latest features and improvements
+            - Bug fixes and performance enhancements
+            
+            📥 **Download:** Click on `app-release.apk` below to download
+            
+            **Installation:** Enable "Install from Unknown Sources" in your device settings before installing.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Option 2: Telegram with Multiple Upload Services
   notify:
     needs: build
     runs-on: ubuntu-latest
@@ -47,13 +99,14 @@ jobs:
       - name: Download APK artifact
         uses: actions/download-artifact@v4
         with:
-          name: app-release
+          name: app-release-${{ github.sha }}
           path: ./apk
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq curl
 
-      - name: Send Telegram Notification via file.io
+      - name: Upload APK and Send Telegram Notification
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -62,29 +115,159 @@ jobs:
           BRANCH_NAME="${GITHUB_REF##*/}"
           APP_NAME="Nitnem"
           APK_PATH="./apk/app-release.apk"
-
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
           if [ "${{ needs.build.result }}" == "success" ]; then
-            echo "Uploading APK to file.io..."
-            RESPONSE=$(curl -s -F "file=@$APK_PATH" https://file.io)
-            APK_LINK=$(echo "$RESPONSE" | jq -r '.link')
-
-            echo "Upload response: $RESPONSE"
-            echo "APK link: $APK_LINK"
-
-            if [[ "$APK_LINK" != "null" && "$APK_LINK" != "" ]]; then
-              MESSAGE=$'✅ Flutter Build succeeded for *'"$APP_NAME"$'* on branch *'"$BRANCH_NAME"$'*.\n\n[📥 Download APK]('"$APK_LINK"$')'
-            else
-              MESSAGE=$'⚠️ Flutter Build succeeded, but failed to upload APK to file.io.\n\nPlease check artifacts manually.'
+            echo "📤 Uploading APK to multiple services..."
+          
+            # Method 1: Try 0x0.st (More reliable than file.io)
+            upload_to_0x0() {
+              echo "Trying 0x0.st..."
+              RESPONSE=$(curl -s -F "file=@$APK_PATH" https://0x0.st)
+              if [[ "$RESPONSE" =~ ^https://0x0\.st/.+ ]]; then
+                echo "$RESPONSE"
+                return 0
+              fi
+              return 1
+            }
+          
+            # Method 2: Try transfer.sh
+            upload_to_transfer() {
+              echo "Trying transfer.sh..."
+              RESPONSE=$(curl -s --upload-file "$APK_PATH" "https://transfer.sh/app-release.apk")
+              if [[ "$RESPONSE" =~ ^https://transfer\.sh/.+ ]]; then
+                echo "$RESPONSE"
+                return 0
+              fi
+              return 1
+            }
+          
+            # Method 3: Try temp.sh
+            upload_to_temp() {
+              echo "Trying temp.sh..."
+              RESPONSE=$(curl -s -F "file=@$APK_PATH" https://temp.sh/upload)
+              LINK=$(echo "$RESPONSE" | jq -r '.url' 2>/dev/null)
+              if [[ "$LINK" != "null" && "$LINK" != "" ]]; then
+                echo "$LINK"
+                return 0
+              fi
+              return 1
+            }
+          
+            # Try upload services in order
+            APK_LINK=""
+            UPLOAD_SERVICE=""
+          
+            if APK_LINK=$(upload_to_0x0); then
+              UPLOAD_SERVICE="0x0.st"
+            elif APK_LINK=$(upload_to_transfer); then
+              UPLOAD_SERVICE="transfer.sh"
+            elif APK_LINK=$(upload_to_temp); then
+              UPLOAD_SERVICE="temp.sh"
             fi
-
-            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-              -d chat_id="${TELEGRAM_CHAT_ID}" \
-              -d text="$MESSAGE" \
-              -d parse_mode="Markdown"
+          
+            # Prepare Telegram message
+            if [[ "$APK_LINK" != "" ]]; then
+              MESSAGE=$'✅ *Flutter Build Successful* 🎉\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n'
+              MESSAGE+=$'☁️ *Service:* '"$UPLOAD_SERVICE"$'\n\n'
+              MESSAGE+=$'[📥 Download APK]('"$APK_LINK"$')\n\n'
+              MESSAGE+=$'⚠️ *Note:* Enable "Unknown Sources" before installing'
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then  # 50MB in bytes
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+          
+            else
+              MESSAGE=$'⚠️ *Build Successful but Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ All upload services failed\n'
+              MESSAGE+=$'💡 Check GitHub Actions artifacts manually'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          
           else
-            MESSAGE=$'❌ Flutter Build failed for *'"$APP_NAME"$'* on branch *'"$BRANCH_NAME"$'*.\n\nPlease check the logs.'
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
               -d chat_id="${TELEGRAM_CHAT_ID}" \
               -d text="$MESSAGE" \
               -d parse_mode="Markdown"
+          fi
+
+  # Option 3: Discord Webhook (Alternative to Telegram)
+  discord-notify:
+    needs: build
+    runs-on: ubuntu-latest
+    if: always() && vars.DISCORD_WEBHOOK_URL != ''
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release-${{ github.sha }}
+          path: ./apk
+
+      - name: Send Discord Notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ vars.DISCORD_WEBHOOK_URL }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          APK_PATH="./apk/app-release.apk"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          if [ "${{ needs.build.result }}" == "success" ]; then
+            # Upload APK to 0x0.st for Discord
+            APK_LINK=$(curl -s -F "file=@$APK_PATH" https://0x0.st)
+          
+            curl -H "Content-Type: application/json" \
+              -X POST \
+              -d '{
+                "embeds": [{
+                  "title": "✅ Flutter Build Successful",
+                  "description": "**App:** '"$APP_NAME"'\n**Branch:** '"$BRANCH_NAME"'\n**Commit:** '"$COMMIT_SHA"'\n\n[📥 Download APK]('"$APK_LINK"')",
+                  "color": 5763719,
+                  "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%S.000Z)'"
+                }]
+              }' \
+              "$DISCORD_WEBHOOK_URL"
+          else
+            curl -H "Content-Type: application/json" \
+              -X POST \
+              -d '{
+                "embeds": [{
+                  "title": "❌ Flutter Build Failed",
+                  "description": "**App:** '"$APP_NAME"'\n**Branch:** '"$BRANCH_NAME"'\n**Commit:** '"$COMMIT_SHA"'",
+                  "color": 15548997,
+                  "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%S.000Z)'"
+                }]
+              }' \
+              "$DISCORD_WEBHOOK_URL"
           fi
