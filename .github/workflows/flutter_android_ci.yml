@@ -164,8 +164,9 @@ jobs:
                   ).execute()
           
                   # Get direct download link
-                  download_link = f"https://drive.google.com/uc?export=download&id={file['id']}"
-                  alt_download_link = f"https://drive.google.com/file/d/{file['id']}/view?usp=sharing"
+                  file_id = file['id']
+                  download_link = f"https://drive.google.com/uc?export=download&id={file_id}"
+                  alt_download_link = f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
           
                   return {
                       'success': True,
@@ -228,6 +229,18 @@ jobs:
             DOWNLOAD_LINK=$(echo "$UPLOAD_RESULT" | jq -r '.download_link')
             VIEW_LINK=$(echo "$UPLOAD_RESULT" | jq -r '.view_link')
             ALT_DOWNLOAD_LINK=$(echo "$UPLOAD_RESULT" | jq -r '.alt_download_link')
+            FILE_ID=$(echo "$UPLOAD_RESULT" | jq -r '.file_id')
+          
+            # Debug: Print extracted values
+            echo "File ID: $FILE_ID"
+            echo "Download Link: $DOWNLOAD_LINK"
+            echo "View Link: $VIEW_LINK"
+          
+            # Ensure download link has the file ID (fallback construction)
+            if [[ "$DOWNLOAD_LINK" != *"id="* ]] && [[ -n "$FILE_ID" ]]; then
+              DOWNLOAD_LINK="https://drive.google.com/uc?export=download&id=${FILE_ID}"
+              echo "Reconstructed download link: $DOWNLOAD_LINK"
+            fi
           
             # Create success message
             cat > message.txt << EOF

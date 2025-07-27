@@ -1,216 +1,63 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'
-    show DeviceOrientation, SystemChrome;
+import 'package:flutter/services.dart' show DeviceOrientation, SystemChrome;
 import 'package:nitnem/screens/splash_screen.dart';
+import 'package:nitnem/services/shared_prefs_service.dart';
 
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  await EasyLocalization.ensureInitialized();
+
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const MyApp());
+  await SharedPrefsService.init();
+  final langCode = SharedPrefsService.getLanguage();
+
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [
+        Locale('en'),
+        Locale('hi'),
+        Locale('pa', 'IN'),
+      ],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
+      startLocale: getLocaleFromLang(langCode),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key}     );
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return      const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
+      locale: context.locale,
+      supportedLocales: context.supportedLocales,
+      localizationsDelegates: context.localizationDelegates,
+      home: const SplashScreen(),
     );
   }
 }
 
-// /// Model for a single transcript segment
-// class TranscriptSegment {
-//   final double start;
-//   final double end;
-//   final String text;
-//
-//   TranscriptSegment({required this.start, required this.end, required this.text});
-//
-//   factory TranscriptSegment.fromJson(Map<String, dynamic> json) {
-//     return TranscriptSegment(
-//       start: json['start']?.toDouble() ?? 0.0,
-//       end: json['end']?.toDouble() ?? 0.0,
-//       text: json['text'] ?? '',
-//     );
-//   }
-// }
-//
-// /// Responsible for loading and parsing the transcript
-// class TranscriptService {
-//   Future<List<TranscriptSegment>> loadTranscript(String path) async {
-//     final jsonStr = await rootBundle.loadString(path);
-//     final Map<String, dynamic> jsonData = json.decode(jsonStr);
-//     final List<dynamic> segments = jsonData['segments'] ?? [];
-//     return segments.map((s) => TranscriptSegment.fromJson(s)).toList();
-//   }
-// }
-//
-// /// Controls audio playback and sync logic
-// class AudioController {
-//   final AudioPlayer _player = AudioPlayer();
-//
-//   AudioPlayer get player => _player;
-//
-//   Future<void> loadAudio(String assetPath) async {
-//     await _player.setAsset(assetPath);
-//   }
-//
-//   void dispose() {
-//     _player.dispose();
-//   }
-// }
-//
-// /// Main UI screen
-// class AudioLyricsScreen extends StatefulWidget {
-//   const AudioLyricsScreen({super.key});
-//
-//   @override
-//   State<AudioLyricsScreen> createState() => _AudioLyricsScreenState();
-// }
-//
-// class _AudioLyricsScreenState extends State<AudioLyricsScreen> {
-//   final AudioController _audioController = AudioController();
-//   final TranscriptService _transcriptService = TranscriptService();
-//   List<TranscriptSegment> _segments = [];
-//   int _currentSegmentIndex = -1;
-//   bool _isPlaying = false;
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//     _init();
-//   }
-//
-//   Future<void> _init() async {
-//     _segments = await _transcriptService.loadTranscript('assets/texts/Japji_Sahib.json');
-//     await _audioController.loadAudio('assets/audios/Japji_Sahib.mp3');
-//     _audioController.player.positionStream.listen(_updateLyrics);
-//     setState(() {});
-//   }
-//
-//   void _updateLyrics(Duration position) {
-//     final seconds = position.inMilliseconds / 1000.0;
-//     final index = _segments.indexWhere((s) => seconds >= s.start && seconds <= s.end);
-//     if (index != _currentSegmentIndex && index != -1) {
-//       setState(() {
-//         _currentSegmentIndex = index;
-//       });
-//     }
-//   }
-//
-//   void _togglePlayback() async {
-//     setState(() {
-//       _isPlaying = !_isPlaying;
-//     });
-//     if (_audioController.player.playing) {
-//       await _audioController.player.pause();
-//     } else {
-//       await _audioController.player.play();
-//     }
-//
-//   }
-//
-//   @override
-//   void dispose() {
-//     _audioController.dispose();
-//     super.dispose();
-//   }
-//
-//   @override
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.black,
-//       appBar: AppBar(
-//         title: const Text('Japji Sahib'),
-//         backgroundColor: Colors.black,
-//       ),
-//       body: _segments.isEmpty
-//           ? const Center(child: CircularProgressIndicator())
-//           : Column(
-//         children: [
-//           Expanded(
-//             child: ListView.builder(
-//               padding: const EdgeInsets.all(16),
-//               itemCount: _segments.length,
-//               itemBuilder: (context, index) {
-//                 final segment = _segments[index];
-//                 final isHighlighted = index == _currentSegmentIndex;
-//                 return Padding(
-//                   padding: const EdgeInsets.symmetric(vertical: 4.0),
-//                   child: Text(
-//                     segment.text,
-//                     style: TextStyle(
-//                       color: isHighlighted ? Colors.amber : Colors.white70,
-//                       fontWeight: isHighlighted ? FontWeight.bold : FontWeight.normal,
-//                       fontSize: 18,
-//                     ),
-//                   ),
-//                 );
-//               },
-//             ),
-//           ),
-//           StreamBuilder<Duration>(
-//             stream: _audioController.player.positionStream,
-//             builder: (context, snapshot) {
-//               final position = snapshot.data ?? Duration.zero;
-//               final total = _audioController.player.duration ?? Duration.zero;
-//
-//               return Column(
-//                 children: [
-//                   Slider(
-//                     activeColor: Colors.amber,
-//                     inactiveColor: Colors.white24,
-//                     min: 0,
-//                     max: total.inMilliseconds.toDouble(),
-//                     value: position.inMilliseconds.clamp(0, total.inMilliseconds).toDouble(),
-//                     onChanged: (value) {
-//                       _audioController.player.seek(Duration(milliseconds: value.toInt()));
-//                     },
-//                   ),
-//                   Padding(
-//                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-//                     child: Row(
-//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                       children: [
-//                         Text(_formatDuration(position), style: const TextStyle(color: Colors.white70)),
-//                         Text(_formatDuration(total), style: const TextStyle(color: Colors.white70)),
-//                       ],
-//                     ),
-//                   ),
-//                 ],
-//               );
-//             },
-//           ),
-//           IconButton(
-//             icon: Icon(
-//               _isPlaying ? Icons.pause : Icons.play_arrow,
-//               size: 48,
-//               color: Colors.white,
-//             ),
-//             onPressed: _togglePlayback,
-//           ),
-//           const SizedBox(height: 20),
-//         ],
-//       ),
-//     );
-//   }
-//   String _formatDuration(Duration duration) {
-//     final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-//     final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-//     return '$minutes:$seconds';
-//   }
-//
-// }
+Locale getLocaleFromLang(String langCode) {
+  switch (langCode) {
+    case 'hi':
+      return const Locale('hi');
+    case 'pa':
+      return const Locale('pa', 'IN');
+    case 'en':
+    default:
+      return const Locale('en');
+  }
+}
