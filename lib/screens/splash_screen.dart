@@ -29,7 +29,6 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background Image (Optional: put a Sikh symbol like Khanda here)
           Image.asset(
             'assets/images/khanda_image.png',
             fit: BoxFit.cover,

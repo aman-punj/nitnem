@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "528515022630",
+    "project_id": "nitnem-39118",
+    "storage_bucket": "nitnem-39118.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528515022630:android:def1aef53b7de945a4cbe7",
+        "android_client_info": {
+          "package_name": "com.example.nitnem"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVrY2zifJRQct83OaRCdgWx0KK2tgVChM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

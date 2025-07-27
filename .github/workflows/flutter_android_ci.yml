@@ -104,14 +104,98 @@ jobs:
         continue-on-error: true
         id: download_artifact
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update && sudo apt-get install -y jq curl
+      - name: Set up Python
+        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-      - name: Upload APK and Send Telegram Notification
+      - name: Install Python dependencies
+        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
+        run: |
+          pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+      - name: Create Drive upload script
+        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
+        run: |
+          cat > drive_upload.py << 'EOF'
+          import os
+          import json
+          from google.oauth2.credentials import Credentials
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+          from google.auth.transport.requests import Request
+          
+          def upload_to_drive(apk_path, file_name):
+              try:
+                  # Get credentials from environment
+                  creds_json = os.environ.get('GOOGLE_DRIVE_CREDENTIALS')
+                  if not creds_json:
+                      raise Exception("GOOGLE_DRIVE_CREDENTIALS not found")
+          
+                  creds_data = json.loads(creds_json)
+                  creds = Credentials.from_authorized_user_info(creds_data)
+          
+                  # Refresh token if needed
+                  if creds.expired and creds.refresh_token:
+                      creds.refresh(Request())
+          
+                  # Build Drive service
+                  service = build('drive', 'v3', credentials=creds)
+          
+                  # File metadata
+                  file_metadata = {
+                      'name': file_name,
+                      'parents': [os.environ.get('GOOGLE_DRIVE_FOLDER_ID', 'root')]
+                  }
+          
+                  # Upload file
+                  media = MediaFileUpload(apk_path, mimetype='application/vnd.android.package-archive')
+                  file = service.files().create(
+                      body=file_metadata,
+                      media_body=media,
+                      fields='id,webViewLink,webContentLink'
+                  ).execute()
+          
+                  # Make file publicly accessible
+                  service.permissions().create(
+                      fileId=file['id'],
+                      body={'role': 'reader', 'type': 'anyone'}
+                  ).execute()
+          
+                  # Get direct download link
+                  download_link = f"https://drive.google.com/uc?export=download&id={file['id']}"
+          
+                  return {
+                      'success': True,
+                      'file_id': file['id'],
+                      'view_link': file['webViewLink'],
+                      'download_link': download_link
+                  }
+          
+              except Exception as e:
+                  return {
+                      'success': False,
+                      'error': str(e)
+                  }
+          
+          if __name__ == "__main__":
+              apk_path = "./apk/app-release.apk"
+              branch_name = os.environ.get('GITHUB_REF_NAME', 'unknown')
+              commit_sha = os.environ.get('GITHUB_SHA', 'unknown')[:7]
+              file_name = f"Nitnem-{branch_name}-{commit_sha}.apk"
+          
+              result = upload_to_drive(apk_path, file_name)
+              print(json.dumps(result))
+          EOF
+
+      - name: Upload APK to Google Drive and Send Telegram Notification
+        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         shell: bash
         run: |
           BRANCH_NAME="${GITHUB_REF##*/}"
@@ -119,63 +203,30 @@ jobs:
           APK_PATH="./apk/app-release.apk"
           COMMIT_SHA="${GITHUB_SHA:0:7}"
           
-          # Function to upload to 0x0.st
-          upload_to_0x0() {
-            echo "Trying 0x0.st..."
-            RESPONSE=$(curl -s -F "file=@$APK_PATH" https://0x0.st)
-            if [[ "$RESPONSE" =~ ^https://0x0\.st/.+ ]]; then
-              echo "$RESPONSE"
-              return 0
-            fi
-            return 1
-          }
+          if [ -f "$APK_PATH" ]; then
+            echo "📤 Uploading APK to Google Drive..."
           
-          # Function to upload to transfer.sh
-          upload_to_transfer() {
-            echo "Trying transfer.sh..."
-            RESPONSE=$(curl -s --upload-file "$APK_PATH" "https://transfer.sh/app-release.apk")
-            if [[ "$RESPONSE" =~ ^https://transfer\.sh/.+ ]]; then
-              echo "$RESPONSE"
-              return 0
-            fi
-            return 1
-          }
+            # Upload to Drive
+            UPLOAD_RESULT=$(python drive_upload.py)
+            echo "Upload result: $UPLOAD_RESULT"
           
-          # Function to upload to temp.sh
-          upload_to_temp() {
-            echo "Trying temp.sh..."
-            RESPONSE=$(curl -s -F "file=@$APK_PATH" https://temp.sh/upload)
-            LINK=$(echo "$RESPONSE" | jq -r '.url' 2>/dev/null)
-            if [[ "$LINK" != "null" && "$LINK" != "" ]]; then
-              echo "$LINK"
-              return 0
-            fi
-            return 1
-          }
+            # Install jq for JSON parsing
+            sudo apt-get update && sudo apt-get install -y jq
           
-          if [ "${{ needs.build.result }}" == "success" ] && [ "${{ steps.download_artifact.outcome }}" == "success" ] && [ -f "$APK_PATH" ]; then
-            echo "📤 Uploading APK to multiple services..."
+            # Parse result
+            SUCCESS=$(echo "$UPLOAD_RESULT" | jq -r '.success' 2>/dev/null || echo "false")
           
-            # Try upload services in order
-            APK_LINK=""
-            UPLOAD_SERVICE=""
+            if [ "$SUCCESS" == "true" ]; then
+              DOWNLOAD_LINK=$(echo "$UPLOAD_RESULT" | jq -r '.download_link')
+              VIEW_LINK=$(echo "$UPLOAD_RESULT" | jq -r '.view_link')
           
-            if APK_LINK=$(upload_to_0x0); then
-              UPLOAD_SERVICE="0x0.st"
-            elif APK_LINK=$(upload_to_transfer); then
-              UPLOAD_SERVICE="transfer.sh"
-            elif APK_LINK=$(upload_to_temp); then
-              UPLOAD_SERVICE="temp.sh"
-            fi
-          
-            # Prepare Telegram message
-            if [[ "$APK_LINK" != "" ]]; then
               MESSAGE=$'✅ *Flutter Build Successful* 🎉\n\n'
               MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
               MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
               MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n'
-              MESSAGE+=$'☁️ *Service:* '"$UPLOAD_SERVICE"$'\n\n'
-              MESSAGE+=$'[📥 Download APK]('"$APK_LINK"$')\n\n'
+              MESSAGE+=$'☁️ *Storage:* Google Drive\n\n'
+              MESSAGE+=$'[📥 Download APK]('"$DOWNLOAD_LINK"$')\n'
+              MESSAGE+=$'[👁️ View in Drive]('"$VIEW_LINK"$')\n\n'
               MESSAGE+=$'⚠️ *Note:* Enable "Unknown Sources" before installing'
           
               # Send message with download link
@@ -185,7 +236,7 @@ jobs:
                 -d parse_mode="Markdown" \
                 -d disable_web_page_preview="false"
           
-              # Also send APK as document (Telegram allows up to 50MB)
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
               APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
               if [ "$APK_SIZE" -lt 52428800 ]; then
                 echo "📤 Sending APK as Telegram document..."
@@ -194,13 +245,14 @@ jobs:
                   -F document="@$APK_PATH" \
                   -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
               fi
-          
             else
-              MESSAGE=$'⚠️ *Build Successful but Upload Failed* 📤\n\n'
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
               MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
               MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
               MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
-              MESSAGE+=$'❌ All upload services failed\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
               MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
           
               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
@@ -208,31 +260,39 @@ jobs:
                 -d text="$MESSAGE" \
                 -d parse_mode="Markdown"
             fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
           
-          elif [ "${{ needs.build.result }}" == "success" ]; then
-            # Build succeeded but artifact issues
-            MESSAGE=$'⚠️ *Build Successful but APK Upload Issues* 📤\n\n'
-            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
-            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
-            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
-            MESSAGE+=$'❌ Could not access APK artifact\n'
-            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
           
-            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-              -d chat_id="${TELEGRAM_CHAT_ID}" \
-              -d text="$MESSAGE" \
-              -d parse_mode="Markdown"
-          
-          else
+          if [ "${{ needs.build.result }}" != "success" ]; then
             # Build failed
             MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
             MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
             MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
             MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
             MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
-          
-            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-              -d chat_id="${TELEGRAM_CHAT_ID}" \
-              -d text="$MESSAGE" \
-              -d parse_mode="Markdown"
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
           fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"
