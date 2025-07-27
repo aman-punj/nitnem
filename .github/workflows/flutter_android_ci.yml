@@ -165,12 +165,15 @@ jobs:
           
                   # Get direct download link
                   download_link = f"https://drive.google.com/uc?export=download&id={file['id']}"
+                  # Alternative download link (more reliable)
+                  alt_download_link = f"https://drive.google.com/file/d/{file['id']}/view?usp=sharing"
           
                   return {
                       'success': True,
                       'file_id': file['id'],
                       'view_link': file['webViewLink'],
-                      'download_link': download_link
+                      'download_link': download_link,
+                      'alt_download_link': alt_download_link
                   }
           
               except Exception as e:
@@ -219,15 +222,1038 @@ jobs:
             if [ "$SUCCESS" == "true" ]; then
               DOWNLOAD_LINK=$(echo "$UPLOAD_RESULT" | jq -r '.download_link')
               VIEW_LINK=$(echo "$UPLOAD_RESULT" | jq -r '.view_link')
+              ALT_DOWNLOAD_LINK=$(echo "$UPLOAD_RESULT" | jq -r '.alt_download_link')
+              FILE_ID=$(echo "$UPLOAD_RESULT" | jq -r '.file_id')
           
-              MESSAGE=$'✅ *Flutter Build Successful* 🎉\n\n'
+              MESSAGE=
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
               MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
               MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
-              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n'
-              MESSAGE+=$'☁️ *Storage:* Google Drive\n\n'
-              MESSAGE+=$'[📥 Download APK]('"$DOWNLOAD_LINK"$')\n'
-              MESSAGE+=$'[👁️ View in Drive]('"$VIEW_LINK"$')\n\n'
-              MESSAGE+=$'⚠️ *Note:* Enable "Unknown Sources" before installing'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"✅ *Flutter Build Successful* 🎉\n\n'
+              MESSAGE+=
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"📱 *App:* '"$APP_NAME"
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"\n'
+              MESSAGE+=
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"🌿 *Branch:* '"$BRANCH_NAME"
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"\n'
+              MESSAGE+=
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"🔗 *Commit:* '"$COMMIT_SHA"
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"\n'
+              MESSAGE+=
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"☁️ *Storage:* Google Drive\n\n'
+              MESSAGE+=
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"[📥 Direct Download]('"$DOWNLOAD_LINK"
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown")\n'
+              MESSAGE+=
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"[👁️ View & Download]('"$VIEW_LINK"
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown")\n'
+              MESSAGE+=
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"[🔗 Alternative Link]('"$ALT_DOWNLOAD_LINK"
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown")\n\n'
+              MESSAGE+=
+          
+              # Send message with download link
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown" \
+                -d disable_web_page_preview="false"
+          
+              # Also send APK as document if small enough (Telegram allows up to 50MB)
+              APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH")
+              if [ "$APK_SIZE" -lt 52428800 ]; then
+                echo "📤 Sending APK as Telegram document..."
+                curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
+                  -F chat_id="${TELEGRAM_CHAT_ID}" \
+                  -F document="@$APK_PATH" \
+                  -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
+              fi
+            else
+              ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+          
+              MESSAGE=$'⚠️ *Build Successful but Drive Upload Failed* 📤\n\n'
+              MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+              MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+              MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+              MESSAGE+=$'❌ Drive upload error: '"$ERROR_MSG"$'\n'
+              MESSAGE+=$'💡 [Check GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+                -d chat_id="${TELEGRAM_CHAT_ID}" \
+                -d text="$MESSAGE" \
+                -d parse_mode="Markdown"
+            fi
+          fi
+
+      - name: Send Build Failure or Artifact Issue Notification
+        if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          APP_NAME="Nitnem"
+          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          
+          # Install jq
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            # Build failed
+            MESSAGE=$'❌ *Flutter Build Failed* 💥\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'🔍 [View Logs](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          else
+            # Build succeeded but artifact issues
+            MESSAGE=$'⚠️ *Build Successful but APK Access Issues* 📤\n\n'
+            MESSAGE+=$'📱 *App:* '"$APP_NAME"$'\n'
+            MESSAGE+=$'🌿 *Branch:* '"$BRANCH_NAME"$'\n'
+            MESSAGE+=$'🔗 *Commit:* '"$COMMIT_SHA"$'\n\n'
+            MESSAGE+=$'❌ Could not access APK artifact\n'
+            MESSAGE+=$'💡 [Download from GitHub Actions](https://github.com/'"$GITHUB_REPOSITORY"'/actions/runs/'"$GITHUB_RUN_ID"$')'
+          fi
+          
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="Markdown"⚠️ *Note:* Enable "Unknown Sources" before installing'
           
               # Send message with download link
               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
