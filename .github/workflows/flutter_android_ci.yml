@@ -121,6 +121,7 @@ jobs:
           cat > drive_upload.py << 'EOF'
           import os
           import json
+          import time
           from google.oauth2.credentials import Credentials
           from googleapiclient.discovery import build
           from googleapiclient.http import MediaFileUpload
@@ -149,34 +150,78 @@ jobs:
                       'parents': [os.environ.get('GOOGLE_DRIVE_FOLDER_ID', 'root')]
                   }
           
+                  print(f"Uploading file: {file_name}")
+                  print(f"To folder: {os.environ.get('GOOGLE_DRIVE_FOLDER_ID', 'root')}")
+          
                   # Upload file
                   media = MediaFileUpload(apk_path, mimetype='application/vnd.android.package-archive')
                   file = service.files().create(
                       body=file_metadata,
                       media_body=media,
-                      fields='id,webViewLink,webContentLink'
+                      fields='id,name,webViewLink,webContentLink'
                   ).execute()
+          
+                  file_id = file.get('id')
+                  if not file_id:
+                      raise Exception("No file ID returned from upload")
+          
+                  print(f"File uploaded successfully. ID: {file_id}")
           
                   # Make file publicly accessible
-                  service.permissions().create(
-                      fileId=file['id'],
-                      body={'role': 'reader', 'type': 'anyone'}
-                  ).execute()
+                  try:
+                      permission_result = service.permissions().create(
+                          fileId=file_id,
+                          body={
+                              'role': 'reader', 
+                              'type': 'anyone'
+                          },
+                          fields='id'
+                      ).execute()
+                      print(f"Permission set successfully: {permission_result}")
+                  except Exception as perm_error:
+                      print(f"Permission setting failed: {perm_error}")
+                      # Continue anyway, file might still be accessible
           
-                  # Get direct download link
-                  file_id = file['id']
-                  download_link = f"https://drive.google.com/uc?export=download&id={file_id}"
-                  alt_download_link = f"https://drive.google.com/file/d/{file_id}/view?usp=sharing"
+                  # Wait a moment for Google Drive to process
+                  time.sleep(2)
+          
+                  # Verify file exists and get fresh metadata
+                  try:
+                      fresh_file = service.files().get(
+                          fileId=file_id,
+                          fields='id,name,webViewLink,webContentLink,permissions'
+                      ).execute()
+                      print(f"Fresh file data: {fresh_file}")
+                  except Exception as e:
+                      print(f"Could not get fresh file data: {e}")
+                      fresh_file = file
+          
+                  # Create multiple download link formats
+                  download_links = {
+                      'direct_download': f"https://drive.google.com/uc?export=download&id={file_id}",
+                      'view_link': f"https://drive.google.com/file/d/{file_id}/view?usp=sharing",
+                      'open_link': f"https://drive.google.com/open?id={file_id}",
+                      'api_webview': fresh_file.get('webViewLink', ''),
+                      'api_content': fresh_file.get('webContentLink', '')
+                  }
+          
+                  print(f"Generated download links: {download_links}")
           
                   return {
                       'success': True,
-                      'file_id': file['id'],
-                      'view_link': file['webViewLink'],
-                      'download_link': download_link,
-                      'alt_download_link': alt_download_link
+                      'file_id': file_id,
+                      'file_name': fresh_file.get('name', file_name),
+                      'download_links': download_links,
+                      # For backward compatibility
+                      'download_link': download_links['direct_download'],
+                      'view_link': download_links['view_link'],
+                      'alt_download_link': download_links['api_webview'] or download_links['view_link']
                   }
           
               except Exception as e:
+                  print(f"Upload failed with error: {str(e)}")
+                  import traceback
+                  traceback.print_exc()
                   return {
                       'success': False,
                       'error': str(e)
@@ -186,10 +231,12 @@ jobs:
               apk_path = "./apk/app-release.apk"
               branch_name = os.environ.get('GITHUB_REF_NAME', 'unknown')
               commit_sha = os.environ.get('GITHUB_SHA', 'unknown')[:7]
-              file_name = f"Nitnem-{branch_name}-{commit_sha}.apk"
+              timestamp = int(time.time())
+              file_name = f"Nitnem-{branch_name}-{commit_sha}-{timestamp}.apk"
           
               result = upload_to_drive(apk_path, file_name)
-              print(json.dumps(result))
+              print("=== FINAL RESULT ===")
+              print(json.dumps(result, indent=2))
           EOF
 
       - name: Install jq
@@ -217,31 +264,67 @@ jobs:
           
           echo "📤 Uploading APK to Google Drive..."
           
-          # Upload to Drive
-          UPLOAD_RESULT=$(python drive_upload.py)
-          echo "Upload result: $UPLOAD_RESULT"
+          # Upload to Drive with more detailed output
+          UPLOAD_RESULT=$(python drive_upload.py 2>&1)
+          echo "=== FULL UPLOAD OUTPUT ==="
+          echo "$UPLOAD_RESULT"
+          echo "=== END OUTPUT ==="
+          
+          # Extract just the JSON result (last part after "=== FINAL RESULT ===")
+          JSON_RESULT=$(echo "$UPLOAD_RESULT" | sed -n '/=== FINAL RESULT ===/,$p' | tail -n +2)
+          echo "=== JSON RESULT ==="
+          echo "$JSON_RESULT"
+          echo "=== END JSON ==="
           
           # Parse result
-          SUCCESS=$(echo "$UPLOAD_RESULT" | jq -r '.success' 2>/dev/null || echo "false")
+          SUCCESS=$(echo "$JSON_RESULT" | jq -r '.success' 2>/dev/null || echo "false")
           
           if [ "$SUCCESS" == "true" ]; then
-            # Extract links
-            DOWNLOAD_LINK=$(echo "$UPLOAD_RESULT" | jq -r '.download_link')
-            VIEW_LINK=$(echo "$UPLOAD_RESULT" | jq -r '.view_link')
-            ALT_DOWNLOAD_LINK=$(echo "$UPLOAD_RESULT" | jq -r '.alt_download_link')
-            FILE_ID=$(echo "$UPLOAD_RESULT" | jq -r '.file_id')
+            # Extract file info
+            FILE_ID=$(echo "$JSON_RESULT" | jq -r '.file_id // empty')
+            FILE_NAME=$(echo "$JSON_RESULT" | jq -r '.file_name // empty')
           
-            # Debug: Print extracted values
-            echo "File ID: $FILE_ID"
-            echo "Download Link: $DOWNLOAD_LINK"
-            echo "View Link: $VIEW_LINK"
+            # Extract all available download links
+            DIRECT_DOWNLOAD=$(echo "$JSON_RESULT" | jq -r '.download_links.direct_download // empty')
+            VIEW_LINK=$(echo "$JSON_RESULT" | jq -r '.download_links.view_link // empty')
+            OPEN_LINK=$(echo "$JSON_RESULT" | jq -r '.download_links.open_link // empty')
+            API_WEBVIEW=$(echo "$JSON_RESULT" | jq -r '.download_links.api_webview // empty')
           
-            # Ensure download link has the file ID (fallback construction)
-            if [[ "$DOWNLOAD_LINK" != *"id="* ]] && [[ -n "$FILE_ID" ]]; then
-              DOWNLOAD_LINK="https://drive.google.com/uc?export=download&id=${FILE_ID}"
-              echo "Reconstructed download link: $DOWNLOAD_LINK"
+            # Debug output
+            echo "File ID: '$FILE_ID'"
+            echo "File Name: '$FILE_NAME'"
+            echo "Direct Download: '$DIRECT_DOWNLOAD'"
+            echo "View Link: '$VIEW_LINK'"
+            echo "Open Link: '$OPEN_LINK'"
+            echo "API WebView: '$API_WEBVIEW'"
+          
+            # Validate we have essential info
+            if [[ -z "$FILE_ID" ]]; then
+              echo "❌ No File ID found in response"
+              SUCCESS="false"
+              ERROR_MSG="File ID not found in API response"
+            elif [[ -z "$DIRECT_DOWNLOAD" || "$DIRECT_DOWNLOAD" == *"id="* == false ]]; then
+              echo "❌ Invalid direct download link"
+              # Reconstruct the link manually
+              DIRECT_DOWNLOAD="https://drive.google.com/uc?export=download&id=${FILE_ID}"
+              echo "🔧 Reconstructed link: $DIRECT_DOWNLOAD"
             fi
           
+            # Ensure we have a view link
+            if [[ -z "$VIEW_LINK" && -n "$FILE_ID" ]]; then
+              VIEW_LINK="https://drive.google.com/file/d/${FILE_ID}/view?usp=sharing"
+              echo "🔧 Reconstructed view link: $VIEW_LINK"
+            fi
+          
+            # Use the best available link for primary download
+            PRIMARY_LINK="$DIRECT_DOWNLOAD"
+            if [[ -z "$PRIMARY_LINK" || "$PRIMARY_LINK" == "null" ]]; then
+              PRIMARY_LINK="$VIEW_LINK"
+            fi
+          
+          fi
+          
+          if [ "$SUCCESS" == "true" ] && [[ -n "$FILE_ID" ]] && [[ -n "$PRIMARY_LINK" ]]; then
             # Create success message
             cat > message.txt << EOF
           ✅ *Flutter Build Successful* 🎉
@@ -250,11 +333,13 @@ jobs:
           🌿 *Branch:* $BRANCH_NAME
           🔗 *Commit:* $COMMIT_SHA
           ☁️ *Storage:* Google Drive
+          📦 *File:* $FILE_NAME
 
-          [📥 Direct Download]($DOWNLOAD_LINK)
-          [👁️ View & Download]($VIEW_LINK)
-          [🔗 Alternative Link]($ALT_DOWNLOAD_LINK)
+          [📥 Download APK]($PRIMARY_LINK)
+          [👁️ View in Drive]($VIEW_LINK)
+          [🔗 Open with Drive]($OPEN_LINK)
 
+          💡 *File ID:* \`$FILE_ID\`
           ⚠️ *Note:* Enable "Unknown Sources" before installing
           EOF
           
@@ -275,8 +360,8 @@ jobs:
                 -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
             fi
           else
-            # Drive upload failed
-            ERROR_MSG=$(echo "$UPLOAD_RESULT" | jq -r '.error' 2>/dev/null || echo "Unknown error")
+            # Drive upload failed or missing data
+            ERROR_MSG=$(echo "$JSON_RESULT" | jq -r '.error // "Unknown error or missing file ID"')
           
             cat > message.txt << EOF
           ⚠️ *Build Successful but Drive Upload Failed* 📤
@@ -286,7 +371,7 @@ jobs:
           🔗 *Commit:* $COMMIT_SHA
 
           ❌ Drive upload error: $ERROR_MSG
-          💡 [Check GitHub Actions](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)
+          💡 [Download from GitHub Actions](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)
           EOF
           
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
