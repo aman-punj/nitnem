@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/screens/prayer_page.dart';
 import 'package:nitnem/utils/gradient_scaffold.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../controllers/home_controller.dart';
 import '../utils/nitnem_appbar.dart';
@@ -41,10 +45,10 @@ class HomeScreen extends StatelessWidget {
       title: title,
       onTap: () {
         Get.to(() => PrayerPage(
-          title: title,
-          audioAssetPath: 'assets/audios/Japji_Sahib.mp3',
-          transcriptAssetPath: 'assets/texts/Japji_Sahib.json',
-        ));
+              title: title,
+              audioAssetPath: 'assets/audios/Japji_Sahib.mp3',
+              transcriptAssetPath: 'assets/texts/Japji_Sahib.json',
+            ));
       },
     );
   }
@@ -53,7 +57,9 @@ class HomeScreen extends StatelessWidget {
     Get.back();
     switch (item.id) {
       case 'language':
-      // TODO: implement language toggle later
+        break;
+      case 'share':
+        onShareApp();
         break;
       case 'feedback':
         Get.to(() => FeedbackScreen());
@@ -61,6 +67,35 @@ class HomeScreen extends StatelessWidget {
       case 'exit':
         SystemNavigator.pop();
         break;
+    }
+  }
+
+  void onShareApp() async {
+    try {
+      const imageAssetPath = 'assets/images/khanda_image.png';
+      const fallbackApkUrl =
+          'https://drive.google.com/file/d/your_apk_id/view?usp=sharing'; // Replace with your actual APK link
+
+      // Load image from assets
+      final byteData = await rootBundle.load(imageAssetPath);
+      final buffer = byteData.buffer;
+
+      // Write image to temporary directory
+      final tempDir = await getTemporaryDirectory();
+      final tempImageFile = File('${tempDir.path}/khanda_image.png');
+      await tempImageFile.writeAsBytes(buffer.asUint8List());
+
+      // Share image + text
+      final shareData = ShareParams(
+        text:
+            '🌟 Check out the Bani Sagar app!\n\n🔗 $fallbackApkUrl\n\nFeel the divine connection daily 🙏',
+        subject: 'Bani Sagar - Daily Nitnem & Bani App',
+        files: [XFile(tempImageFile.path)],
+      );
+
+      SharePlus.instance.share(shareData);
+    } catch (e) {
+      print('Sharing failed: $e');
     }
   }
 }

@@ -29,8 +29,16 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // primarySwatch: Colors.teal,
-      ),
+
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: Color(0xFFD4AF37), // Golden
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFFD4AF37)),
+          ),
+        ),      ),
+
       home: const SplashScreen(),
     );
   }

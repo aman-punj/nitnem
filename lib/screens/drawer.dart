@@ -402,16 +402,16 @@ class CompactHomeDrawer extends StatelessWidget {
               ),
 
               // Compact footer
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  '© 2025 nBani',
-                  style: TextStyle(
-                    color: Color(0xFF8B4513),
-                    fontSize: 10,
-                  ),
-                ),
-              ),
+              // const Padding(
+              //   padding: EdgeInsets.all(16),
+              //   child: Text(
+              //     '© 2025 nBani',
+              //     style: TextStyle(
+              //       color: Color(0xFF8B4513),
+              //       fontSize: 10,
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
