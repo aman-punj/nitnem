@@ -284,30 +284,25 @@ jobs:
             FILE_ID=$(echo "$JSON_RESULT" | jq -r '.file_id // empty')
             FILE_NAME=$(echo "$JSON_RESULT" | jq -r '.file_name // empty')
           
-            # Extract all available download links
-            DIRECT_DOWNLOAD=$(echo "$JSON_RESULT" | jq -r '.download_links.direct_download // empty')
-            VIEW_LINK=$(echo "$JSON_RESULT" | jq -r '.download_links.view_link // empty')
-            OPEN_LINK=$(echo "$JSON_RESULT" | jq -r '.download_links.open_link // empty')
-            API_WEBVIEW=$(echo "$JSON_RESULT" | jq -r '.download_links.api_webview // empty')
+            # Extract all available download links with proper quoting
+            DIRECT_DOWNLOAD=$(echo "$JSON_RESULT" | jq -r '.download_links.direct_download // empty' | tr -d '\n\r')
+            VIEW_LINK=$(echo "$JSON_RESULT" | jq -r '.download_links.view_link // empty' | tr -d '\n\r')
+            OPEN_LINK=$(echo "$JSON_RESULT" | jq -r '.download_links.open_link // empty' | tr -d '\n\r')
+            API_WEBVIEW=$(echo "$JSON_RESULT" | jq -r '.download_links.api_webview // empty' | tr -d '\n\r')
           
             # Debug output
             echo "File ID: '$FILE_ID'"
             echo "File Name: '$FILE_NAME'"
             echo "Direct Download: '$DIRECT_DOWNLOAD'"
+            echo "Direct Download Length: ${#DIRECT_DOWNLOAD}"
             echo "View Link: '$VIEW_LINK'"
             echo "Open Link: '$OPEN_LINK'"
             echo "API WebView: '$API_WEBVIEW'"
           
-            # Validate we have essential info
-            if [[ -z "$FILE_ID" ]]; then
-              echo "❌ No File ID found in response"
-              SUCCESS="false"
-              ERROR_MSG="File ID not found in API response"
-            elif [[ -z "$DIRECT_DOWNLOAD" || "$DIRECT_DOWNLOAD" != *"id="* ]]; then
-              echo "❌ Invalid direct download link"
-              # Reconstruct the link manually
+            # Always reconstruct the direct download link from FILE_ID to avoid any parsing issues
+            if [[ -n "$FILE_ID" ]]; then
               DIRECT_DOWNLOAD="https://drive.google.com/uc?export=download&id=${FILE_ID}"
-              echo "🔧 Reconstructed link: $DIRECT_DOWNLOAD"
+              echo "🔧 Reconstructed direct download link: $DIRECT_DOWNLOAD"
             fi
           
             # Ensure we have a view link
@@ -316,10 +311,23 @@ jobs:
               echo "🔧 Reconstructed view link: $VIEW_LINK"
             fi
           
-            # Use the best available link for primary download
+            # Ensure we have an open link
+            if [[ -z "$OPEN_LINK" && -n "$FILE_ID" ]]; then
+              OPEN_LINK="https://drive.google.com/open?id=${FILE_ID}"
+              echo "🔧 Reconstructed open link: $OPEN_LINK"
+            fi
+          
+            # Use the reconstructed direct download link as primary
             PRIMARY_LINK="$DIRECT_DOWNLOAD"
             if [[ -z "$PRIMARY_LINK" || "$PRIMARY_LINK" == "null" ]]; then
               PRIMARY_LINK="$VIEW_LINK"
+            fi
+          
+            # Final validation
+            if [[ -z "$FILE_ID" ]]; then
+              echo "❌ No File ID found in response"
+              SUCCESS="false"
+              ERROR_MSG="File ID not found in API response"
             fi
           
           fi
@@ -353,11 +361,20 @@ jobs:
               -d disable_web_page_preview="false"
           
             # Also send the direct download link as a separate plain text message to ensure it works
+            # Use printf to ensure proper formatting and avoid shell interpretation issues
+            DOWNLOAD_MESSAGE=$(printf "📥 Direct APK Download Link:\n%s\n\n🎯 File ID: %s" "$DIRECT_DOWNLOAD" "$FILE_ID")
+          
             curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
               -d chat_id="${TELEGRAM_CHAT_ID}" \
-              -d text="📥 Direct APK Download Link:
-          $DIRECT_DOWNLOAD" \
+              -d text="$DOWNLOAD_MESSAGE" \
               -d disable_web_page_preview="false"
+          
+            # Debug: Also echo the final links to the log
+            echo "=== FINAL LINKS BEING SENT ==="
+            echo "Primary Link: $PRIMARY_LINK"
+            echo "Direct Download: $DIRECT_DOWNLOAD"
+            echo "View Link: $VIEW_LINK"
+            echo "=== END FINAL LINKS ==="
           
             # Send APK as document if small enough (Telegram limit: 50MB)
             APK_SIZE=$(stat -c%s "$APK_PATH" 2>/dev/null || stat -f%z "$APK_PATH" 2>/dev/null || echo "0")
