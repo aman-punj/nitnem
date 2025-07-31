@@ -24,20 +24,20 @@ class FeedbackScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFFFFFDF7).withOpacity(0.95),
-                    const Color(0xFFF5E6B8).withOpacity(0.85),
+                    const Color(0xFFFFFDF7).withValues(alpha:0.95),
+                    const Color(0xFFF5E6B8).withValues(alpha:0.85),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFFD4AF37).withOpacity(0.3),
+                  color: const Color(0xFFD4AF37).withValues(alpha:0.3),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFD4C19C).withOpacity(0.25),
+                    color: const Color(0xFFD4C19C).withValues(alpha:0.25),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -76,7 +76,7 @@ class FeedbackScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: const Color(0xFFD4AF37).withOpacity(0.3),
+                              color: const Color(0xFFD4AF37).withValues(alpha:0.3),
                             ),
                           ),
                           clipBehavior: Clip.antiAlias,

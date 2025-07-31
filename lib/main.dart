@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:nitnem/screens/splash_screen.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
 
+import 'bindings/di.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -18,6 +19,8 @@ void main() async {
 
   await SharedPrefsService.init();
 
+  DependencyInjection.init();
+
   runApp(const MyApp());
 }
 
@@ -29,7 +32,6 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-
         textSelectionTheme: const TextSelectionThemeData(
           cursorColor: Color(0xFFD4AF37), // Golden
         ),
@@ -37,8 +39,8 @@ class MyApp extends StatelessWidget {
           focusedBorder: UnderlineInputBorder(
             borderSide: BorderSide(color: Color(0xFFD4AF37)),
           ),
-        ),      ),
-
+        ),
+      ),
       home: const SplashScreen(),
     );
   }

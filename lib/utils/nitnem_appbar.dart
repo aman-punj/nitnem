@@ -38,12 +38,12 @@ class NitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD4C19C).withOpacity(0.4),
+            color: const Color(0xFFD4C19C).withValues(alpha:0.4),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
           BoxShadow(
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha:0.7),
             blurRadius: 4,
             offset: const Offset(0, -1),
           ),
@@ -109,10 +109,10 @@ class NitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ? Container(
                         margin: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha:0.2),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: const Color(0xFFE6D3A3).withOpacity(0.5),
+                            color: const Color(0xFFE6D3A3).withValues(alpha:0.5),
                             width: 1,
                           ),
                         ),
@@ -129,10 +129,10 @@ class NitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
                 return Container(
                   margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: const Color(0xFFE6D3A3).withOpacity(0.5),
+                      color: const Color(0xFFE6D3A3).withValues(alpha:0.5),
                       width: 1,
                     ),
                   ),
@@ -170,7 +170,7 @@ class AppBarPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFD4AF37).withOpacity(0.08)
+      ..color = const Color(0xFFD4AF37).withValues(alpha:0.08)
       ..style = PaintingStyle.fill;
 
     const dotSize = 2.0;

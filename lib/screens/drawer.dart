@@ -57,7 +57,7 @@ class HomeDrawer extends StatelessWidget {
                             borderRadius: BorderRadius.circular(40),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFD4C19C).withOpacity(0.4),
+                                color: const Color(0xFFD4C19C).withValues(alpha:0.4),
                                 blurRadius: 8,
                                 offset: const Offset(0, 3),
                               ),
@@ -149,7 +149,7 @@ class HomeDrawer extends StatelessWidget {
                             gradient: LinearGradient(
                               colors: [
                                 Colors.transparent,
-                                const Color(0xFFE6D3A3).withOpacity(0.5),
+                                const Color(0xFFE6D3A3).withValues(alpha:0.5),
                                 Colors.transparent,
                               ],
                             ),
@@ -196,15 +196,15 @@ class HomeDrawer extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFFD4AF37).withOpacity(0.15),
-                        const Color(0xFFB8860B).withOpacity(0.1),
+                        const Color(0xFFD4AF37).withValues(alpha:0.15),
+                        const Color(0xFFB8860B).withValues(alpha:0.1),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: const Color(0xFFD4AF37).withOpacity(0.2),
+                      color: const Color(0xFFD4AF37).withValues(alpha:0.2),
                       width: 1,
                     ),
                   ),
@@ -233,7 +233,7 @@ class HomeDrawer extends StatelessWidget {
                 // Subtle arrow indicator
                 Icon(
                   Icons.arrow_forward_ios_rounded,
-                  color: const Color(0xFF8B4513).withOpacity(0.4),
+                  color: const Color(0xFF8B4513).withValues(alpha: 0.4),
                   size: 14,
                 ),
               ],
@@ -250,7 +250,7 @@ class DrawerPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFD4AF37).withOpacity(0.05)
+      ..color = const Color(0xFFD4AF37).withValues(alpha:0.05)
       ..style = PaintingStyle.fill;
 
     const spacing = 40.0;
@@ -268,7 +268,7 @@ class DrawerPatternPainter extends CustomPainter {
 
     // Add some flowing lines for elegance
     final linePaint = Paint()
-      ..color = const Color(0xFFE6D3A3).withOpacity(0.15)
+      ..color = const Color(0xFFE6D3A3).withValues(alpha:0.15)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
@@ -367,7 +367,7 @@ class CompactHomeDrawer extends StatelessWidget {
               Container(
                 height: 1,
                 margin: const EdgeInsets.symmetric(horizontal: 20),
-                color: const Color(0xFFE6D3A3).withOpacity(0.5),
+                color: const Color(0xFFE6D3A3).withValues(alpha:0.5),
               ),
 
               // Compact menu items
@@ -378,7 +378,7 @@ class CompactHomeDrawer extends StatelessWidget {
                     leading: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD4AF37).withOpacity(0.1),
+                        color: const Color(0xFFD4AF37).withValues(alpha:0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(

@@ -54,7 +54,7 @@ class GradientScaffold extends StatelessWidget {
                 center: Alignment.topRight,
                 radius: 1.5,
                 colors: [
-                  const Color(0xFFFFE4A3).withOpacity(0.3),
+                  const Color(0xFFFFE4A3).withValues(alpha:0.3),
                   Colors.transparent,
                 ],
               ),
@@ -102,12 +102,12 @@ class SacredPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFD4AF37).withOpacity(0.08) // Golden with low opacity
+      ..color = const Color(0xFFD4AF37).withValues(alpha:0.08) // Golden with low opacity
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
     final dotPaint = Paint()
-      ..color = const Color(0xFFB8860B).withOpacity(0.15); // Darker gold for dots
+      ..color = const Color(0xFFB8860B).withValues(alpha:0.15); // Darker gold for dots
 
     const spacing = 60.0;
     const radius = 25.0;
@@ -149,7 +149,7 @@ class LotusPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFCD853F).withOpacity(0.06)
+      ..color = const Color(0xFFCD853F).withValues(alpha:0.06)
       ..style = PaintingStyle.fill;
 
     const spacing = 100.0;
@@ -211,15 +211,15 @@ class ReadingOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFDF7).withOpacity(opacity),
+        color: const Color(0xFFFFFDF7).withValues(alpha:opacity),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFFE6D3A3).withOpacity(0.3),
+          color: const Color(0xFFE6D3A3).withValues(alpha:0.3),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD4C19C).withOpacity(0.2),
+            color: const Color(0xFFD4C19C).withValues(alpha:0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

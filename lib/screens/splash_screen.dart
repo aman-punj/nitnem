@@ -1,6 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:nitnem/controllers/app_info_controller.dart';
+import 'package:nitnem/services/shared_prefs_service.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'home_screen.dart';
 
@@ -19,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-
+    getAppInfo();
     _fadeController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
@@ -85,4 +89,45 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
   }
+
+  void getAppInfo() async {
+    final controller = Get.find<AppInfoController>();
+    final appInfo = await controller.loadAppInfo();
+
+    if (appInfo == null) return;
+
+
+    final packageInfo = await PackageInfo.fromPlatform();
+    final localVersion = packageInfo.version;
+
+    if (appInfo.forceUpdate && appInfo.currentVersion != localVersion) {
+      showDialog(
+        context: Get.context!,
+        barrierDismissible: false,
+        builder: (_) => AlertDialog(
+          title: const Text("Update Required"),
+          content: Text(appInfo.updateNotes),
+          actions: [
+            TextButton(
+              onPressed: () {
+              },
+              child: const Text("Update Now"),
+            )
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (appInfo.minorUpdateAvailable) {
+      final lastAppliedPatchVersion = SharedPrefsService.getPatchNum();
+      if (lastAppliedPatchVersion != appInfo.currentVersion) {
+
+        //TODO: Need to add here
+        // await applyMinorPatch(appInfo.currentVersion);
+        await SharedPrefsService.setPatchNum(appInfo.currentVersion);
+      }
+    }
+  }
+
 }

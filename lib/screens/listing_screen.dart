@@ -96,8 +96,8 @@ class _BaniListTileState extends State<BaniListTile>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFFFFFDF7).withOpacity(0.9),
-                    const Color(0xFFF5E6B8).withOpacity(0.8),
+                    const Color(0xFFFFFDF7).withValues(alpha:0.9),
+                    const Color(0xFFF5E6B8).withValues(alpha:0.8),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -105,18 +105,18 @@ class _BaniListTileState extends State<BaniListTile>
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: widget.isCompleted
-                      ? const Color(0xFFD4AF37).withOpacity(0.5)
-                      : const Color(0xFFE6D3A3).withOpacity(0.4),
+                      ? const Color(0xFFD4AF37).withValues(alpha:0.5)
+                      : const Color(0xFFE6D3A3).withValues(alpha:0.4),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFD4C19C).withOpacity(0.25),
+                    color: const Color(0xFFD4C19C).withValues(alpha:0.25),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
                   BoxShadow(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha:0.8),
                     blurRadius: 8,
                     offset: const Offset(0, -1),
                   ),
@@ -130,15 +130,15 @@ class _BaniListTileState extends State<BaniListTile>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          const Color(0xFFD4AF37).withOpacity(0.2),
-                          const Color(0xFFB8860B).withOpacity(0.15),
+                          const Color(0xFFD4AF37).withValues(alpha:0.2),
+                          const Color(0xFFB8860B).withValues(alpha:0.15),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFFD4AF37).withOpacity(0.3),
+                        color: const Color(0xFFD4AF37).withValues(alpha:0.3),
                         width: 1,
                       ),
                     ),
@@ -170,7 +170,7 @@ class _BaniListTileState extends State<BaniListTile>
                           Text(
                             widget.subtitle!,
                             style: TextStyle(
-                              color: const Color(0xFF8B4513).withOpacity(0.7),
+                              color: const Color(0xFF8B4513).withValues(alpha:0.7),
                               fontSize: 14,
                               height: 1.2,
                             ),
@@ -183,13 +183,13 @@ class _BaniListTileState extends State<BaniListTile>
                               Icon(
                                 Icons.access_time_rounded,
                                 size: 14,
-                                color: const Color(0xFF8B4513).withOpacity(0.6),
+                                color: const Color(0xFF8B4513).withValues(alpha:0.6),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 _formatDuration(widget.estimatedTime!),
                                 style: TextStyle(
-                                  color: const Color(0xFF8B4513).withOpacity(0.6),
+                                  color: const Color(0xFF8B4513).withValues(alpha:0.6),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -209,10 +209,10 @@ class _BaniListTileState extends State<BaniListTile>
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD4AF37).withOpacity(0.2),
+                            color: const Color(0xFFD4AF37).withValues(alpha:0.2),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: const Color(0xFFD4AF37).withOpacity(0.4),
+                              color: const Color(0xFFD4AF37).withValues(alpha:0.4),
                               width: 1,
                             ),
                           ),
@@ -228,7 +228,7 @@ class _BaniListTileState extends State<BaniListTile>
                       // Arrow indicator
                       Icon(
                         Icons.arrow_forward_ios_rounded,
-                        color: const Color(0xFF8B4513).withOpacity(0.5),
+                        color: const Color(0xFF8B4513).withValues(alpha:0.5),
                         size: 16,
                       ),
                     ],
@@ -282,20 +282,20 @@ class _CompactBaniListTileState extends State<CompactBaniListTile> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              const Color(0xFFFFFDF7).withOpacity(0.8),
-              const Color(0xFFF5E6B8).withOpacity(0.6),
+              const Color(0xFFFFFDF7).withValues(alpha:0.8),
+              const Color(0xFFF5E6B8).withValues(alpha:0.6),
             ],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFFE6D3A3).withOpacity(0.4),
+            color: const Color(0xFFE6D3A3).withValues(alpha:0.4),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFD4C19C).withOpacity(0.15),
+              color: const Color(0xFFD4C19C).withValues(alpha:0.15),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -328,7 +328,7 @@ class _CompactBaniListTileState extends State<CompactBaniListTile> {
             else
               Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: const Color(0xFF8B4513).withOpacity(0.4),
+                color: const Color(0xFF8B4513).withValues(alpha:0.4),
                 size: 14,
               ),
           ],
@@ -369,20 +369,20 @@ class SpecialBaniTile extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withOpacity(0.95),
-              accent.withOpacity(0.05),
+              Colors.white.withValues(alpha:0.95),
+              accent.withValues(alpha:0.05),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: accent.withOpacity(0.3),
+            color: accent.withValues(alpha:0.3),
             width: 2,
           ),
           boxShadow: [
             BoxShadow(
-              color: accent.withOpacity(0.15),
+              color: accent.withValues(alpha:0.15),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -396,10 +396,10 @@ class SpecialBaniTile extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: accent.withOpacity(0.15),
+                    color: accent.withValues(alpha:0.15),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: accent.withOpacity(0.3),
+                      color: accent.withValues(alpha:0.3),
                       width: 1,
                     ),
                   ),
@@ -414,7 +414,7 @@ class SpecialBaniTile extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: accent.withOpacity(0.2),
+                      color: accent.withValues(alpha:0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Icon(
@@ -441,7 +441,7 @@ class SpecialBaniTile extends StatelessWidget {
             Text(
               title,
               style: TextStyle(
-                color: const Color(0xFF8B4513).withOpacity(0.8),
+                color: const Color(0xFF8B4513).withValues(alpha:0.8),
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
                 height: 1.3,
