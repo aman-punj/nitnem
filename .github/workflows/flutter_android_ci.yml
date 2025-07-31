@@ -303,7 +303,7 @@ jobs:
               echo "❌ No File ID found in response"
               SUCCESS="false"
               ERROR_MSG="File ID not found in API response"
-            elif [[ -z "$DIRECT_DOWNLOAD" || "$DIRECT_DOWNLOAD" == *"id="* == false ]]; then
+            elif [[ -z "$DIRECT_DOWNLOAD" || "$DIRECT_DOWNLOAD" != *"id="* ]]; then
               echo "❌ Invalid direct download link"
               # Reconstruct the link manually
               DIRECT_DOWNLOAD="https://drive.google.com/uc?export=download&id=${FILE_ID}"

@@ -1,152 +1,336 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:nitnem/screens/feedback_screen.dart';
 
-import 'prayer_page.dart';
+class BaniListTile extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback onTap;
+  final bool isCompleted;
+  final Duration? estimatedTime;
+  final bool showEstimatedTime;
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  final List<Map<String, dynamic>> baniList = const [
-    {
-      'id': 'japji_sahib',
-      'pa': 'ਜਪੁਜੀ ਸਾਹਿਬ',
-      'hi': 'जपुजी साहिब',
-      'en': 'Japji Sahib',
-    },
-    {
-      'id': 'jaap_sahib',
-      'pa': 'ਜਾਪ ਸਾਹਿਬ',
-      'hi': 'जाप साहिब',
-      'en': 'Jaap Sahib',
-    },
-    {
-      'id': 'tav_prasad_savaiye',
-      'pa': 'ਤਵ ਪ੍ਰਸਾਦ ਸਵੱਯੇ',
-      'hi': 'तव प्रसाद सवये',
-      'en': 'Tav Prasad Savaiye',
-    },
-    {
-      'id': 'chaupai_sahib',
-      'pa': 'ਚੌਪਈ ਸਾਹਿਬ',
-      'hi': 'चौपई साहिब',
-      'en': 'Chaupai Sahib',
-    },
-    {
-      'id': 'anand_sahib',
-      'pa': 'ਆਨੰਦ ਸਾਹਿਬ',
-      'hi': 'आनंद साहिब',
-      'en': 'Anand Sahib',
-    },
-  ];
-
+  const BaniListTile({
+    super.key,
+    this.icon = Icons.auto_stories_outlined,
+    required this.title,
+    this.subtitle,
+    required this.onTap,
+    this.isCompleted = false,
+    this.estimatedTime,
+    this.showEstimatedTime = false,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    final currentLang = context.locale.languageCode;
-
-    return Scaffold(
-      drawer: HomeDrawer(
-        onItemSelected: (item) {
-          Navigator.pop(context);
-          switch (item.id) {
-            case 'language': // show dialog or redirect
-              break;
-            case 'feedback':
-              Navigator.push(context, MaterialPageRoute(builder: (context){
-                return FeedbackScreen();
-              }));
-              break;
-            case 'exit': // show confirm dialog
-              break;
-          // and so on
-          }
-        },
-      ),      appBar: AppBar(
-        title: Text('app_name'.tr()),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.2,
-          ),
-          itemCount: baniList.length,
-          itemBuilder: (context, index) {
-            final bani = baniList[index];
-            return BaniListTile(
-              // baniId: bani['id']!,
-    onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PrayerPage(
-                      title: 'Japji Sahib',
-                      audioAssetPath: 'assets/audios/Japji_Sahib.mp3',
-                      transcriptAssetPath: 'assets/texts/Japji_Sahib.json',
-                    ),
-                  ),
-                );
-              },
-              title: bani[currentLang] ?? bani['pa']!,
-            );
-          },
-        ),
-      ),
-    );
-  }
+  State<BaniListTile> createState() => _BaniListTileState();
 }
 
+class _BaniListTileState extends State<BaniListTile>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  bool _isPressed = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+  }
 
-class HomeDrawer extends StatelessWidget {
-  const HomeDrawer({super.key, required this.onItemSelected});
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
-  final Function(DrawerItem) onItemSelected;
+  void _handleTapDown(TapDownDetails details) {
+    setState(() {
+      _isPressed = true;
+    });
+    _animationController.forward();
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    setState(() {
+      _isPressed = false;
+    });
+    _animationController.reverse();
+    widget.onTap();
+  }
+
+  void _handleTapCancel() {
+    setState(() {
+      _isPressed = false;
+    });
+    _animationController.reverse();
+  }
+
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes;
+    return '${minutes}min';
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Drawer(
-      backgroundColor: Colors.black,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: Colors.black),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return AnimatedBuilder(
+      animation: _scaleAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: GestureDetector(
+            onTapDown: _handleTapDown,
+            onTapUp: _handleTapUp,
+            onTapCancel: _handleTapCancel,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFFFFFDF7).withOpacity(0.9),
+                    const Color(0xFFF5E6B8).withOpacity(0.8),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: widget.isCompleted
+                      ? const Color(0xFFD4AF37).withOpacity(0.5)
+                      : const Color(0xFFE6D3A3).withOpacity(0.4),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFD4C19C).withOpacity(0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.8),
+                    blurRadius: 8,
+                    offset: const Offset(0, -1),
+                  ),
+                ],
+              ),
+              child: Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 30,
-                    backgroundImage: AssetImage('assets/images/khanda_image.png'),
+                  // Leading Icon with sacred styling
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFFD4AF37).withOpacity(0.2),
+                          const Color(0xFFB8860B).withOpacity(0.15),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFFD4AF37).withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(
+                      widget.icon,
+                      color: const Color(0xFF8B4513),
+                      size: 24,
+                    ),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'nBani',
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(color: Colors.white),
+
+                  const SizedBox(width: 16),
+
+                  // Title and subtitle section
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          style: const TextStyle(
+                            color: Color(0xFF8B4513),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            height: 1.3,
+                          ),
+                        ),
+                        if (widget.subtitle != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.subtitle!,
+                            style: TextStyle(
+                              color: const Color(0xFF8B4513).withOpacity(0.7),
+                              fontSize: 14,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
+                        if (widget.showEstimatedTime && widget.estimatedTime != null) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.access_time_rounded,
+                                size: 14,
+                                color: const Color(0xFF8B4513).withOpacity(0.6),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _formatDuration(widget.estimatedTime!),
+                                style: TextStyle(
+                                  color: const Color(0xFF8B4513).withOpacity(0.6),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                  const Text(
-                    'Spiritual Bani Reader',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
+
+                  // Trailing elements
+                  Column(
+                    children: [
+                      // Completion status
+                      if (widget.isCompleted)
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD4AF37).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color(0xFFD4AF37).withOpacity(0.4),
+                              width: 1,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            color: Color(0xFFB8860B),
+                            size: 16,
+                          ),
+                        ),
+
+                      const SizedBox(height: 8),
+
+                      // Arrow indicator
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: const Color(0xFF8B4513).withOpacity(0.5),
+                        size: 16,
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            ...drawerItems.map((item) => ListTile(
-              leading: Icon(item.icon, color: Colors.white),
-              title: Text(item.title, style: const TextStyle(color: Colors.white)),
-              onTap: () => onItemSelected(item),
-            )),
-            const Spacer(),
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text('© 2025 nBani • All rights reserved', style: TextStyle(color: Colors.grey, fontSize: 12)),
-            )
+          ),
+        );
+      },
+    );
+  }
+}
+
+// Alternative compact version for dense lists
+class CompactBaniListTile extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final bool isCompleted;
+
+  const CompactBaniListTile({
+    super.key,
+    this.icon = Icons.auto_stories_outlined,
+    required this.title,
+    required this.onTap,
+    this.isCompleted = false,
+  });
+
+  @override
+  State<CompactBaniListTile> createState() => _CompactBaniListTileState();
+}
+
+class _CompactBaniListTileState extends State<CompactBaniListTile> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        transform: Matrix4.identity()..scale(_isPressed ? 0.98 : 1.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFFFFFDF7).withOpacity(0.8),
+              const Color(0xFFF5E6B8).withOpacity(0.6),
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color(0xFFE6D3A3).withOpacity(0.4),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFD4C19C).withOpacity(0.15),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              widget.icon,
+              color: const Color(0xFF8B4513),
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                widget.title,
+                style: const TextStyle(
+                  color: Color(0xFF8B4513),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            if (widget.isCompleted)
+              Icon(
+                Icons.check_circle_rounded,
+                color: const Color(0xFFD4AF37),
+                size: 18,
+              )
+            else
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: const Color(0xFF8B4513).withOpacity(0.4),
+                size: 14,
+              ),
           ],
         ),
       ),
@@ -154,57 +338,130 @@ class HomeDrawer extends StatelessWidget {
   }
 }
 
-
-
-class DrawerItem {
+// Specialized tile for different Bani types
+class SpecialBaniTile extends StatelessWidget {
   final String title;
+  final String? gurmukhiTitle;
   final IconData icon;
-  final String id;
-
-  const DrawerItem({required this.title, required this.icon, required this.id});
-}
-
-const List<DrawerItem> drawerItems = [
-  DrawerItem(title: 'Change Language', icon: Icons.language, id: 'language'),
-  DrawerItem(title: 'Share App', icon: Icons.share, id: 'share'),
-  DrawerItem(title: 'Feedback', icon: Icons.feedback, id: 'feedback'),
-  DrawerItem(title: 'Rate Us', icon: Icons.star_rate, id: 'rate'),
-  DrawerItem(title: 'Privacy Policy', icon: Icons.privacy_tip, id: 'privacy'),
-  DrawerItem(title: 'About App', icon: Icons.info_outline, id: 'about'),
-  DrawerItem(title: 'Exit', icon: Icons.exit_to_app, id: 'exit'),
-];
-
-class BaniListTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
   final VoidCallback onTap;
+  final bool isCompleted;
+  final Color? accentColor;
 
-  const BaniListTile({
+  const SpecialBaniTile({
     super.key,
-     this.icon = Icons.gradient,
     required this.title,
+    this.gurmukhiTitle,
+    this.icon = Icons.auto_stories_outlined,
     required this.onTap,
+    this.isCompleted = false,
+    this.accentColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.amberAccent),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
+    final accent = accentColor ?? const Color(0xFFD4AF37);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.white.withOpacity(0.95),
+              accent.withOpacity(0.05),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: accent.withOpacity(0.3),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: accent.withOpacity(0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: accent.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: const Color(0xFF8B4513),
+                    size: 28,
+                  ),
+                ),
+                const Spacer(),
+                if (isCompleted)
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Icon(
+                      Icons.check_rounded,
+                      color: accent,
+                      size: 20,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (gurmukhiTitle != null) ...[
+              Text(
+                gurmukhiTitle!,
+                style: const TextStyle(
+                  color: Color(0xFF8B4513),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 6),
+            ],
+            Text(
+              title,
+              style: TextStyle(
+                color: const Color(0xFF8B4513).withOpacity(0.8),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                height: 1.3,
+              ),
+            ),
+          ],
         ),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey, size: 16),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      tileColor: Colors.grey[900],
     );
   }
+}
+
+// Usage examples and constants
+class BaniIcons {
+  static const IconData japjiSahib = Icons.wb_sunny_outlined;
+  static const IconData jaapSahib = Icons.auto_stories_outlined;
+  static const IconData tvaPresaad = Icons.spa_outlined;
+  static const IconData chaupaiSahib = Icons.shield_outlined;
+  static const IconData anandSahib = Icons.favorite_border_outlined;
+  static const IconData rehrasSahib = Icons.wb_twilight_outlined;
+  static const IconData kirtan = Icons.music_note_outlined;
+  static const IconData ardaas = Icons.pan_tool_outlined;
 }

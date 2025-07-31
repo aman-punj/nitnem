@@ -17,7 +17,6 @@ dependencies:
   just_audio: ^0.10.4
   get: ^4.7.2
   firebase_core: ^3.15.2
-  easy_localization: ^3.0.8
   shared_preferences: ^2.5.3
   image_picker: ^1.1.2
 
@@ -35,4 +34,3 @@ flutter:
     - assets/texts/
     - assets/audios/
     - assets/images/
-    - assets/translations/
