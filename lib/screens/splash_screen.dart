@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
+import 'package:nitnem/services/prayer_update_service.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -121,11 +122,13 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (appInfo.minorUpdateAvailable) {
       final lastAppliedPatchVersion = SharedPrefsService.getPatchNum();
-      if (lastAppliedPatchVersion != appInfo.currentVersion) {
+      if (lastAppliedPatchVersion != "1.0.02") {
 
-        //TODO: Need to add here
+        //TODO: Just for testing
         // await applyMinorPatch(appInfo.currentVersion);
-        await SharedPrefsService.setPatchNum(appInfo.currentVersion);
+        // await SharedPrefsService.setPatchNum(appInfo.currentVersion);
+
+        await PrayerUpdateService().fetchUpdatedPrayers(appInfo.updateFor);
       }
     }
   }

@@ -58,4 +58,8 @@ class SharedPrefsService {
   static Future<void> clear() async {
     await _prefs?.clear();
   }
+
+  static Future<void> clearWithKey(String clearKey) async {
+      await _prefs?.remove(clearKey);
+  }
 }

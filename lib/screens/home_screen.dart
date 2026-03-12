@@ -19,7 +19,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(HomeController());
+    final controller = Get.find<HomeController>();
 
     return GradientScaffold(
       appBar: SimpleNitnemAppBar(
@@ -28,28 +28,22 @@ class HomeScreen extends StatelessWidget {
       ),
       drawer: HomeDrawer(onItemSelected: (item) => _onDrawerItemSelect(item)),
       body: ListView.separated(
-        padding: const EdgeInsets.only(top: 24, left: 18, right: 18),
+        padding: const EdgeInsets.only(top: 12, left: 18, right: 18),
         itemCount: controller.baniList.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final bani = controller.baniList[index];
           final title = bani[controller.currentLang] ?? bani['pa']!;
-          return _buildBaniTile(bani['id']!, title);
+          return _buildBaniTile(bani['id']!, title, controller);
         },
       ),
     );
   }
 
-  Widget _buildBaniTile(String id, String title) {
+  Widget _buildBaniTile(String id, String title,HomeController controller) {
     return BaniListTile(
       title: title,
-      onTap: () {
-        Get.to(() => PrayerPage(
-              title: title,
-              audioAssetPath: 'assets/audios/Japji_Sahib.mp3',
-              transcriptAssetPath: 'assets/texts/Japji_Sahib.json',
-            ));
-      },
+      onTap: ()=> controller.openPrayer(id, title),
     );
   }
 

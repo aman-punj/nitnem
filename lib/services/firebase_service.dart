@@ -19,27 +19,12 @@ class FirebaseAppInfoService implements AppInfoService {
           .doc('XRW0TNK0gtC6FOhMicb9')
           .get();
 
-      // final patchDoc = await
-      //     .collection('app_info')
-      //     .doc('XRW0TNK0gtC6FOhMicb9')
-      //     .get();
-      //
-      // if (patchDoc.exists) {
-      //   final patchData = patchDoc.data();
-      //   print(patchData);
-      // }
-
-      if ( doc.data() != null) {
+      if (doc.data() != null) {
         return AppInfoModel.fromMap(doc.data()!);
       }
     } catch (e) {
-      log(e.toString());}
+      log(e.toString());
+    }
     return null;
-  }
-
-  @override
-  Future<Map<String, dynamic>> updateJsonPerPrayer(String prayerId) {
-    // TODO: implement updateJsonPerPrayer
-    throw UnimplementedError();
   }
 }

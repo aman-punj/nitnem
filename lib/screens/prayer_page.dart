@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:just_audio/just_audio.dart';
+import 'dart:async';
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:get/get.dart';
-import 'dart:async';
+import 'package:just_audio/just_audio.dart';
 import 'package:nitnem/utils/gradient_scaffold.dart';
 
 /// Model for a single transcript segment
@@ -12,7 +13,8 @@ class TranscriptSegment {
   final double end;
   final String text;
 
-  TranscriptSegment({required this.start, required this.end, required this.text});
+  TranscriptSegment(
+      {required this.start, required this.end, required this.text});
 
   factory TranscriptSegment.fromJson(Map<String, dynamic> json) {
     return TranscriptSegment(
@@ -34,14 +36,19 @@ class PrayerController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxBool isTextOnlyMode = false.obs;
   final RxBool isUserScrolling = false.obs;
-  final RxBool isUserSeeking = false.obs; // Track slider interactions separately
+  final RxBool isUserSeeking =
+      false.obs; // Track slider interactions separately
   final Rx<Duration> currentPosition = Duration.zero.obs;
   final Rx<Duration> totalDuration = Duration.zero.obs;
+
   // Add configuration options for fine-tuning
   final RxDouble playbackSpeed = 1.0.obs;
-  final RxDouble scrollAlignment = 0.3.obs; // Adjustable alignment (0.0 = top, 0.5 = center, 1.0 = bottom)
-  final RxInt scrollAnimationDuration = 800.obs; // Adjustable animation duration in ms
-  final RxBool useAlternativeScroll = false.obs; // Toggle between scroll methods
+  final RxDouble scrollAlignment =
+      0.3.obs; // Adjustable alignment (0.0 = top, 0.5 = center, 1.0 = bottom)
+  final RxInt scrollAnimationDuration =
+      800.obs; // Adjustable animation duration in ms
+  final RxBool useAlternativeScroll =
+      false.obs; // Toggle between scroll methods
   final RxBool enableScrollDebug = true.obs; // Toggle debug prints
 
   // Controllers
@@ -98,7 +105,8 @@ class PrayerController extends GetxController {
       final jsonStr = await rootBundle.loadString(transcriptPath);
       final Map<String, dynamic> jsonData = json.decode(jsonStr);
       final List<dynamic> segmentList = jsonData['segments'] ?? [];
-      segments.value = segmentList.map((s) => TranscriptSegment.fromJson(s)).toList();
+      segments.value =
+          segmentList.map((s) => TranscriptSegment.fromJson(s)).toList();
 
       // Create keys for each segment after loading
       _createSegmentKeys();
@@ -120,11 +128,13 @@ class PrayerController extends GetxController {
     }
 
     final seconds = position.inMilliseconds / 1000.0;
-    final index = segments.indexWhere((s) => seconds >= s.start && seconds <= s.end);
+    final index =
+        segments.indexWhere((s) => seconds >= s.start && seconds <= s.end);
 
     if (index != currentSegmentIndex.value && index != -1) {
       if (enableScrollDebug.value) {
-        print('Natural segment change from ${currentSegmentIndex.value} to $index at ${formatDuration(position)}');
+        print(
+            'Natural segment change from ${currentSegmentIndex.value} to $index at ${formatDuration(position)}');
       }
 
       currentSegmentIndex.value = index;
@@ -143,11 +153,11 @@ class PrayerController extends GetxController {
     if (currentSegmentIndex.value >= 0 &&
         scrollController.hasClients &&
         segmentKeys.containsKey(currentSegmentIndex.value)) {
-
       final key = segmentKeys[currentSegmentIndex.value];
       if (key?.currentContext != null) {
         // Debug: Print current segment info
-        print('Auto-scrolling to segment ${currentSegmentIndex.value}: "${segments[currentSegmentIndex.value].text.substring(0, 50)}..."');
+        print(
+            'Auto-scrolling to segment ${currentSegmentIndex.value}: "${segments[currentSegmentIndex.value].text.substring(0, 50)}..."');
 
         // Use Scrollable.ensureVisible for accurate positioning
         Scrollable.ensureVisible(
@@ -159,7 +169,8 @@ class PrayerController extends GetxController {
           print('Error scrolling to segment: $e');
         });
       } else {
-        print('Warning: Context not found for segment ${currentSegmentIndex.value}');
+        print(
+            'Warning: Context not found for segment ${currentSegmentIndex.value}');
       }
     }
   }
@@ -170,12 +181,14 @@ class PrayerController extends GetxController {
       try {
         final key = segmentKeys[currentSegmentIndex.value];
         if (key?.currentContext != null) {
-          final RenderBox renderBox = key!.currentContext!.findRenderObject() as RenderBox;
+          final RenderBox renderBox =
+              key!.currentContext!.findRenderObject() as RenderBox;
           final position = renderBox.localToGlobal(Offset.zero);
           final scrollPosition = scrollController.position;
 
           // Calculate target scroll offset
-          final targetOffset = scrollController.offset + position.dy - 200; // 200px from top
+          final targetOffset =
+              scrollController.offset + position.dy - 200; // 200px from top
 
           print('Scrolling to calculated position: $targetOffset');
 
@@ -196,7 +209,8 @@ class PrayerController extends GetxController {
   void _fallbackScroll() {
     if (currentSegmentIndex.value >= 0 && scrollController.hasClients) {
       // Estimate position based on average segment height
-      const estimatedHeight = 100.0; // Adjust based on your typical segment height
+      const estimatedHeight =
+          100.0; // Adjust based on your typical segment height
       final targetOffset = currentSegmentIndex.value * estimatedHeight;
 
       print('Using fallback scroll to estimated position: $targetOffset');
@@ -251,11 +265,13 @@ class PrayerController extends GetxController {
 
     // Force update current segment based on the final position
     final seconds = position.inMilliseconds / 1000.0;
-    final newIndex = segments.indexWhere((s) => seconds >= s.start && seconds <= s.end);
+    final newIndex =
+        segments.indexWhere((s) => seconds >= s.start && seconds <= s.end);
 
     if (newIndex != -1 && newIndex != currentSegmentIndex.value) {
       if (enableScrollDebug.value) {
-        print('Force updating segment from ${currentSegmentIndex.value} to $newIndex');
+        print(
+            'Force updating segment from ${currentSegmentIndex.value} to $newIndex');
       }
 
       currentSegmentIndex.value = newIndex;
@@ -352,7 +368,7 @@ class PrayerPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(PrayerController());
-
+    print("thuis is the path recived - $transcriptAssetPath");
     // Initialize content loading
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.loadContent(audioAssetPath, transcriptAssetPath);
@@ -366,16 +382,16 @@ class PrayerPage extends StatelessWidget {
         actions: [
           // Text-only mode toggle
           Obx(() => IconButton(
-            icon: Icon(
-              controller.isTextOnlyMode.value
-                  ? Icons.headphones
-                  : Icons.text_fields,
-            ),
-            onPressed: controller.toggleTextOnlyMode,
-            tooltip: controller.isTextOnlyMode.value
-                ? 'Enable Audio Mode'
-                : 'Text Only Mode',
-          )),
+                icon: Icon(
+                  controller.isTextOnlyMode.value
+                      ? Icons.headphones
+                      : Icons.text_fields,
+                ),
+                onPressed: controller.toggleTextOnlyMode,
+                tooltip: controller.isTextOnlyMode.value
+                    ? 'Enable Audio Mode'
+                    : 'Text Only Mode',
+              )),
 
           // Playback speed
           PopupMenuButton<double>(
@@ -495,10 +511,12 @@ class PrayerPage extends StatelessWidget {
                       itemCount: controller.segments.length,
                       itemBuilder: (context, index) {
                         final segment = controller.segments[index];
-                        final isHighlighted = index == controller.currentSegmentIndex.value;
+                        final isHighlighted =
+                            index == controller.currentSegmentIndex.value;
 
                         return GestureDetector(
-                          key: controller.segmentKeys[index], // Add the key here
+                          key: controller.segmentKeys[index],
+                          // Add the key here
                           onTap: () {
                             // Seek to this segment when tapped
                             final seekPosition = Duration(
@@ -515,20 +533,20 @@ class PrayerPage extends StatelessWidget {
                             decoration: BoxDecoration(
                               gradient: isHighlighted
                                   ? const LinearGradient(
-                                colors: [
-                                  Color(0xFFD4AF37),
-                                  Color(0xFFB8860B),
-                                ],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                              )
+                                      colors: [
+                                        Color(0xFFD4AF37),
+                                        Color(0xFFB8860B),
+                                      ],
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                    )
                                   : null,
                               borderRadius: BorderRadius.circular(12),
                               border: isHighlighted
                                   ? Border.all(
-                                color: const Color(0xFFD4AF37),
-                                width: 2,
-                              )
+                                      color: const Color(0xFFD4AF37),
+                                      width: 2,
+                                    )
                                   : null,
                             ),
                             child: Text(
@@ -564,17 +582,21 @@ class PrayerPage extends StatelessWidget {
                     SliderTheme(
                       data: SliderTheme.of(context).copyWith(
                         activeTrackColor: const Color(0xFFD4AF37),
-                        inactiveTrackColor: const Color(0xFFE6D3A3).withOpacity(0.3),
+                        inactiveTrackColor:
+                            const Color(0xFFE6D3A3).withOpacity(0.3),
                         thumbColor: const Color(0xFFB8860B),
                         overlayColor: const Color(0xFFD4AF37).withOpacity(0.2),
                         trackHeight: 4,
-                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                        thumbShape:
+                            const RoundSliderThumbShape(enabledThumbRadius: 8),
                       ),
                       child: Slider(
                         min: 0,
-                        max: controller.totalDuration.value.inMilliseconds.toDouble(),
+                        max: controller.totalDuration.value.inMilliseconds
+                            .toDouble(),
                         value: controller.currentPosition.value.inMilliseconds
-                            .clamp(0, controller.totalDuration.value.inMilliseconds)
+                            .clamp(0,
+                                controller.totalDuration.value.inMilliseconds)
                             .toDouble(),
                         onChangeStart: (value) {
                           // Mark that user started seeking (prevents natural updates)
@@ -582,11 +604,13 @@ class PrayerPage extends StatelessWidget {
                         },
                         onChanged: (value) {
                           // Use debounced seek for slider interactions
-                          controller.seekToWithDebounce(Duration(milliseconds: value.toInt()));
+                          controller.seekToWithDebounce(
+                              Duration(milliseconds: value.toInt()));
                         },
                         onChangeEnd: (value) {
                           // Final seek with debounce
-                          controller.seekToWithDebounce(Duration(milliseconds: value.toInt()));
+                          controller.seekToWithDebounce(
+                              Duration(milliseconds: value.toInt()));
                         },
                       ),
                     ),
@@ -598,7 +622,8 @@ class PrayerPage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            controller.formatDuration(controller.currentPosition.value),
+                            controller.formatDuration(
+                                controller.currentPosition.value),
                             style: const TextStyle(
                               color: Color(0xFF8B4513),
                               fontSize: 12,
@@ -606,15 +631,16 @@ class PrayerPage extends StatelessWidget {
                             ),
                           ),
                           Obx(() => Text(
-                            '${controller.playbackSpeed.value}x',
-                            style: const TextStyle(
-                              color: Color(0xFF8B4513),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          )),
+                                '${controller.playbackSpeed.value}x',
+                                style: const TextStyle(
+                                  color: Color(0xFF8B4513),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              )),
                           Text(
-                            controller.formatDuration(controller.totalDuration.value),
+                            controller
+                                .formatDuration(controller.totalDuration.value),
                             style: const TextStyle(
                               color: Color(0xFF8B4513),
                               fontSize: 12,
@@ -632,7 +658,8 @@ class PrayerPage extends StatelessWidget {
 
               // Control Buttons
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [

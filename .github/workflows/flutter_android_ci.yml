@@ -27,19 +27,8 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Cache Flutter dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-            ~/.gradle/caches
-          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
-
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Flutter Doctor
-        run: flutter doctor -v
 
       - name: Build APK
         run: flutter build apk --release
@@ -50,7 +39,6 @@ jobs:
             echo "APK file not found!"
             exit 1
           fi
-          ls -la build/app/outputs/flutter-apk/
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -58,36 +46,6 @@ jobs:
           name: app-release-${{ github.sha }}
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/') && needs.build.result == 'success'
-
-    steps:
-      - name: Download APK artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app-release-${{ github.sha }}
-          path: ./apk
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ./apk/app-release.apk
-          name: Release ${{ github.ref_name }}
-          body: |
-            🚀 **Nitnem App Release ${{ github.ref_name }}**
-            
-            📱 **What's New:**
-            - Latest features and improvements
-            - Bug fixes and performance enhancements
-            
-            📥 **Download:** Click on `app-release.apk` below to download
-            
-            **Installation:** Enable "Install from Unknown Sources" in your device settings before installing.
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
     needs: build
@@ -112,381 +70,97 @@ jobs:
 
       - name: Install Python dependencies
         if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
-        run: |
-          pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+        run: pip install google-api-python-client google-auth
 
-      - name: Create Drive upload script
+      - name: Upload to Google Drive
         if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
+        env:
+          GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         run: |
           cat > drive_upload.py << 'EOF'
           import os
           import json
-          import time
           from google.oauth2.credentials import Credentials
           from googleapiclient.discovery import build
           from googleapiclient.http import MediaFileUpload
-          from google.auth.transport.requests import Request
           
-          def upload_to_drive(apk_path, file_name):
-              try:
-                  # Get credentials from environment
-                  creds_json = os.environ.get('GOOGLE_DRIVE_CREDENTIALS')
-                  if not creds_json:
-                      raise Exception("GOOGLE_DRIVE_CREDENTIALS not found")
+          creds = Credentials.from_authorized_user_info(
+              json.loads(os.environ['GOOGLE_DRIVE_CREDENTIALS'])
+          )
           
-                  creds_data = json.loads(creds_json)
-                  creds = Credentials.from_authorized_user_info(creds_data)
+          service = build('drive', 'v3', credentials=creds)
           
-                  # Refresh token if needed
-                  if creds.expired and creds.refresh_token:
-                      creds.refresh(Request())
+          file_metadata = {
+              'name': f"Nitnem-{os.environ['GITHUB_REF_NAME']}-{os.environ['GITHUB_SHA'][:7]}.apk",
+              'parents': [os.environ.get('GOOGLE_DRIVE_FOLDER_ID', 'root')]
+          }
           
-                  # Build Drive service
-                  service = build('drive', 'v3', credentials=creds)
+          media = MediaFileUpload('./apk/app-release.apk', 
+                                 mimetype='application/vnd.android.package-archive')
           
-                  # File metadata
-                  file_metadata = {
-                      'name': file_name,
-                      'parents': [os.environ.get('GOOGLE_DRIVE_FOLDER_ID', 'root')]
-                  }
+          file = service.files().create(
+              body=file_metadata,
+              media_body=media,
+              fields='id'
+          ).execute()
           
-                  print(f"Uploading file: {file_name}")
-                  print(f"To folder: {os.environ.get('GOOGLE_DRIVE_FOLDER_ID', 'root')}")
+          # Make file publicly accessible
+          service.permissions().create(
+              fileId=file['id'],
+              body={'role': 'reader', 'type': 'anyone'}
+          ).execute()
           
-                  # Upload file
-                  media = MediaFileUpload(apk_path, mimetype='application/vnd.android.package-archive')
-                  file = service.files().create(
-                      body=file_metadata,
-                      media_body=media,
-                      fields='id,name,webViewLink,webContentLink'
-                  ).execute()
-          
-                  file_id = file.get('id')
-                  if not file_id:
-                      raise Exception("No file ID returned from upload")
-          
-                  print(f"File uploaded successfully. ID: {file_id}")
-          
-                  # Make file publicly accessible
-                  try:
-                      permission_result = service.permissions().create(
-                          fileId=file_id,
-                          body={
-                              'role': 'reader', 
-                              'type': 'anyone'
-                          },
-                          fields='id'
-                      ).execute()
-                      print(f"Permission set successfully: {permission_result}")
-                  except Exception as perm_error:
-                      print(f"Permission setting failed: {perm_error}")
-                      # Continue anyway, file might still be accessible
-          
-                  # Wait a moment for Google Drive to process
-                  time.sleep(2)
-          
-                  # Verify file exists and get fresh metadata
-                  try:
-                      fresh_file = service.files().get(
-                          fileId=file_id,
-                          fields='id,name,webViewLink,webContentLink,permissions'
-                      ).execute()
-                      print(f"Fresh file data: {fresh_file}")
-                  except Exception as e:
-                      print(f"Could not get fresh file data: {e}")
-                      fresh_file = file
-          
-                  # Create multiple download link formats
-                  download_links = {
-                      'direct_download': f"https://drive.google.com/uc?export=download&id={file_id}",
-                      'view_link': f"https://drive.google.com/file/d/{file_id}/view?usp=sharing",
-                      'open_link': f"https://drive.google.com/open?id={file_id}",
-                      'api_webview': fresh_file.get('webViewLink', ''),
-                      'api_content': fresh_file.get('webContentLink', '')
-                  }
-          
-                  print(f"Generated download links: {download_links}")
-          
-                  return {
-                      'success': True,
-                      'file_id': file_id,
-                      'file_name': fresh_file.get('name', file_name),
-                      'download_links': download_links,
-                      # For backward compatibility
-                      'download_link': download_links['direct_download'],
-                      'view_link': download_links['view_link'],
-                      'alt_download_link': download_links['api_webview'] or download_links['view_link']
-                  }
-          
-              except Exception as e:
-                  print(f"Upload failed with error: {str(e)}")
-                  import traceback
-                  traceback.print_exc()
-                  return {
-                      'success': False,
-                      'error': str(e)
-                  }
-          
-          if __name__ == "__main__":
-              apk_path = "./apk/app-release.apk"
-              branch_name = os.environ.get('GITHUB_REF_NAME', 'unknown')
-              commit_sha = os.environ.get('GITHUB_SHA', 'unknown')[:7]
-              timestamp = int(time.time())
-              file_name = f"Nitnem-{branch_name}-{commit_sha}-{timestamp}.apk"
-          
-              result = upload_to_drive(apk_path, file_name)
-              print("=== FINAL RESULT ===")
-              print(json.dumps(result, indent=2))
+          print(file['id'])
           EOF
-
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+          
+          FILE_ID=$(python drive_upload.py)
+          echo "FILE_ID=$FILE_ID" >> $GITHUB_ENV
 
       - name: Send Success Notification
-        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
+        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success' && env.FILE_ID != ''
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
-          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         run: |
-          # Set variables
-          BRANCH_NAME="${GITHUB_REF##*/}"
-          APP_NAME="Nitnem"
-          APK_PATH="./apk/app-release.apk"
-          COMMIT_SHA="${GITHUB_SHA:0:7}"
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d parse_mode="HTML" \
+            -d text="✅ <b>Build Successful</b>
           
-          # Check if APK exists
-          if [ ! -f "$APK_PATH" ]; then
-            echo "APK file not found at $APK_PATH"
-            exit 1
-          fi
+          📱 App: Nitnem
+          🌿 Branch: ${GITHUB_REF##*/}
+          🔗 Commit: ${GITHUB_SHA:0:7}
           
-          echo "📤 Uploading APK to Google Drive..."
+          📥 Download: <a href='https://drive.google.com/uc?export=download&id=${{ env.FILE_ID }}'>APK</a>
+          🔗 File ID: <code>${{ env.FILE_ID }}</code>
           
-          # Upload to Drive with more detailed output
-          UPLOAD_RESULT=$(python drive_upload.py 2>&1)
-          echo "=== FULL UPLOAD OUTPUT ==="
-          echo "$UPLOAD_RESULT"
-          echo "=== END OUTPUT ==="
-          
-          # Extract just the JSON result (last part after "=== FINAL RESULT ===")
-          JSON_RESULT=$(echo "$UPLOAD_RESULT" | sed -n '/=== FINAL RESULT ===/,$p' | tail -n +2)
-          echo "=== JSON RESULT ==="
-          echo "$JSON_RESULT"
-          echo "=== END JSON ==="
-          
-          # Parse result
-          SUCCESS=$(echo "$JSON_RESULT" | jq -r '.success' 2>/dev/null || echo "false")
-          
-          if [ "$SUCCESS" == "true" ]; then
-            # Extract file info
-            FILE_ID=$(echo "$JSON_RESULT" | jq -r '.file_id // empty')
-            FILE_NAME=$(echo "$JSON_RESULT" | jq -r '.file_name // empty')
-          
-            # Extract all available download links with proper quoting
-            DIRECT_DOWNLOAD=$(echo "$JSON_RESULT" | jq -r '.download_links.direct_download // empty' | tr -d '\n\r')
-            VIEW_LINK=$(echo "$JSON_RESULT" | jq -r '.download_links.view_link // empty' | tr -d '\n\r')
-            OPEN_LINK=$(echo "$JSON_RESULT" | jq -r '.download_links.open_link // empty' | tr -d '\n\r')
-            API_WEBVIEW=$(echo "$JSON_RESULT" | jq -r '.download_links.api_webview // empty' | tr -d '\n\r')
-          
-            # Debug output
-            echo "File ID: '$FILE_ID'"
-            echo "File Name: '$FILE_NAME'"
-            echo "Direct Download: '$DIRECT_DOWNLOAD'"
-            echo "Direct Download Length: ${#DIRECT_DOWNLOAD}"
-            echo "View Link: '$VIEW_LINK'"
-            echo "Open Link: '$OPEN_LINK'"
-            echo "API WebView: '$API_WEBVIEW'"
-          
-            # Always reconstruct the direct download link from FILE_ID to avoid any parsing issues
-            if [[ -n "$FILE_ID" ]]; then
-              DIRECT_DOWNLOAD="https://drive.google.com/uc?export=download&id=${FILE_ID}"
-              echo "🔧 Reconstructed direct download link: $DIRECT_DOWNLOAD"
-              echo "🔧 Link length: ${#DIRECT_DOWNLOAD}"
-              echo "🔧 Contains '&': $(echo "$DIRECT_DOWNLOAD" | grep -o '&' | wc -l)"
-              echo "🔧 Full URL test: $(echo "$DIRECT_DOWNLOAD" | cat -A)"
-            fi
-          
-            # Ensure we have a view link
-            if [[ -z "$VIEW_LINK" && -n "$FILE_ID" ]]; then
-              VIEW_LINK="https://drive.google.com/file/d/${FILE_ID}/view?usp=sharing"
-              echo "🔧 Reconstructed view link: $VIEW_LINK"
-            fi
-          
-            # Ensure we have an open link
-            if [[ -z "$OPEN_LINK" && -n "$FILE_ID" ]]; then
-              OPEN_LINK="https://drive.google.com/open?id=${FILE_ID}"
-              echo "🔧 Reconstructed open link: $OPEN_LINK"
-            fi
-          
-            # Use the reconstructed direct download link as primary
-            PRIMARY_LINK="$DIRECT_DOWNLOAD"
-            if [[ -z "$PRIMARY_LINK" || "$PRIMARY_LINK" == "null" ]]; then
-              PRIMARY_LINK="$VIEW_LINK"
-            fi
-          
-            # Final validation
-            if [[ -z "$FILE_ID" ]]; then
-              echo "❌ No File ID found in response"
-              SUCCESS="false"
-              ERROR_MSG="File ID not found in API response"
-            fi
-          
-          fi
-          
-          if [ "$SUCCESS" == "true" ] && [[ -n "$FILE_ID" ]] && [[ -n "$PRIMARY_LINK" ]]; then
-            # Create success message with URL-encoded links to avoid Telegram parsing issues
-            # Use HTML parsing instead of Markdown to better handle URLs with special characters
-            cat > message.txt << EOF
-          ✅ <b>Flutter Build Successful</b> 🎉
+          ⚠️ Enable 'Unknown Sources' to install"
 
-          📱 <b>App:</b> $APP_NAME
-          🌿 <b>Branch:</b> $BRANCH_NAME
-          🔗 <b>Commit:</b> $COMMIT_SHA
-          ☁️ <b>Storage:</b> Google Drive
-          📦 <b>File:</b> $FILE_NAME
+      - name: Send Upload Failure Notification
+        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success' && env.FILE_ID == ''
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d parse_mode="HTML" \
+            -d text="⚠️ <b>Build Successful but Drive Upload Failed</b>
+          
+            🔗 Download from GitHub Actions:
+            https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
-          📥 <b>Download Links:</b>
-          🔗 <a href="$DIRECT_DOWNLOAD">Direct Download APK</a>
-          👁️ <a href="$VIEW_LINK">View in Drive</a>
-          🔗 <a href="$OPEN_LINK">Open with Drive</a>
-
-          💡 <b>File ID:</b> <code>$FILE_ID</code>
-          ⚠️ <b>Note:</b> Enable "Unknown Sources" before installing
-          EOF
+      - name: Send Build Failure Notification
+        if: needs.build.result == 'failure'
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d parse_mode="HTML" \
+            -d text="❌ <b>Build Failed</b>
           
-            # Send message using HTML parse mode instead of Markdown
-            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-              -d chat_id="${TELEGRAM_CHAT_ID}" \
-              -d text="$(cat message.txt)" \
-              -d parse_mode="HTML" \
-              -d disable_web_page_preview="false"
-          
-            # Also send the direct download link as a separate plain text message to ensure it works
-            # First, let's test with a hardcoded URL to see if the issue is with curl or with our variables
-            echo "=== TESTING HARDCODED URL ==="
-            TEST_URL="https://drive.google.com/uc?export=download&id=12vKCBLKuJ72wkFUTjzNcIUDSrYN627a0"
-            echo "Test URL: $TEST_URL"
-          
-            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
-              --data-urlencode "text=🧪 TEST - Hardcoded URL:
-           ${TEST_URL}" \
-           -d disable_web_page_preview="false"
-           
-           # Now send our actual URL
-           echo "=== SENDING ACTUAL URL ==="
-         echo "Actual URL: $DIRECT_DOWNLOAD"
-         echo "URL Length: ${#DIRECT_DOWNLOAD}"
-         echo "FILE_ID: $FILE_ID"
-         echo "FILE_ID Length: ${#FILE_ID}"
-         
-         # Try multiple approaches to send the URL
-         
-         # Approach 1: Using --data-urlencode
-           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-           --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
-         --data-urlencode "text=📥 Method 1 - Direct APK Download Link:
-           ${DIRECT_DOWNLOAD}
-         
-         🎯 File ID: ${FILE_ID}" \
-           -d disable_web_page_preview="false"
-           
-           # Approach 2: Manual URL encoding
-           ENCODED_URL=$(echo "$DIRECT_DOWNLOAD" | sed 's/&/%26/g')
-           echo "Encoded URL: $ENCODED_URL"
-           
-           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-           -d chat_id="${TELEGRAM_CHAT_ID}" \
-           -d text="📥 Method 2 - Encoded APK Download Link:
-           ${ENCODED_URL}
-         
-         🎯 File ID: ${FILE_ID}" \
-           -d disable_web_page_preview="false"
-           
-           # Approach 3: Using printf and proper quoting
-           MESSAGE=$(printf "📥 Method 3 - Printf APK Download Link:\n%s\n\n🎯 File ID: %s" "$DIRECT_DOWNLOAD" "$FILE_ID")
-           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-           --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
-           --data-urlencode "text=${MESSAGE}" \
-           -d disable_web_page_preview="false"
-           
-           # Debug: Also echo the final links to the log
-           echo "=== FINAL LINKS BEING SENT ==="
-           echo "Primary Link: $PRIMARY_LINK"
-           echo "Direct Download: $DIRECT_DOWNLOAD"
-           echo "Direct Download (hex dump): $(echo -n "$DIRECT_DOWNLOAD" | xxd)"
-           echo "View Link: $VIEW_LINK"
-           echo "=== END FINAL LINKS ==="
-           
-           # Send APK as document if small enough (Telegram limit: 50MB)
-           APK_SIZE=$(stat -c%s "$APK_PATH" 2>/dev/null || stat -f%z "$APK_PATH" 2>/dev/null || echo "0")
-           if [ "$APK_SIZE" -lt 52428800 ] && [ "$APK_SIZE" -gt 0 ]; then
-           echo "📤 Sending APK as Telegram document..."
-           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument" \
-           -F chat_id="${TELEGRAM_CHAT_ID}" \
-           -F document="@$APK_PATH" \
-           -F caption="🎯 Direct APK file for $APP_NAME ($BRANCH_NAME - $COMMIT_SHA)"
-           fi
-           else
-           # Drive upload failed or missing data
-           ERROR_MSG=$(echo "$JSON_RESULT" | jq -r '.error // "Unknown error or missing file ID"')
-           
-           cat > message.txt << EOF
-           ⚠️ <b>Build Successful but Drive Upload Failed</b> 📤
-           
-           📱 <b>App:</b> $APP_NAME
-           🌿 <b>Branch:</b> $BRANCH_NAME
-           🔗 <b>Commit:</b> $COMMIT_SHA
-           
-           ❌ Drive upload error: $ERROR_MSG
-           💡 <a href="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID">Download from GitHub Actions</a>
-           EOF
-           
-           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-           -d chat_id="${TELEGRAM_CHAT_ID}" \
-           -d text="$(cat message.txt)" \
-           -d parse_mode="HTML"
-           fi
-         
-           - name: Send Failure Notification
-             if: needs.build.result != 'success' || (needs.build.result == 'success' && steps.download_artifact.outcome != 'success')
-             env:
-               TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-               TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-             run: |
-               # Set variables
-               BRANCH_NAME="${GITHUB_REF##*/}"
-               APP_NAME="Nitnem"
-               COMMIT_SHA="${GITHUB_SHA:0:7}"
-               
-               if [ "${{ needs.build.result }}" != "success" ]; then
-                 # Build failed
-                 cat > message.txt << EOF
-               ❌ <b>Flutter Build Failed</b> 💥
-               
-               📱 <b>App:</b> $APP_NAME
-               🌿 <b>Branch:</b> $BRANCH_NAME
-               🔗 <b>Commit:</b> $COMMIT_SHA
-               
-               🔍 <a href="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID">View Logs</a>
-               EOF
-               else
-                 # Build succeeded but artifact issues
-                 cat > message.txt << EOF
-               ⚠️ <b>Build Successful but APK Access Issues</b> 📤
-               
-               📱 <b>App:</b> $APP_NAME
-               🌿 <b>Branch:</b> $BRANCH_NAME
-               🔗 <b>Commit:</b> $COMMIT_SHA
-               
-               ❌ Could not access APK artifact
-               💡 <a href="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID">Download from GitHub Actions</a>
-               EOF
-               fi
-               
-               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-                 -d chat_id="${TELEGRAM_CHAT_ID}" \
-                 -d text="$(cat message.txt)" \
-                 -d parse_mode="HTML"
+            🔍 View logs:
+            https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
