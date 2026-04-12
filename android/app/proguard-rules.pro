@@ -1,0 +1,2 @@
+-keep class com.ryanheise.** { *; }
+-dontwarn io.flutter.plugins.**

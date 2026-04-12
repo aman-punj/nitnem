@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:nitnem/services/prayer_storage_service.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 class PrayerUpdateService {
   static const String baseRawUrl =
