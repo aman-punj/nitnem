@@ -121,6 +121,38 @@ class PrayerController extends GetxController {
     }
   }
 
+  // Binary search for efficient segment lookup
+  int _findSegmentIndexByTime(double seconds) {
+    if (segments.isEmpty) return -1;
+
+    int low = 0;
+    int high = segments.length - 1;
+
+    while (low <= high) {
+      int mid = low + ((high - low) >> 1);
+      final segment = segments[mid];
+
+      if (seconds >= segment.start && seconds <= segment.end) {
+        return mid;
+      } else if (seconds < segment.start) {
+        high = mid - 1;
+      } else {
+        low = mid + 1;
+      }
+    }
+    return -1;
+  }
+
+  // Safe substring helper
+  String safeSubstring(String text, int start, int end) {
+    if (text.isEmpty) return '';
+    if (start < 0) start = 0;
+    if (start > text.length) start = text.length;
+    if (end < start) end = start;
+    if (end > text.length) end = text.length;
+    return text.substring(start, end);
+  }
+
   void _updateCurrentSegment(Duration position) {
     // Skip updates during active seeking to prevent conflicts
     if (isUserSeeking.value) {
@@ -128,8 +160,8 @@ class PrayerController extends GetxController {
     }
 
     final seconds = position.inMilliseconds / 1000.0;
-    final index =
-        segments.indexWhere((s) => seconds >= s.start && seconds <= s.end);
+    final index = _findSegmentIndexByTime(seconds);
+
 
     if (index != currentSegmentIndex.value && index != -1) {
       if (enableScrollDebug.value) {
@@ -151,13 +183,15 @@ class PrayerController extends GetxController {
 
   void _autoScrollToCurrentSegment() {
     if (currentSegmentIndex.value >= 0 &&
+        currentSegmentIndex.value < segments.length &&
         scrollController.hasClients &&
         segmentKeys.containsKey(currentSegmentIndex.value)) {
       final key = segmentKeys[currentSegmentIndex.value];
       if (key?.currentContext != null) {
-        // Debug: Print current segment info
+        // Debug: Print current segment info safely
+        final text = segments[currentSegmentIndex.value].text;
         print(
-            'Auto-scrolling to segment ${currentSegmentIndex.value}: "${segments[currentSegmentIndex.value].text.substring(0, 50)}..."');
+            'Auto-scrolling to segment ${currentSegmentIndex.value}: "${safeSubstring(text, 0, 50)}..."');
 
         // Use Scrollable.ensureVisible for accurate positioning
         Scrollable.ensureVisible(
@@ -177,7 +211,7 @@ class PrayerController extends GetxController {
 
   // Alternative scrolling method if ensureVisible doesn't work well
   void _autoScrollToCurrentSegmentAlternative() {
-    if (currentSegmentIndex.value >= 0 && scrollController.hasClients) {
+    if (currentSegmentIndex.value >= 0 && currentSegmentIndex.value < segments.length && scrollController.hasClients) {
       try {
         final key = segmentKeys[currentSegmentIndex.value];
         if (key?.currentContext != null) {
@@ -265,8 +299,7 @@ class PrayerController extends GetxController {
 
     // Force update current segment based on the final position
     final seconds = position.inMilliseconds / 1000.0;
-    final newIndex =
-        segments.indexWhere((s) => seconds >= s.start && seconds <= s.end);
+    final newIndex = _findSegmentIndexByTime(seconds);
 
     if (newIndex != -1 && newIndex != currentSegmentIndex.value) {
       if (enableScrollDebug.value) {
