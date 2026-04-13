@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [main, development]
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,15 +17,17 @@ jobs:
       - name: Set Up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
 
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.7'
-          channel: 'stable'
+          channel: stable
           cache: true
+
+      - name: Flutter Doctor
+        run: flutter doctor -v
 
       - name: Install dependencies
         run: flutter pub get
@@ -36,19 +35,13 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
-      - name: Verify APK exists
-        run: |
-          if [ ! -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
-            echo "APK file not found!"
-            exit 1
-          fi
-
-      - name: Upload build artifacts
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-${{ github.sha }}
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 30
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+            build/app/outputs/apk/release/*.apk
 
   notify:
     needs: build
@@ -56,99 +49,43 @@ jobs:
     if: always()
 
     steps:
-      - name: Download APK artifact
+      - name: Set Download URL
         if: needs.build.result == 'success'
-        uses: actions/download-artifact@v4
-        with:
-          name: app-release-${{ github.sha }}
-          path: ./apk
-        continue-on-error: true
-        id: download_artifact
-
-      - name: Set up Python
-        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Python dependencies
-        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
-        run: pip install cloudinary
-
-      - name: Upload to Cloudinary
-        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
-        env:
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
         run: |
-          cat > cloudinary_upload.py << 'EOF'
-          import os
-          import cloudinary
-          import cloudinary.uploader
-
-          cloudinary.config(
-              cloud_name=os.environ['CLOUDINARY_CLOUD_NAME'],
-              api_key=os.environ['CLOUDINARY_API_KEY'],
-              api_secret=os.environ['CLOUDINARY_API_SECRET']
-          )
-
-          result = cloudinary.uploader.upload(
-              './apk/app-release.apk',
-              resource_type='raw',
-              public_id=f"nitnem_apk/Nitnem-{os.environ['GITHUB_REF_NAME']}-{os.environ['GITHUB_SHA'][:7]}",
-              use_filename=False
-          )
-
-          print(result['secure_url'])
-          EOF
-
-          DOWNLOAD_URL=$(python cloudinary_upload.py)
-          echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> $GITHUB_ENV
+          echo "DOWNLOAD_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_ENV
 
       - name: Send Success Notification
-        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success' && env.DOWNLOAD_URL != ''
+        if: needs.build.result == 'success'
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-            -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d parse_mode="HTML" \
-            -d text="✅ <b>Build Successful</b>
+          MESSAGE="✅ Build Successful
 
           📱 App: Nitnem
-          🌿 Branch: ${GITHUB_REF##*/}
-          🔗 Commit: ${GITHUB_SHA:0:7}
+          🌿 Branch: ${{ github.ref_name }}
+          🔗 Commit: ${{ github.sha }}
 
-          📥 <a href='${{ env.DOWNLOAD_URL }}'>Download APK</a>
+          📥 Download APK: $DOWNLOAD_URL
 
-          ⚠️ Enable 'Unknown Sources' to install"
+          ⚠️ Login required"
 
-      - name: Send Upload Failure Notification
-        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success' && env.DOWNLOAD_URL == ''
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d parse_mode="HTML" \
-            -d text="⚠️ <b>Build Successful but Cloudinary Upload Failed</b>
+            -d text="$MESSAGE" \
+            -d parse_mode="HTML"
 
-            🔗 Download from GitHub Actions:
-            https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-
-      - name: Send Build Failure Notification
+      - name: Send Failure Notification
         if: needs.build.result == 'failure'
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
+          MESSAGE="❌ Build Failed
+
+          🔍 Logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d parse_mode="HTML" \
-            -d text="❌ <b>Build Failed</b>
-
-            🔍 View logs:
-            https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            -d text="$MESSAGE" \
+            -d parse_mode="HTML"
