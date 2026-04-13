@@ -23,12 +23,16 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      # ✅ FIX: Use latest Flutter instead of fixed version
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.7'
-          channel: 'stable'
+          channel: stable
           cache: true
+
+      # Optional: Debug versions (very useful)
+      - name: Flutter Version
+        run: flutter --version
 
       - name: Install dependencies
         run: flutter pub get
@@ -121,23 +125,7 @@ jobs:
           🌿 Branch: ${GITHUB_REF##*/}
           🔗 Commit: ${GITHUB_SHA:0:7}
 
-          📥 <a href='${{ env.DOWNLOAD_URL }}'>Download APK</a>
-
-          ⚠️ Enable 'Unknown Sources' to install"
-
-      - name: Send Upload Failure Notification
-        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success' && env.DOWNLOAD_URL == ''
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-            -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d parse_mode="HTML" \
-            -d text="⚠️ <b>Build Successful but Cloudinary Upload Failed</b>
-
-            🔗 Download from GitHub Actions:
-            https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          📥 <a href='${{ env.DOWNLOAD_URL }}'>Download APK</a>"
 
       - name: Send Build Failure Notification
         if: needs.build.result == 'failure'
@@ -150,5 +138,5 @@ jobs:
             -d parse_mode="HTML" \
             -d text="❌ <b>Build Failed</b>
 
-            🔍 View logs:
-            https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          🔍 Logs:
+          https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
