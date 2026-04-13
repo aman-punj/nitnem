@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [main, development]
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,123 +17,78 @@ jobs:
       - name: Set Up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
 
-      # ✅ FIX: Use latest Flutter instead of fixed version
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      # Optional: Debug versions (very useful)
-      - name: Flutter Version
-        run: flutter --version
+      - name: Flutter Doctor
+        run: flutter doctor -v
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --split-per-abi
 
-      - name: Verify APK exists
-        run: |
-          if [ ! -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
-            echo "APK file not found!"
-            exit 1
-          fi
-
-      - name: Upload build artifacts
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-${{ github.sha }}
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 30
+          path: build/app/outputs/flutter-apk/*.apk
 
   notify:
-    needs: build
-    runs-on: ubuntu-latest
-    if: always()
+  needs: build
+  runs-on: ubuntu-latest
+  if: always()
 
-    steps:
-      - name: Download APK artifact
-        if: needs.build.result == 'success'
-        uses: actions/download-artifact@v4
-        with:
-          name: app-release-${{ github.sha }}
-          path: ./apk
-        continue-on-error: true
-        id: download_artifact
+  steps:
+    - name: Set Download URL
+      if: needs.build.result == 'success'
+      run: |
+        echo "DOWNLOAD_URL=https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> $GITHUB_ENV
 
-      - name: Set up Python
-        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+    - name: Send Success Notification
+      if: needs.build.result == 'success'
+      env:
+        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        cat <<EOF > message.txt
+✅ <b>Build Successful</b>
 
-      - name: Install Python dependencies
-        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
-        run: pip install cloudinary
+📱 App: Nitnem
+🌿 Branch: ${GITHUB_REF##*/}
+🔗 Commit: ${GITHUB_SHA:0:7}
 
-      - name: Upload to Cloudinary
-        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success'
-        env:
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-        run: |
-          cat > cloudinary_upload.py << 'EOF'
-          import os
-          import cloudinary
-          import cloudinary.uploader
+📥 <a href='${DOWNLOAD_URL}'>Download APK</a>
 
-          cloudinary.config(
-              cloud_name=os.environ['CLOUDINARY_CLOUD_NAME'],
-              api_key=os.environ['CLOUDINARY_API_KEY'],
-              api_secret=os.environ['CLOUDINARY_API_SECRET']
-          )
+⚠️ Login required
+EOF
 
-          result = cloudinary.uploader.upload(
-              './apk/app-release.apk',
-              resource_type='raw',
-              public_id=f"nitnem_apk/Nitnem-{os.environ['GITHUB_REF_NAME']}-{os.environ['GITHUB_SHA'][:7]}",
-              use_filename=False
-          )
+        curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+          -d chat_id="${TELEGRAM_CHAT_ID}" \
+          -d parse_mode="HTML" \
+          --data-urlencode text@message.txt
 
-          print(result['secure_url'])
-          EOF
+    - name: Send Failure Notification
+      if: needs.build.result == 'failure'
+      env:
+        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        cat <<EOF > message.txt
+❌ <b>Build Failed</b>
 
-          DOWNLOAD_URL=$(python cloudinary_upload.py)
-          echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> $GITHUB_ENV
+🔍 Logs:
+https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+EOF
 
-      - name: Send Success Notification
-        if: needs.build.result == 'success' && steps.download_artifact.outcome == 'success' && env.DOWNLOAD_URL != ''
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-            -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d parse_mode="HTML" \
-            -d text="✅ <b>Build Successful</b>
-
-          📱 App: Nitnem
-          🌿 Branch: ${GITHUB_REF##*/}
-          🔗 Commit: ${GITHUB_SHA:0:7}
-
-          📥 <a href='${{ env.DOWNLOAD_URL }}'>Download APK</a>"
-
-      - name: Send Build Failure Notification
-        if: needs.build.result == 'failure'
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-            -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d parse_mode="HTML" \
-            -d text="❌ <b>Build Failed</b>
-
-          🔍 Logs:
-          https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+        curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+          -d chat_id="${TELEGRAM_CHAT_ID}" \
+          -d parse_mode="HTML" \
+          --data-urlencode text@message.txt
