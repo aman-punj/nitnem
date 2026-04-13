@@ -33,62 +33,59 @@ jobs:
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-${{ github.sha }}
-          path: build/app/outputs/flutter-apk/*.apk
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+            build/app/outputs/apk/release/*.apk
 
   notify:
-  needs: build
-  runs-on: ubuntu-latest
-  if: always()
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
 
-  steps:
-    - name: Set Download URL
-      if: needs.build.result == 'success'
-      run: |
-        echo "DOWNLOAD_URL=https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> $GITHUB_ENV
+    steps:
+      - name: Set Download URL
+        if: needs.build.result == 'success'
+        run: |
+          echo "DOWNLOAD_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_ENV
 
-    - name: Send Success Notification
-      if: needs.build.result == 'success'
-      env:
-        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      run: |
-        cat <<EOF > message.txt
-✅ <b>Build Successful</b>
+      - name: Send Success Notification
+        if: needs.build.result == 'success'
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MESSAGE="✅ Build Successful
 
-📱 App: Nitnem
-🌿 Branch: ${GITHUB_REF##*/}
-🔗 Commit: ${GITHUB_SHA:0:7}
+          📱 App: Nitnem
+          🌿 Branch: ${{ github.ref_name }}
+          🔗 Commit: ${{ github.sha }}
 
-📥 <a href='${DOWNLOAD_URL}'>Download APK</a>
+          📥 Download APK: $DOWNLOAD_URL
 
-⚠️ Login required
-EOF
+          ⚠️ Login required"
 
-        curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-          -d chat_id="${TELEGRAM_CHAT_ID}" \
-          -d parse_mode="HTML" \
-          --data-urlencode text@message.txt
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="HTML"
 
-    - name: Send Failure Notification
-      if: needs.build.result == 'failure'
-      env:
-        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      run: |
-        cat <<EOF > message.txt
-❌ <b>Build Failed</b>
+      - name: Send Failure Notification
+        if: needs.build.result == 'failure'
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MESSAGE="❌ Build Failed
 
-🔍 Logs:
-https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
-EOF
+          🔍 Logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-        curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-          -d chat_id="${TELEGRAM_CHAT_ID}" \
-          -d parse_mode="HTML" \
-          --data-urlencode text@message.txt
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="HTML"
