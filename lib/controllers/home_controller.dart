@@ -47,6 +47,12 @@ class HomeController extends GetxController {
       'hi': 'रेहरास साहिब',
       'en': 'Rehras Sahib'
     },
+    {
+      'id': 'kirtan_sohila',
+      'pn': 'ਕੀਰਤਨ ਸੋਹਿਲਾ',
+      'hi': 'कीरतन सोहिला',
+      'en': 'Kirtan Sohila'
+    },
   ];
 
   void openPrayer(String prayerId, String title) async {
@@ -54,7 +60,6 @@ class HomeController extends GetxController {
       prayerId: prayerId,
       languageCode: currentLang,
     );
-
 
     print("this is the path - $transcriptPath");
 
