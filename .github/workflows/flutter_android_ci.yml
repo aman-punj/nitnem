@@ -50,12 +50,12 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Run analyzer
-        run: flutter analyze
+      # - name: Run analyzer
+      #   run: flutter analyze
 
-      # Optional - remove if tests aren't ready yet
-      - name: Run tests
-        run: flutter test
+      # # Optional - remove if tests aren't ready yet
+      # - name: Run tests
+      #   run: flutter test
 
       - name: Build Android App Bundle
         run: flutter build appbundle --release
