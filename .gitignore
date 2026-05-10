@@ -47,3 +47,4 @@ admin_panel/.env.*
 
 # Shared
 shared/node_modules/
+docs/task.md
