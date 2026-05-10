@@ -4,18 +4,25 @@ type UploadResult = {
   secureUrl: string
 }
 
-type CloudinaryResourceType = 'video' | 'raw' | 'image' | 'auto'
+type CloudinaryResourceType = 'video' | 'raw'
+
+type PresetType = 'audio' | 'transcript'
+
+function presetFor(type: PresetType): string {
+  return type === 'audio' ? envConfig.cloudinary.audioUploadPreset : envConfig.cloudinary.transcriptUploadPreset
+}
 
 function uploadToCloudinary(
   file: File,
   resourceType: CloudinaryResourceType,
+  presetType: PresetType,
   onProgress: (percent: number) => void,
 ): Promise<UploadResult> {
   return new Promise((resolve, reject) => {
     const endpoint = `https://api.cloudinary.com/v1_1/${envConfig.cloudinary.cloudName}/${resourceType}/upload`
     const formData = new FormData()
     formData.append('file', file)
-    formData.append('upload_preset', envConfig.cloudinary.uploadPreset)
+    formData.append('upload_preset', presetFor(presetType))
 
     const request = new XMLHttpRequest()
 
@@ -48,7 +55,7 @@ function uploadToCloudinary(
 }
 
 export function uploadAudioToCloudinary(file: File, onProgress: (percent: number) => void): Promise<UploadResult> {
-  return uploadToCloudinary(file, 'video', onProgress)
+  return uploadToCloudinary(file, 'video', 'audio', onProgress)
 }
 
 export function uploadTranscriptJsonToCloudinary(
@@ -57,5 +64,5 @@ export function uploadTranscriptJsonToCloudinary(
   onProgress: (percent: number) => void,
 ): Promise<UploadResult> {
   const file = new File([jsonText], filename, { type: 'application/json' })
-  return uploadToCloudinary(file, 'raw', onProgress)
+  return uploadToCloudinary(file, 'raw', 'transcript', onProgress)
 }

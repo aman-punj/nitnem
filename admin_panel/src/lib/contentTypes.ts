@@ -1,19 +1,32 @@
 export type ContentType = 'prayer' | 'youtube_live'
 
+export type LocalizedTitles = {
+  en: string
+  pa: string
+  hi: string
+}
+
+export type VersionedFile = {
+  url: string
+  version: number
+}
+
 export type PrayerTrack = {
-  audio_url?: string
-  pa_url?: string
-  hi_url?: string
-  en_url?: string
-  audio_version?: number
-  lyrics_version?: number
+  id: string
+  title: string
+  audio?: VersionedFile
+  transcripts: {
+    pa?: VersionedFile
+    hi?: VersionedFile
+    en?: VersionedFile
+  }
   duration?: number
 }
 
 export type PrayerContentData = {
   id: string
   type: 'prayer'
-  title: string
+  titles: LocalizedTitles
   enabled: boolean
   active_track: string
   tracks: Record<string, PrayerTrack>
@@ -23,12 +36,15 @@ export type PrayerContentData = {
 export type YoutubeLiveContentData = {
   id: string
   type: 'youtube_live'
-  title: string
-  subtitle?: string
+  titles: LocalizedTitles
   youtube_url: string
-  thumbnail?: string
   enabled: boolean
+  thumbnail?: string
   updated_at?: unknown
 }
 
 export type ContentItem = PrayerContentData | YoutubeLiveContentData
+
+export function contentDisplayTitle(item: ContentItem): string {
+  return item.titles.en || item.id
+}

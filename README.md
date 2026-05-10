@@ -1,26 +1,26 @@
-# nitnem
+# Nitnem
 
-A new Flutter project.
+Nitnem is a content-driven Sikh prayer application with a React-based administration dashboard.
+
+## Repository Structure
+
+- `mobile_app/`: Flutter mobile application.
+- `admin_panel/`: React/Vite administration dashboard.
+- `shared/`: Shared schemas and transcript samples.
+- `docs/`: Technical documentation.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+### Mobile App
+1. `cd mobile_app`
+2. `flutter pub get`
+3. `flutter run`
 
-A few resources to get you started if this is your first Flutter project:
+### Admin Panel
+1. `cd admin_panel`
+2. `npm install`
+3. Copy `.env.example` to `.env` and fill values.
+4. `npm run dev`
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-## Admin Panel Environment Setup
-
-The React admin panel uses Vite env vars.
-
-1. Copy `admin_panel/.env.example` to `admin_panel/.env`
-2. Fill Firebase + Cloudinary values
-3. Restart Vite dev server
-
-See [environment-setup.md](/D:/Dev/Projects/flutter_projects/nitnem/docs/environment-setup.md) for full instructions.
+## Documentation
+See the `docs/` directory for detailed documentation on architecture, sync engine, and more.

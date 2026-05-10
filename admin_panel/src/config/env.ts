@@ -6,7 +6,8 @@ type EnvKey =
   | 'VITE_FIREBASE_MESSAGING_SENDER_ID'
   | 'VITE_FIREBASE_APP_ID'
   | 'VITE_CLOUDINARY_CLOUD_NAME'
-  | 'VITE_CLOUDINARY_UPLOAD_PRESET'
+  | 'VITE_CLOUDINARY_AUDIO_UPLOAD_PRESET'
+  | 'VITE_CLOUDINARY_TRANSCRIPT_UPLOAD_PRESET'
   | 'VITE_ADMIN_ALLOWED_EMAILS'
 
 const REQUIRED_KEYS: EnvKey[] = [
@@ -17,7 +18,8 @@ const REQUIRED_KEYS: EnvKey[] = [
   'VITE_FIREBASE_MESSAGING_SENDER_ID',
   'VITE_FIREBASE_APP_ID',
   'VITE_CLOUDINARY_CLOUD_NAME',
-  'VITE_CLOUDINARY_UPLOAD_PRESET',
+  'VITE_CLOUDINARY_AUDIO_UPLOAD_PRESET',
+  'VITE_CLOUDINARY_TRANSCRIPT_UPLOAD_PRESET',
   'VITE_ADMIN_ALLOWED_EMAILS',
 ]
 
@@ -63,7 +65,8 @@ export type AppEnvConfig = {
   }
   cloudinary: {
     cloudName: string
-    uploadPreset: string
+    audioUploadPreset: string
+    transcriptUploadPreset: string
   }
   auth: {
     allowedEmails: string[]
@@ -81,7 +84,8 @@ export const envConfig: AppEnvConfig = {
   },
   cloudinary: {
     cloudName: readEnv('VITE_CLOUDINARY_CLOUD_NAME'),
-    uploadPreset: readEnv('VITE_CLOUDINARY_UPLOAD_PRESET'),
+    audioUploadPreset: readEnv('VITE_CLOUDINARY_AUDIO_UPLOAD_PRESET'),
+    transcriptUploadPreset: readEnv('VITE_CLOUDINARY_TRANSCRIPT_UPLOAD_PRESET'),
   },
   auth: {
     allowedEmails: parseAllowedEmails(readEnv('VITE_ADMIN_ALLOWED_EMAILS')),

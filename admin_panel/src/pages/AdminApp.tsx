@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { parseLrc } from '../lib/transcript'
+import { uploadAudioToCloudinary, uploadTranscriptJsonToCloudinary } from '../lib/cloudinary'
+import { bumpVersion, nextTrackId, slugifyTitleToId } from '../lib/contentHelpers'
+import { fetchContentList, upsertContentItem } from '../lib/contentService'
+import { contentDisplayTitle, type ContentItem, type ContentType, type LocalizedTitles, type PrayerContentData, type PrayerTrack, type YoutubeLiveContentData } from '../lib/contentTypes'
 import {
   initAuthPersistence,
   isAllowedAdminEmail,
@@ -8,24 +11,42 @@ import {
   signInAdminWithGoogle,
   signOutAdmin,
 } from '../lib/firebase'
-import { fetchContentList, upsertContentItem } from '../lib/contentService'
-import { uploadAudioToCloudinary, uploadTranscriptJsonToCloudinary } from '../lib/cloudinary'
-import type { ContentItem, ContentType, PrayerContentData, PrayerTrack, YoutubeLiveContentData } from '../lib/contentTypes'
+import { parseLrc } from '../lib/transcript'
 
 type AuthStatus = 'checking' | 'signed_out' | 'signed_in' | 'error'
-type UploadState = {
-  audioProgress: number
-  transcriptProgress: number
-  loading: boolean
-  message: string
-  error: string
+type TranscriptLang = 'pa' | 'hi' | 'en'
+
+type TrackEditorState = {
+  mode: 'add' | 'edit'
+  id: string
+  title: string
+  audioFile: File | null
+  transcriptLrc: Record<TranscriptLang, string>
+  transcriptJson: Record<TranscriptLang, string>
+  baselineTranscriptJson: Record<TranscriptLang, string>
 }
 
-function defaultUploadState(): UploadState {
+function emptyTitles(): LocalizedTitles {
+  return { en: '', pa: '', hi: '' }
+}
+
+function emptyTrackState(mode: 'add' | 'edit', trackId = ''): TrackEditorState {
   return {
-    audioProgress: 0,
-    transcriptProgress: 0,
+    mode,
+    id: trackId,
+    title: '',
+    audioFile: null,
+    transcriptLrc: { pa: '', hi: '', en: '' },
+    transcriptJson: { pa: '', hi: '', en: '' },
+    baselineTranscriptJson: { pa: '', hi: '', en: '' },
+  }
+}
+
+function emptyUploadState() {
+  return {
     loading: false,
+    audioProgress: 0,
+    transcriptProgress: { pa: 0, hi: 0, en: 0 } as Record<TranscriptLang, number>,
     message: '',
     error: '',
   }
@@ -37,41 +58,44 @@ export function AdminApp() {
   const [authMessage, setAuthMessage] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
 
-  const [contentItems, setContentItems] = useState<ContentItem[]>([])
-  const [contentLoading, setContentLoading] = useState(false)
-  const [contentError, setContentError] = useState('')
+  const [items, setItems] = useState<ContentItem[]>([])
+  const [loadingItems, setLoadingItems] = useState(false)
+  const [itemsError, setItemsError] = useState('')
   const [search, setSearch] = useState('')
 
-  const [editorMode, setEditorMode] = useState<'add' | 'edit' | null>(null)
-  const [editingId, setEditingId] = useState('')
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [editorMode, setEditorMode] = useState<'add' | 'edit'>('add')
   const [contentType, setContentType] = useState<ContentType>('prayer')
-  const [title, setTitle] = useState('')
+  const [contentId, setContentId] = useState('')
+  const [idTouched, setIdTouched] = useState(false)
+  const [titles, setTitles] = useState<LocalizedTitles>(emptyTitles())
   const [enabled, setEnabled] = useState(true)
 
-  const [activeTrack, setActiveTrack] = useState('track_1')
-  const [trackId, setTrackId] = useState('track_1')
-  const [audioFile, setAudioFile] = useState<File | null>(null)
-  const [transcriptLrc, setTranscriptLrc] = useState('')
-  const [transcriptJson, setTranscriptJson] = useState('')
-  const [initialTranscriptJson, setInitialTranscriptJson] = useState('')
-
-  const [youtubeSubtitle, setYoutubeSubtitle] = useState('')
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [youtubeThumbnail, setYoutubeThumbnail] = useState('')
 
-  const [selectedExisting, setSelectedExisting] = useState<ContentItem | null>(null)
-  const [saveLoading, setSaveLoading] = useState(false)
+  const [editingPrayer, setEditingPrayer] = useState<PrayerContentData | null>(null)
+  const [activeTrackDraft, setActiveTrackDraft] = useState('')
+
+  const [trackEditor, setTrackEditor] = useState<TrackEditorState | null>(null)
+  const [activeTranscriptTab, setActiveTranscriptTab] = useState<TranscriptLang>('pa')
+
+  const [savingContent, setSavingContent] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [saveError, setSaveError] = useState('')
-  const [uploadState, setUploadState] = useState<UploadState>(defaultUploadState())
+
+  const [uploadState, setUploadState] = useState(emptyUploadState())
 
   const isAuthed = authStatus === 'signed_in'
 
   const filteredItems = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return contentItems
-    return contentItems.filter((item) => item.title.toLowerCase().includes(query) || item.id.toLowerCase().includes(query))
-  }, [contentItems, search])
+    const q = search.trim().toLowerCase()
+    if (!q) return items
+    return items.filter((item) => {
+      const t = contentDisplayTitle(item).toLowerCase()
+      return t.includes(q) || item.id.toLowerCase().includes(q)
+    })
+  }, [items, search])
 
   useEffect(() => {
     let unsub = () => {}
@@ -85,14 +109,12 @@ export function AdminApp() {
             setAuthUserEmail('')
             return
           }
-
           if (!isAllowedAdminEmail(user.email)) {
             setAuthStatus('error')
             setAuthMessage('Signed in account is not authorized for admin access.')
             setAuthUserEmail(user.email ?? '')
             return
           }
-
           setAuthStatus('signed_in')
           setAuthUserEmail(user.email ?? '')
           setAuthMessage('')
@@ -103,72 +125,119 @@ export function AdminApp() {
       }
     })()
 
-    return () => {
-      unsub()
-    }
+    return () => unsub()
   }, [])
 
   useEffect(() => {
+    if (idTouched) return
+    const slug = slugifyTitleToId(titles.en)
+    setContentId(slug)
+  }, [titles.en, idTouched])
+
+  useEffect(() => {
     if (!isAuthed) return
-    void loadContent()
+    void loadContentList()
   }, [isAuthed])
 
-  async function loadContent(): Promise<void> {
-    setContentLoading(true)
-    setContentError('')
+  async function loadContentList(): Promise<void> {
+    setLoadingItems(true)
+    setItemsError('')
     try {
       const list = await fetchContentList()
-      setContentItems(list)
+      setItems(list)
     } catch (error) {
-      setContentError(error instanceof Error ? error.message : 'Failed to load content list.')
+      setItemsError(error instanceof Error ? error.message : 'Failed to load content list.')
     } finally {
-      setContentLoading(false)
+      setLoadingItems(false)
     }
   }
 
-  function resetEditor(): void {
-    setEditorMode(null)
-    setEditingId('')
+  function resetEditorState(): void {
+    setEditorOpen(false)
+    setEditorMode('add')
     setContentType('prayer')
-    setTitle('')
+    setContentId('')
+    setIdTouched(false)
+    setTitles(emptyTitles())
     setEnabled(true)
-    setActiveTrack('track_1')
-    setTrackId('track_1')
-    setAudioFile(null)
-    setTranscriptLrc('')
-    setTranscriptJson('')
-    setInitialTranscriptJson('')
-    setYoutubeSubtitle('')
     setYoutubeUrl('')
     setYoutubeThumbnail('')
-    setSelectedExisting(null)
+    setEditingPrayer(null)
+    setActiveTrackDraft('')
+    setTrackEditor(null)
+    setActiveTranscriptTab('pa')
     setSaveMessage('')
     setSaveError('')
-    setUploadState(defaultUploadState())
+    setUploadState(emptyUploadState())
   }
 
-  function startAdd(): void {
-    resetEditor()
+  function openAddEditor(): void {
+    resetEditorState()
+    setEditorOpen(true)
     setEditorMode('add')
   }
 
-  function startEdit(item: ContentItem): void {
-    resetEditor()
+  function openEditEditor(item: ContentItem): void {
+    resetEditorState()
+    setEditorOpen(true)
     setEditorMode('edit')
-    setSelectedExisting(item)
-    setEditingId(item.id)
-    setTitle(item.title)
-    setEnabled(item.enabled)
     setContentType(item.type)
+    setContentId(item.id)
+    setIdTouched(true)
+    setTitles(item.titles)
+    setEnabled(item.enabled)
 
     if (item.type === 'prayer') {
-      setActiveTrack(item.active_track)
-      setTrackId(item.active_track)
+      setEditingPrayer(item)
+      setActiveTrackDraft(item.active_track)
     } else {
-      setYoutubeSubtitle(item.subtitle ?? '')
       setYoutubeUrl(item.youtube_url)
       setYoutubeThumbnail(item.thumbnail ?? '')
     }
+  }
+
+  function openTrackEditor(mode: 'add' | 'edit', track?: PrayerTrack): void {
+    if (!editingPrayer) return
+
+    if (mode === 'add') {
+      const generatedTrackId = nextTrackId(Object.keys(editingPrayer.tracks))
+      setTrackEditor(emptyTrackState('add', generatedTrackId))
+      setActiveTranscriptTab('pa')
+      return
+    }
+
+    if (track) {
+      const next = emptyTrackState('edit', track.id)
+      next.title = track.title
+      ;(['pa', 'hi', 'en'] as TranscriptLang[]).forEach((lang) => {
+        const url = track.transcripts[lang]?.url
+        if (url) {
+          next.baselineTranscriptJson[lang] = url
+        }
+      })
+      setTrackEditor(next)
+      setActiveTranscriptTab('pa')
+    }
+  }
+
+  function parseCurrentLrcToJson(lang: TranscriptLang): void {
+    if (!trackEditor) return
+    const segments = parseLrc(trackEditor.transcriptLrc[lang])
+    const nextJson = JSON.stringify({ segments }, null, 2)
+    setTrackEditor({
+      ...trackEditor,
+      transcriptJson: { ...trackEditor.transcriptJson, [lang]: nextJson },
+    })
+  }
+
+  function onAudioFileSelected(file: File | null): void {
+    if (!trackEditor) return
+    const nextTitle = trackEditor.title || (file?.name ? file.name.replace(/\.mp3$/i, '') : '')
+    setTrackEditor({
+      ...trackEditor,
+      audioFile: file,
+      title: nextTitle,
+    })
   }
 
   async function onSignIn(): Promise<void> {
@@ -193,7 +262,7 @@ export function AdminApp() {
       await signOutAdmin()
       setAuthStatus('signed_out')
       setAuthUserEmail('')
-      resetEditor()
+      resetEditorState()
     } catch (error) {
       setAuthStatus('error')
       setAuthMessage(error instanceof Error ? error.message : 'Logout failed.')
@@ -202,39 +271,31 @@ export function AdminApp() {
     }
   }
 
-  function parseLrcToJson(): void {
-    const parsed = parseLrc(transcriptLrc)
-    const text = JSON.stringify({ segments: parsed }, null, 2)
-    setTranscriptJson(text)
-  }
-
-  async function saveContent(): Promise<void> {
+  async function saveContentMetadataOnly(): Promise<void> {
     setSaveError('')
     setSaveMessage('')
 
-    if (!editingId.trim()) {
+    if (!contentId.trim()) {
       setSaveError('Content id is required.')
       return
     }
-
-    if (!title.trim()) {
-      setSaveError('Title is required.')
+    if (!titles.en.trim() || !titles.pa.trim() || !titles.hi.trim()) {
+      setSaveError('English, Punjabi, and Hindi titles are required.')
       return
     }
 
-    setSaveLoading(true)
+    setSavingContent(true)
 
     try {
       if (contentType === 'youtube_live') {
         if (!youtubeUrl.trim()) {
-          throw new Error('YouTube URL is required for youtube_live content.')
+          throw new Error('youtube_live requires YouTube URL.')
         }
 
         const payload: YoutubeLiveContentData = {
-          id: editingId.trim(),
+          id: contentId.trim(),
           type: 'youtube_live',
-          title: title.trim(),
-          subtitle: youtubeSubtitle.trim(),
+          titles,
           youtube_url: youtubeUrl.trim(),
           thumbnail: youtubeThumbnail.trim(),
           enabled,
@@ -243,73 +304,163 @@ export function AdminApp() {
         await upsertContentItem(payload)
         setSaveMessage('youtube_live content saved.')
       } else {
-        const existingPrayer = selectedExisting?.type === 'prayer' ? selectedExisting : null
-        const tracks = { ...(existingPrayer?.tracks ?? {}) }
-        const existingTrack: PrayerTrack = { ...(tracks[trackId] ?? {}) }
-
-        const shouldUploadAudio = audioFile !== null
-        const shouldUploadTranscript = transcriptJson.trim().length > 0 && transcriptJson.trim() !== initialTranscriptJson.trim()
-
-        let nextAudioUrl = existingTrack.audio_url
-        let nextPaUrl = existingTrack.pa_url
-
-        setUploadState({
-          audioProgress: 0,
-          transcriptProgress: 0,
-          loading: shouldUploadAudio || shouldUploadTranscript,
-          message: shouldUploadAudio || shouldUploadTranscript ? 'Uploading assets before Firestore update...' : '',
-          error: '',
-        })
-
-        if (shouldUploadAudio && audioFile) {
-          const uploaded = await uploadAudioToCloudinary(audioFile, (percent) => {
-            setUploadState((prev) => ({ ...prev, audioProgress: percent }))
-          })
-          nextAudioUrl = uploaded.secureUrl
-        }
-
-        if (shouldUploadTranscript) {
-          const uploaded = await uploadTranscriptJsonToCloudinary(
-            transcriptJson,
-            `${editingId}_${trackId}_pa.json`,
-            (percent) => {
-              setUploadState((prev) => ({ ...prev, transcriptProgress: percent }))
-            },
-          )
-          nextPaUrl = uploaded.secureUrl
-        }
-
-        const previousAudioVersion = existingTrack.audio_version ?? 1
-        const previousLyricsVersion = existingTrack.lyrics_version ?? 1
-
-        tracks[trackId] = {
-          ...existingTrack,
-          audio_url: nextAudioUrl,
-          pa_url: nextPaUrl,
-          audio_version: shouldUploadAudio ? previousAudioVersion + 1 : previousAudioVersion,
-          lyrics_version: shouldUploadTranscript ? previousLyricsVersion + 1 : previousLyricsVersion,
-        }
-
-        const payload: PrayerContentData = {
-          id: editingId.trim(),
+        const prayer: PrayerContentData = {
+          id: contentId.trim(),
           type: 'prayer',
-          title: title.trim(),
+          titles,
           enabled,
-          active_track: activeTrack.trim() || trackId.trim(),
-          tracks,
+          active_track: activeTrackDraft || editingPrayer?.active_track || '',
+          tracks: editingPrayer?.tracks ?? {},
         }
 
-        await upsertContentItem(payload)
-        setUploadState((prev) => ({ ...prev, loading: false, message: 'Uploads and Firestore update completed.' }))
-        setSaveMessage('Prayer content saved.')
+        await upsertContentItem(prayer)
+        setEditingPrayer(prayer)
+        setSaveMessage('Prayer metadata saved.')
       }
 
-      await loadContent()
+      await loadContentList()
     } catch (error) {
-      setUploadState((prev) => ({ ...prev, loading: false, error: error instanceof Error ? error.message : 'Upload failed.' }))
-      setSaveError(error instanceof Error ? error.message : 'Failed to save content.')
+      setSaveError(error instanceof Error ? error.message : 'Failed to save content metadata.')
     } finally {
-      setSaveLoading(false)
+      setSavingContent(false)
+    }
+  }
+
+  async function saveTrack(): Promise<void> {
+    if (!editingPrayer || !trackEditor) return
+
+    setSaveError('')
+    setSaveMessage('')
+
+    const existing = editingPrayer.tracks[trackEditor.id]
+    const isFirstTrack = Object.keys(editingPrayer.tracks).length === 0 && trackEditor.mode === 'add'
+
+    const changedTranscriptLangs = (['pa', 'hi', 'en'] as TranscriptLang[]).filter((lang) => {
+      const text = trackEditor.transcriptJson[lang].trim()
+      return text.length > 0
+    })
+
+    if (!trackEditor.title.trim()) {
+      setSaveError('Track title is required.')
+      return
+    }
+
+    if (isFirstTrack && !trackEditor.audioFile) {
+      setSaveError('First track requires audio upload.')
+      return
+    }
+
+    if (isFirstTrack && changedTranscriptLangs.length === 0) {
+      setSaveError('First track requires at least one transcript (Punjabi recommended).')
+      return
+    }
+
+    setUploadState({
+      loading: true,
+      audioProgress: 0,
+      transcriptProgress: { pa: 0, hi: 0, en: 0 },
+      message: 'Uploading track assets before metadata update...',
+      error: '',
+    })
+
+    try {
+      let audioUrl = existing?.audio?.url ?? ''
+      const hasAudioChange = trackEditor.audioFile !== null
+      if (hasAudioChange && trackEditor.audioFile) {
+        const uploadedAudio = await uploadAudioToCloudinary(trackEditor.audioFile, (percent) => {
+          setUploadState((prev) => ({ ...prev, audioProgress: percent }))
+        })
+        audioUrl = uploadedAudio.secureUrl
+      }
+
+      const nextTranscripts: PrayerTrack['transcripts'] = {
+        pa: existing?.transcripts.pa,
+        hi: existing?.transcripts.hi,
+        en: existing?.transcripts.en,
+      }
+
+      for (const lang of changedTranscriptLangs) {
+        const uploaded = await uploadTranscriptJsonToCloudinary(
+          trackEditor.transcriptJson[lang],
+          `${editingPrayer.id}_${trackEditor.id}_${lang}.json`,
+          (percent) => {
+            setUploadState((prev) => ({
+              ...prev,
+              transcriptProgress: { ...prev.transcriptProgress, [lang]: percent },
+            }))
+          },
+        )
+
+        const previous = existing?.transcripts[lang]
+        nextTranscripts[lang] = {
+          url: uploaded.secureUrl,
+          version: bumpVersion(previous?.version, true),
+        }
+      }
+
+      const nextTrack: PrayerTrack = {
+        id: trackEditor.id,
+        title: trackEditor.title.trim(),
+        audio: audioUrl
+          ? {
+              url: audioUrl,
+              version: bumpVersion(existing?.audio?.version, hasAudioChange),
+            }
+          : existing?.audio,
+        transcripts: {
+          pa: nextTranscripts.pa,
+          hi: nextTranscripts.hi,
+          en: nextTranscripts.en,
+        },
+        duration: existing?.duration,
+      }
+
+      const nextTracks: Record<string, PrayerTrack> = {
+        ...editingPrayer.tracks,
+        [nextTrack.id]: nextTrack,
+      }
+
+      const shouldAutoSetActive = !editingPrayer.active_track
+      const nextActiveTrack = shouldAutoSetActive ? nextTrack.id : activeTrackDraft || editingPrayer.active_track
+
+      const payload: PrayerContentData = {
+        ...editingPrayer,
+        active_track: nextActiveTrack,
+        tracks: nextTracks,
+      }
+
+      await upsertContentItem(payload)
+      setEditingPrayer(payload)
+      setActiveTrackDraft(payload.active_track)
+      setTrackEditor(null)
+      setUploadState((prev) => ({ ...prev, loading: false, message: 'Track saved successfully.' }))
+      setSaveMessage('Track saved.')
+      await loadContentList()
+    } catch (error) {
+      setUploadState((prev) => ({
+        ...prev,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Track upload failed.',
+      }))
+      setSaveError(error instanceof Error ? error.message : 'Failed to save track.')
+    }
+  }
+
+  async function setTrackAsActive(trackId: string): Promise<void> {
+    if (!editingPrayer) return
+
+    try {
+      const payload: PrayerContentData = {
+        ...editingPrayer,
+        active_track: trackId,
+      }
+      await upsertContentItem(payload)
+      setEditingPrayer(payload)
+      setActiveTrackDraft(trackId)
+      setSaveMessage(`Active track set to ${trackId}.`)
+      await loadContentList()
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to set active track.')
     }
   }
 
@@ -340,55 +491,55 @@ export function AdminApp() {
         {authMessage && <p>{authMessage}</p>}
       </div>
 
-      {!isAuthed && <div className="card"><p>Sign in with an allowlisted admin email to access the dashboard.</p></div>}
+      {!isAuthed && <div className="card"><p>Sign in with an allowlisted admin email to manage content.</p></div>}
 
       {isAuthed && (
         <>
           <div className="card">
             <div className="row spread">
-              <h3>Content</h3>
+              <h3>Content Dashboard</h3>
               <div className="row">
-                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search content" />
-                <button onClick={startAdd}>Add Content</button>
-                <button onClick={() => void loadContent()} disabled={contentLoading}>Reload</button>
+                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by title or id" />
+                <button onClick={openAddEditor}>Add Content</button>
+                <button onClick={() => void loadContentList()} disabled={loadingItems}>Reload</button>
               </div>
             </div>
 
-            {contentLoading && <p>Loading content...</p>}
-            {contentError && <p>{contentError}</p>}
-            {!contentLoading && filteredItems.length === 0 && <p>No content found. Use Add Content to create one.</p>}
+            {loadingItems && <p>Loading content...</p>}
+            {itemsError && <p>{itemsError}</p>}
+            {!loadingItems && filteredItems.length === 0 && <p>No content found. Click Add Content to create one.</p>}
 
             {filteredItems.map((item) => {
-              const activeTrackInfo = item.type === 'prayer' ? item.tracks[item.active_track] : null
+              const activeTrack = item.type === 'prayer' ? item.tracks[item.active_track] : undefined
               return (
                 <div key={item.id} className="content-item">
                   <div className="row spread">
                     <div>
-                      <strong>{item.title}</strong>
-                      <p>ID: {item.id}</p>
+                      <strong>{item.titles.en}</strong>
+                      <p>Punjabi: {item.titles.pa}</p>
+                      <p>Hindi: {item.titles.hi}</p>
                       <p>Type: {item.type}</p>
                       <p>Enabled: {item.enabled ? 'Yes' : 'No'}</p>
                       <p>Active Track: {item.type === 'prayer' ? item.active_track : '-'}</p>
+                      <p>Track Count: {item.type === 'prayer' ? Object.keys(item.tracks).length : '-'}</p>
                       <p>
-                        Versions: {item.type === 'prayer'
-                          ? `audio ${activeTrackInfo?.audio_version ?? '-'}, lyrics ${activeTrackInfo?.lyrics_version ?? '-'}`
+                        Version Info: {item.type === 'prayer'
+                          ? `audio v${activeTrack?.audio?.version ?? '-'}, pa v${activeTrack?.transcripts.pa?.version ?? '-'}, hi v${activeTrack?.transcripts.hi?.version ?? '-'}, en v${activeTrack?.transcripts.en?.version ?? '-'}`
                           : '-'}
                       </p>
                     </div>
-                    <button onClick={() => startEdit(item)}>Edit</button>
+                    <button onClick={() => openEditEditor(item)}>Edit</button>
                   </div>
                 </div>
               )
             })}
           </div>
 
-          {editorMode && (
+          {editorOpen && (
             <div className="card">
-              <h3>{editorMode === 'add' ? 'Add Content' : `Edit Content: ${editingId}`}</h3>
+              <h3>{editorMode === 'add' ? 'Create Content' : `Edit Content: ${titles.en || contentId}`}</h3>
 
               <div className="row">
-                <input value={editingId} onChange={(e) => setEditingId(e.target.value)} placeholder="content id" disabled={editorMode === 'edit'} />
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="title" />
                 <select value={contentType} onChange={(e) => setContentType(e.target.value as ContentType)} disabled={editorMode === 'edit'}>
                   <option value="prayer">prayer</option>
                   <option value="youtube_live">youtube_live</option>
@@ -398,45 +549,157 @@ export function AdminApp() {
                 </label>
               </div>
 
-              {contentType === 'prayer' && (
-                <>
-                  <div className="row">
-                    <input value={trackId} onChange={(e) => setTrackId(e.target.value)} placeholder="track id (e.g. track_1)" />
-                    <input value={activeTrack} onChange={(e) => setActiveTrack(e.target.value)} placeholder="active track" />
-                    <input type="file" accept="audio/mpeg,.mp3" onChange={(e) => setAudioFile(e.target.files?.[0] ?? null)} />
-                  </div>
+              <div className="row">
+                <input
+                  value={titles.en}
+                  onChange={(e) => setTitles((prev) => ({ ...prev, en: e.target.value }))}
+                  placeholder="English title"
+                />
+                <input
+                  value={titles.pa}
+                  onChange={(e) => setTitles((prev) => ({ ...prev, pa: e.target.value }))}
+                  placeholder="Punjabi title"
+                />
+                <input
+                  value={titles.hi}
+                  onChange={(e) => setTitles((prev) => ({ ...prev, hi: e.target.value }))}
+                  placeholder="Hindi title"
+                />
+              </div>
 
-                  <h4>Punjabi Transcript</h4>
-                  <textarea value={transcriptLrc} onChange={(e) => setTranscriptLrc(e.target.value)} placeholder="Paste LRC to parse transcript" />
-                  <div className="row">
-                    <button onClick={parseLrcToJson}>Parse LRC to JSON</button>
-                    <button onClick={() => setInitialTranscriptJson(transcriptJson)}>Mark Transcript as Baseline</button>
-                  </div>
-                  <textarea value={transcriptJson} onChange={(e) => setTranscriptJson(e.target.value)} placeholder="Transcript JSON to upload" />
-
-                  {uploadState.loading && (
-                    <>
-                      <p>Audio upload progress: {uploadState.audioProgress}%</p>
-                      <p>Transcript upload progress: {uploadState.transcriptProgress}%</p>
-                      <p>{uploadState.message}</p>
-                    </>
-                  )}
-                  {uploadState.error && <p>{uploadState.error}</p>}
-                </>
-              )}
+              <div className="row">
+                <input
+                  value={contentId}
+                  onChange={(e) => {
+                    setIdTouched(true)
+                    setContentId(e.target.value)
+                  }}
+                  placeholder="content_id (auto-generated, editable)"
+                  disabled={editorMode === 'edit'}
+                />
+              </div>
 
               {contentType === 'youtube_live' && (
                 <div className="row">
-                  <input value={youtubeSubtitle} onChange={(e) => setYoutubeSubtitle(e.target.value)} placeholder="subtitle" />
-                  <input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="youtube_url" />
-                  <input value={youtubeThumbnail} onChange={(e) => setYoutubeThumbnail(e.target.value)} placeholder="thumbnail (optional)" />
+                  <input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="YouTube URL" />
+                  <input value={youtubeThumbnail} onChange={(e) => setYoutubeThumbnail(e.target.value)} placeholder="Thumbnail URL (optional)" />
                 </div>
               )}
 
+              {contentType === 'prayer' && editingPrayer && (
+                <>
+                  <h4>Prayer Details</h4>
+                  <div className="row">
+                    <input
+                      value={activeTrackDraft}
+                      onChange={(e) => setActiveTrackDraft(e.target.value)}
+                      placeholder="Active track id"
+                    />
+                    <button onClick={() => openTrackEditor('add')}>Add Track</button>
+                  </div>
+
+                  {Object.values(editingPrayer.tracks).length === 0 && <p>No tracks yet. Add first track.</p>}
+
+                  {Object.values(editingPrayer.tracks).map((track) => (
+                    <div key={track.id} className="content-item">
+                      <div className="row spread">
+                        <div>
+                          <strong>{track.title}</strong>
+                          <p>ID: {track.id}</p>
+                          <p>Active: {editingPrayer.active_track === track.id ? 'Yes' : 'No'}</p>
+                          <p>Audio version: {track.audio?.version ?? '-'}</p>
+                          <p>Transcript versions: pa {track.transcripts.pa?.version ?? '-'}, hi {track.transcripts.hi?.version ?? '-'}, en {track.transcripts.en?.version ?? '-'}</p>
+                        </div>
+                        <div className="row">
+                          <button onClick={() => setTrackAsActive(track.id)} disabled={editingPrayer.active_track === track.id}>Set Active</button>
+                          <button onClick={() => openTrackEditor('edit', track)}>Edit Track</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {trackEditor && (
+                    <div className="card">
+                      <h4>{trackEditor.mode === 'add' ? 'Add Track' : `Edit Track: ${trackEditor.id}`}</h4>
+                      <div className="row">
+                        <input value={trackEditor.id} disabled />
+                        <input
+                          value={trackEditor.title}
+                          onChange={(e) => setTrackEditor({ ...trackEditor, title: e.target.value })}
+                          placeholder="Track title"
+                        />
+                        <input
+                          type="file"
+                          accept="audio/mpeg,.mp3"
+                          onChange={(e) => onAudioFileSelected(e.target.files?.[0] ?? null)}
+                        />
+                      </div>
+
+                      <div className="row">
+                        <button onClick={() => setActiveTranscriptTab('pa')}>Punjabi</button>
+                        <button onClick={() => setActiveTranscriptTab('hi')}>Hindi</button>
+                        <button onClick={() => setActiveTranscriptTab('en')}>English</button>
+                      </div>
+
+                      <h5>Transcript: {activeTranscriptTab.toUpperCase()}</h5>
+                      <textarea
+                        value={trackEditor.transcriptLrc[activeTranscriptTab]}
+                        onChange={(e) => setTrackEditor({
+                          ...trackEditor,
+                          transcriptLrc: { ...trackEditor.transcriptLrc, [activeTranscriptTab]: e.target.value },
+                        })}
+                        placeholder="Paste LRC for selected language"
+                      />
+                      <div className="row">
+                        <button onClick={() => parseCurrentLrcToJson(activeTranscriptTab)}>Parse LRC</button>
+                        <button
+                          onClick={() => setTrackEditor({
+                            ...trackEditor,
+                            baselineTranscriptJson: {
+                              ...trackEditor.baselineTranscriptJson,
+                              [activeTranscriptTab]: trackEditor.transcriptJson[activeTranscriptTab],
+                            },
+                          })}
+                        >
+                          Mark Baseline
+                        </button>
+                      </div>
+                      <textarea
+                        value={trackEditor.transcriptJson[activeTranscriptTab]}
+                        onChange={(e) => setTrackEditor({
+                          ...trackEditor,
+                          transcriptJson: { ...trackEditor.transcriptJson, [activeTranscriptTab]: e.target.value },
+                        })}
+                        placeholder="Transcript JSON for selected language"
+                      />
+
+                      {uploadState.loading && (
+                        <>
+                          <p>Audio upload: {uploadState.audioProgress}%</p>
+                          <p>PA upload: {uploadState.transcriptProgress.pa}%</p>
+                          <p>HI upload: {uploadState.transcriptProgress.hi}%</p>
+                          <p>EN upload: {uploadState.transcriptProgress.en}%</p>
+                          <p>{uploadState.message}</p>
+                        </>
+                      )}
+                      {uploadState.error && <p>{uploadState.error}</p>}
+
+                      <div className="row">
+                        <button onClick={() => void saveTrack()} disabled={uploadState.loading}>Save Track</button>
+                        <button onClick={() => setTrackEditor(null)} disabled={uploadState.loading}>Cancel Track Editor</button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
               <div className="row">
-                <button onClick={() => void saveContent()} disabled={saveLoading}>{saveLoading ? 'Saving...' : 'Save Content'}</button>
-                <button onClick={resetEditor}>Close Editor</button>
+                <button onClick={() => void saveContentMetadataOnly()} disabled={savingContent || uploadState.loading}>
+                  {savingContent ? 'Saving...' : 'Save Content Metadata'}
+                </button>
+                <button onClick={resetEditorState} disabled={savingContent || uploadState.loading}>Close</button>
               </div>
+
               {saveMessage && <p>{saveMessage}</p>}
               {saveError && <p>{saveError}</p>}
             </div>

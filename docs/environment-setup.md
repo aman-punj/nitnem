@@ -1,8 +1,10 @@
 # Environment Setup
 
+## 1) Admin Panel (React)
+
 This project uses Vite environment variables for the React admin panel.
 
-## 1) Create `.env`
+### Create `.env`
 
 From the repository root:
 
@@ -11,6 +13,26 @@ cp admin_panel/.env.example admin_panel/.env
 ```
 
 Then fill values in `admin_panel/.env`.
+
+... (rest of admin panel section) ...
+
+## 2) Mobile App (Flutter)
+
+The Flutter app is located in `mobile_app/`.
+
+### Prerequisites
+- Flutter SDK installed.
+- Android Studio / Xcode for native builds.
+
+### Setup
+1. `cd mobile_app`
+2. `flutter pub get`
+3. Ensure `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) are present in their respective native directories if not managed via FlutterFire CLI.
+
+### Run
+```bash
+flutter run
+```
 
 ## 2) Required Variables
 
@@ -23,7 +45,7 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
 
 VITE_CLOUDINARY_CLOUD_NAME=
-VITE_CLOUDINARY_UPLOAD_PRESET=
+VITE_CLOUDINARY_AUDIO_UPLOAD_PRESET=nitnem_audio`r`nVITE_CLOUDINARY_TRANSCRIPT_UPLOAD_PRESET=nitnem_transcripts
 ```
 
 ## 3) Where Firebase Values Come From
@@ -41,7 +63,7 @@ Open Cloudinary Console:
 2. Settings -> Upload -> Upload presets -> use preset name
 3. Put them in:
 - `VITE_CLOUDINARY_CLOUD_NAME`
-- `VITE_CLOUDINARY_UPLOAD_PRESET`
+- `VITE_CLOUDINARY_AUDIO_UPLOAD_PRESET`
 
 ## 5) Vite Env Rules
 

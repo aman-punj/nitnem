@@ -2,7 +2,7 @@
 
 ## Overview
 
-Nitnem is a Flutter-based Sikh prayer application with:
+Nitnem is a Sikh prayer application with:
 
 * offline-first audio playback
 * synchronized prayer lyrics
@@ -11,6 +11,17 @@ Nitnem is a Flutter-based Sikh prayer application with:
 * React-based admin panel
 
 The architecture is content-driven.
+
+---
+
+## Repository Structure
+
+* `/mobile_app`: Flutter mobile application
+* `/admin_panel`: React/Vite administration dashboard
+* `/shared`: Shared schemas, examples, and transcript samples
+* `/docs`: Technical documentation
+* `firebase.json`: Firebase configuration (root)
+* `PROJECT_CONTEXT.md`: This file (AI memory)
 
 ---
 
