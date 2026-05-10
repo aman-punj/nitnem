@@ -14,6 +14,11 @@ class SharedPrefsService {
 
   static SharedPreferences? _prefs;
 
+  static SharedPreferences get instance {
+    if (_prefs == null) throw Exception('SharedPrefsService not initialized');
+    return _prefs!;
+  }
+
   static Future<void> setLanguage(String code) async {
     await _prefs?.setString(_keyLanguage, code);
   }

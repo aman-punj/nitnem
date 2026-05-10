@@ -1,84 +1,106 @@
 import 'package:get/get.dart';
-import 'package:nitnem/services/prayer_asset_service.dart';
-
+import 'package:url_launcher/url_launcher.dart';
+import '../models/content_item.dart';
 import '../screens/prayer_page.dart';
-import '../services/transcript_path_service.dart';
+import '../services/firebase_content_service.dart';
+import '../services/local_content_service.dart';
+import '../services/transcript_sync_service.dart';
+import '../services/shared_prefs_service.dart';
 
 class HomeController extends GetxController {
-  final TranscriptPathService transcriptPathService;
-  final PrayerAssetService prayerAssetService;
+  final FirebaseContentService _firebaseContentService;
+  final LocalContentService _localContentService;
+  final TranscriptSyncService _syncService;
 
   HomeController({
-    required this.transcriptPathService,
-    required this.prayerAssetService,
-  });
+    required FirebaseContentService firebaseContentService,
+    required LocalContentService localContentService,
+    required TranscriptSyncService syncService,
+  })  : _firebaseContentService = firebaseContentService,
+        _localContentService = localContentService,
+        _syncService = syncService;
 
-  final currentLang = 'pn';
+  final RxList<ContentItem> contentItems = <ContentItem>[].obs;
+  final RxBool isLoading = false.obs;
+  final RxString currentLang = 'pa'.obs;
 
-  final baniList = [
-    {
-      'id': 'japji_sahib',
-      'pn': 'ਜਪੁਜੀ ਸਾਹਿਬ',
-      'hi': 'जपुजी साहिब',
-      'en': 'Japji Sahib'
-    },
-    {
-      'id': 'jaap_sahib',
-      'pn': 'ਜਾਪ ਸਾਹਿਬ',
-      'hi': 'जाप साहिब',
-      'en': 'Jaap Sahib'
-    },
-    {
-      'id': 'tav_prasad',
-      'pn': 'ਤਵ ਪ੍ਰਸਾਦ ਸਵੱਯੇ',
-      'hi': 'तव प्रसाद सवये',
-      'en': 'Tav Prasad Savaiye'
-    },
-    {
-      'id': 'chaupai_sahib',
-      'pn': 'ਚੌਪਈ ਸਾਹਿਬ',
-      'hi': 'चौपई साहिब',
-      'en': 'Chaupai Sahib'
-    },
-    {
-      'id': 'anand_sahib',
-      'pn': 'ਆਨੰਦ ਸਾਹਿਬ',
-      'hi': 'आनंद साहिब',
-      'en': 'Anand Sahib'
-    },
-    {
-      'id': 'rehras_sahib',
-      'pn': 'ਰਹਿਰਾਸ ਸਾਹਿਬ',
-      'hi': 'रेहरास साहिब',
-      'en': 'Rehras Sahib'
-    },
-    {
-      'id': 'kirtan_sohila',
-      'pn': 'ਕੀਰਤਨ ਸੋਹਿਲਾ',
-      'hi': 'कीरतन सोहिला',
-      'en': 'Kirtan Sohila'
-    },
-  ];
+  @override
+  void onInit() {
+    super.onInit();
+    currentLang.value = SharedPrefsService.getLanguage();
+    _loadInitialContent();
+  }
 
-  void openPrayer(String prayerId, String title) async {
-    final localTranscript = await prayerAssetService.existingTranscript(
-      prayerId: prayerId,
-      languageCode: currentLang,
-    );
-    final localAudio = await prayerAssetService.existingAudio(prayerId: prayerId);
+  Future<void> _loadInitialContent() async {
+    // 1. Load from cache first
+    contentItems.value = _localContentService.getCachedContentCatalog();
+    
+    // 2. Fetch from Firebase
+    await refreshContent();
+  }
 
-    final transcriptPath = localTranscript?.path ??
-        await transcriptPathService.getTranscriptPath(
-      prayerId: prayerId,
-      languageCode: currentLang,
-    );
+  Future<void> refreshContent() async {
+    isLoading.value = true;
+    try {
+      final remoteItems = await _firebaseContentService.fetchContentCatalog();
+      if (remoteItems.isNotEmpty) {
+        contentItems.value = remoteItems;
+        await _localContentService.cacheContentCatalog(remoteItems);
+        
+        // Background sync for all items
+        _syncAllContent(remoteItems);
+      }
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void _syncAllContent(List<ContentItem> items) async {
+    for (var item in items) {
+      if (item.type == ContentType.prayer) {
+        await _syncService.syncContent(item);
+      }
+    }
+  }
+
+  void onContentTap(ContentItem item) async {
+    if (item.type == ContentType.prayer) {
+      _openPrayer(item);
+    } else if (item.type == ContentType.youtube_live) {
+      _openYoutube(item);
+    }
+  }
+
+  void _openPrayer(ContentItem item) async {
+    final localMetadata = _localContentService.getSyncMetadata(item.id);
+    
+    final title = item.titles.getForLanguage(currentLang.value);
+    
+    // Fallback to assets if not synced yet
+    final audioPath = localMetadata?.audioLocalPath ?? 'assets/audios/${item.id}.mp3';
+    final transcriptPath = localMetadata?.transcriptLocalPaths[currentLang.value] ?? 
+        'assets/texts/${_validateLanguageCode(currentLang.value)}/${item.id}.json';
 
     Get.to(() => PrayerPage(
           title: title,
-          audioPath: localAudio?.path ?? 'assets/audios/$prayerId.mp3',
+          audioPath: audioPath,
           transcriptPath: transcriptPath,
-          audioIsLocalFile: localAudio != null,
-          transcriptIsLocalFile: localTranscript != null,
+          audioIsLocalFile: localMetadata?.audioLocalPath != null,
+          transcriptIsLocalFile: localMetadata?.transcriptLocalPaths[currentLang.value] != null,
         ));
+  }
+
+  void _openYoutube(ContentItem item) async {
+    if (item.youtubeUrl == null) return;
+    final url = Uri.parse(item.youtubeUrl!);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  String _validateLanguageCode(String code) {
+    const supportedLanguages = ['en', 'hi', 'pn', 'pa'];
+    if (code == 'pn' || code == 'pa') return 'pn';
+    return supportedLanguages.contains(code) ? code : 'en';
   }
 }

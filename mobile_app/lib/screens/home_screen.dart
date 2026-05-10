@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -11,7 +9,6 @@ import '../controllers/home_controller.dart';
 import '../utils/nitnem_appbar.dart';
 import 'drawer.dart';
 import 'feedback_screen.dart';
-import 'listing_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -21,28 +18,46 @@ class HomeScreen extends StatelessWidget {
     final controller = Get.find<HomeController>();
 
     return GradientScaffold(
+      showKhandaSymbol: true,
       appBar: SimpleNitnemAppBar(
         title: 'Bani Sagar',
         centerTitle: true,
       ),
       drawer: HomeDrawer(onItemSelected: (item) => _onDrawerItemSelect(item)),
-      body: ListView.separated(
-        padding: const EdgeInsets.only(top: 12, left: 18, right: 18),
-        itemCount: controller.baniList.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final bani = controller.baniList[index];
-          final title = bani[controller.currentLang] ?? bani['pa']!;
-          return _buildBaniTile(bani['id']!, title, controller);
-        },
-      ),
+      body: Obx(() {
+        if (controller.isLoading.value && controller.contentItems.isEmpty) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)));
+        }
+
+        return RefreshIndicator(
+          onRefresh: controller.refreshContent,
+          child: ListView.separated(
+            padding: const EdgeInsets.only(top: 12, left: 18, right: 18),
+            itemCount: controller.contentItems.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final content = controller.contentItems[index];
+              return _buildContentTile(content, controller);
+            },
+          ),
+        );
+      }),
     );
   }
 
-  Widget _buildBaniTile(String id, String title,HomeController controller) {
-    return BaniListTile(
-      title: title,
-      onTap: ()=> controller.openPrayer(id, title),
+  Widget _buildContentTile(content, HomeController controller) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        title: Text(
+          content.titles.getForLanguage(controller.currentLang.value),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(content.type.name.toUpperCase()),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => controller.onContentTap(content),
+      ),
     );
   }
 
@@ -66,27 +81,20 @@ class HomeScreen extends StatelessWidget {
   void onShareApp() async {
     try {
       const imageAssetPath = 'assets/images/khanda_image.png';
-      const fallbackApkUrl =
-          'https://drive.google.com/file/d/your_apk_id/view?usp=sharing'; // Replace with your actual APK link
+      const fallbackApkUrl = 'https://drive.google.com/file/d/your_apk_id/view?usp=sharing';
 
-      // Load image from assets
       final byteData = await rootBundle.load(imageAssetPath);
       final buffer = byteData.buffer;
 
-      // Write image to temporary directory
       final tempDir = await getTemporaryDirectory();
       final tempImageFile = File('${tempDir.path}/khanda_image.png');
       await tempImageFile.writeAsBytes(buffer.asUint8List());
 
-      // Share image + text
-      final shareData = ShareParams(
-        text:
-            '🌟 Check out the Bani Sagar app!\n\n🔗 $fallbackApkUrl\n\nFeel the divine connection daily 🙏',
+      await Share.shareXFiles(
+        [XFile(tempImageFile.path)],
+        text: '🌟 Check out the Bani Sagar app!\n\n🔗 $fallbackApkUrl\n\nFeel the divine connection daily 🙏',
         subject: 'Bani Sagar - Daily Nitnem & Bani App',
-        files: [XFile(tempImageFile.path)],
       );
-
-      SharePlus.instance.share(shareData);
     } catch (e) {
       print('Sharing failed: $e');
     }
