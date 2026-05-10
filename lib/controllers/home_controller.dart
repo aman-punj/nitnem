@@ -1,12 +1,17 @@
 import 'package:get/get.dart';
+import 'package:nitnem/services/prayer_asset_service.dart';
 
 import '../screens/prayer_page.dart';
 import '../services/transcript_path_service.dart';
 
 class HomeController extends GetxController {
   final TranscriptPathService transcriptPathService;
+  final PrayerAssetService prayerAssetService;
 
-  HomeController({required this.transcriptPathService});
+  HomeController({
+    required this.transcriptPathService,
+    required this.prayerAssetService,
+  });
 
   final currentLang = 'pn';
 
@@ -56,17 +61,24 @@ class HomeController extends GetxController {
   ];
 
   void openPrayer(String prayerId, String title) async {
-    final transcriptPath = await transcriptPathService.getTranscriptPath(
+    final localTranscript = await prayerAssetService.existingTranscript(
+      prayerId: prayerId,
+      languageCode: currentLang,
+    );
+    final localAudio = await prayerAssetService.existingAudio(prayerId: prayerId);
+
+    final transcriptPath = localTranscript?.path ??
+        await transcriptPathService.getTranscriptPath(
       prayerId: prayerId,
       languageCode: currentLang,
     );
 
-    print("this is the path - $transcriptPath");
-
     Get.to(() => PrayerPage(
           title: title,
-          audioAssetPath: 'assets/audios/$prayerId.mp3',
-          transcriptAssetPath: transcriptPath,
+          audioPath: localAudio?.path ?? 'assets/audios/$prayerId.mp3',
+          transcriptPath: transcriptPath,
+          audioIsLocalFile: localAudio != null,
+          transcriptIsLocalFile: localTranscript != null,
         ));
   }
 }

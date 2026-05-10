@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
+import 'package:nitnem/services/prayer_asset_service.dart';
 import 'package:nitnem/services/prayer_update_service.dart';
 
 import '../controllers/home_controller.dart';
@@ -14,6 +15,7 @@ class DependencyInjection {
     // Data layer
     Get.put(PrayerUpdateService());
     Get.put(PrayerStorageService());
+    Get.put(PrayerAssetService());
 
     // Domain layer
     Get.put(TranscriptPathService(storageService: Get.find()));
@@ -23,6 +25,9 @@ class DependencyInjection {
     Get.put(AppInfoController(
       service: FirebaseAppInfoService(firestoreInstance: FirebaseFirestore.instance),
     ));
-    Get.put(HomeController(transcriptPathService: Get.find()));
+    Get.put(HomeController(
+      transcriptPathService: Get.find(),
+      prayerAssetService: Get.find(),
+    ));
   }
 }
