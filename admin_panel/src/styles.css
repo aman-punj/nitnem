@@ -25,6 +25,18 @@ body {
   padding: 40px 20px;
 }
 
+.admin-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.admin-sidebar {
+  width: 220px;
+  position: sticky;
+  top: 20px;
+}
+
 h1, h2, h3, h4 {
   margin-top: 0;
   color: var(--fg);
@@ -251,4 +263,15 @@ textarea {
 
 .fade-in {
   animation: fadeIn 0.3s ease-out;
+}
+
+@media (max-width: 900px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    position: static;
+  }
 }

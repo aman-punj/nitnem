@@ -30,6 +30,7 @@ export type PrayerContentData = {
   enabled: boolean
   active_track: string
   tracks: Record<string, PrayerTrack>
+  categoryId?: string
   updated_at?: unknown
   // Phase 2
   displayOrder: number
@@ -44,6 +45,7 @@ export type YoutubeLiveContentData = {
   youtube_url: string
   enabled: boolean
   thumbnail?: string
+  categoryId?: string
   updated_at?: unknown
   // Phase 2
   displayOrder: number

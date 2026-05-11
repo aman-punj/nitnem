@@ -4,6 +4,8 @@ import 'package:flutter/services.dart' show DeviceOrientation, SystemChrome;
 import 'package:get/get.dart';
 import 'package:nitnem/screens/splash_screen.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
+import 'package:nitnem/core/design_system/models/theme_config.dart';
+import 'package:nitnem/core/design_system/theme/app_theme.dart';
 
 import 'bindings/di.dart';
 import 'firebase_options.dart';
@@ -31,16 +33,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        textSelectionTheme: const TextSelectionThemeData(
-          cursorColor: Color(0xFFD4AF37), // Golden
-        ),
-        inputDecorationTheme: const InputDecorationTheme(
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: Color(0xFFD4AF37)),
-          ),
-        ),
-      ),
+      theme: AppTheme.resolve(const ThemeConfig(amoled: true)),
       home: const SplashScreen(),
     );
   }

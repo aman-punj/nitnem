@@ -99,7 +99,7 @@ Rules:
 
 ## Important Rules
 
-* Do NOT run flutter analyze automatically
+* Do NOT run flutter analyze, dart analyze, dart format, run npm run build, flutter build automatically  
 * Do NOT rewrite existing playback logic unnecessarily
 * Prefer incremental refactors
 * Keep Flutter widgets modular

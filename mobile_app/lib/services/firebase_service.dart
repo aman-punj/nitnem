@@ -14,10 +14,7 @@ class FirebaseAppInfoService implements AppInfoService {
   @override
   Future<AppInfoModel?> fetchAppInfo() async {
     try {
-      final doc = await firestore
-          .collection('app_info')
-          .doc('XRW0TNK0gtC6FOhMicb9')
-          .get();
+      final doc = await firestore.collection('app_config').doc('mobile').get();
 
       if (doc.data() != null) {
         return AppInfoModel.fromMap(doc.data()!);

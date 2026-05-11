@@ -37,6 +37,7 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
   const [idTouched, setIdTouched] = useState(isEdit)
   const [titles, setTitles] = useState<LocalizedTitles>(item?.titles ?? { en: '', pa: '', hi: '' })
   const [enabled, setEnabled] = useState(item?.enabled ?? true)
+  const [categoryId, setCategoryId] = useState(item?.categoryId ?? 'uncategorized')
 
   // Phase 2 Fields
   const [pinToTop, setPinToTop] = useState(item?.pinToTop ?? false)
@@ -79,6 +80,7 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
           titles,
           youtube_url: youtubeUrl,
           thumbnail: youtubeThumbnail,
+          categoryId,
           enabled,
           displayOrder: item?.displayOrder ?? 100, // Keep existing order or default
           pinToTop,
@@ -92,6 +94,7 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
           titles,
           enabled,
           active_track: activeTrackId,
+          categoryId,
           tracks,
           displayOrder: item?.displayOrder ?? 100,
           pinToTop,
@@ -252,6 +255,14 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
           </div>
 
           <div className="grid" style={{ marginTop: '16px', borderTop: '1px solid #eee', paddingTop: '16px' }}>
+            <div className="label-group">
+              <label>Category ID</label>
+              <input
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                placeholder="nitnem"
+              />
+            </div>
             <div className="label-group">
               <label>Priority Type</label>
               <select 

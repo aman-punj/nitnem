@@ -30,6 +30,7 @@ import { PrayerCard } from '../components/admin/PrayerCard'
 import { ContentEditor } from '../components/admin/ContentEditor'
 
 type AuthStatus = 'checking' | 'signed_out' | 'signed_in' | 'error'
+type AdminSection = 'dashboard' | 'content' | 'categories' | 'feedback' | 'live' | 'app_config' | 'storage' | 'settings'
 
 function SortableItem({ item, onEdit }: { item: ContentItem; onEdit: () => void }) {
   const {
@@ -60,6 +61,7 @@ function SortableItem({ item, onEdit }: { item: ContentItem; onEdit: () => void 
 }
 
 export function AdminApp() {
+  const [section, setSection] = useState<AdminSection>('content')
   const [authStatus, setAuthStatus] = useState<AuthStatus>('checking')
   const [authUserEmail, setAuthUserEmail] = useState('')
   const [authMessage, setAuthMessage] = useState('')
@@ -237,6 +239,19 @@ export function AdminApp() {
     setIsAddingNew(false)
   }
 
+  const sectionMenu: Array<{ id: AdminSection; label: string }> = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'content', label: 'Content' },
+    { id: 'categories', label: 'Categories' },
+    { id: 'feedback', label: 'Feedback' },
+    { id: 'live', label: 'Live Content' },
+    { id: 'app_config', label: 'App Config' },
+    { id: 'storage', label: 'Storage' },
+    { id: 'settings', label: 'Settings' },
+  ]
+
+  const isContentSection = section === 'content'
+
   return (
     <div className="app fade-in">
       <header className="row spread" style={{ marginBottom: '40px' }}>
@@ -275,7 +290,23 @@ export function AdminApp() {
       )}
 
       {isAuthed && (
-        <div className="stack">
+        <div className="admin-layout">
+          <aside className="admin-sidebar card">
+            {sectionMenu.map((entry) => (
+              <button
+                key={entry.id}
+                className={section === entry.id ? '' : 'secondary'}
+                style={{ width: '100%', marginBottom: '8px' }}
+                onClick={() => setSection(entry.id)}
+              >
+                {entry.label}
+              </button>
+            ))}
+          </aside>
+          <main className="stack" style={{ flex: 1 }}>
+          {!isContentSection && <div className="card">Section scaffold: {section}</div>}
+          {isContentSection && (
+            <div className="stack">
           {(editingItem || isAddingNew) ? (
             <ContentEditor 
               item={editingItem} 
@@ -336,6 +367,8 @@ export function AdminApp() {
               </DndContext>
             </div>
           )}
+        </div>)}
+        </main>
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import '../core/design_system/tokens/colors.dart';
 
 class GradientScaffold extends StatelessWidget {
   final PreferredSizeWidget? appBar;
@@ -19,7 +20,7 @@ class GradientScaffold extends StatelessWidget {
     this.floatingActionButton,
     this.floatingActionButtonLocation,
     this.bottomNavigationBar,
-    this.showPattern = true,
+    this.showPattern = false,
     this.showKhandaSymbol = false,
   });
 
@@ -28,44 +29,48 @@ class GradientScaffold extends StatelessWidget {
     return Scaffold(
       drawer: drawer,
       appBar: appBar,
+      backgroundColor: SacredColors.backgroundBlack,
       body: Stack(
         children: [
-          // 🔹 Enhanced spiritual gradient background
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFFFDF8E1), // Warm cream - represents purity
-                  Color(0xFFF5E6B8), // Light golden - represents divine light
-                  Color(0xFFE8D5A3), // Deeper gold - represents wisdom
-                  Color(0xFFD4C19C), // Warm beige - represents earth/grounding
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                stops: [0.0, 0.3, 0.7, 1.0],
+          // 🔹 AMOLED base background with subtle atmospheric gradient
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: SacredColors.backgroundBlack,
+                gradient: LinearGradient(
+                  colors: [
+                    SacredColors.backgroundDeep,
+                    SacredColors.backgroundBlack,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
               ),
             ),
           ),
 
-          // 🎨 Subtle radial overlay for depth
-          Container(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.topRight,
-                radius: 1.5,
-                colors: [
-                  const Color(0xFFFFE4A3).withValues(alpha:0.3),
-                  Colors.transparent,
-                ],
+          // 🎨 Ultra-subtle radial glow for depth
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(0.0, 0.9), // Low center glow
+                  radius: 1.4,
+                  colors: [
+                    SacredColors.primaryAccent.withValues(alpha: 0.04),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
 
-          // 🔸 Optional geometric pattern
+          // 🔸 Optional geometric pattern (restrained)
           if (showPattern)
-            CustomPaint(
-              painter: SacredPatternPainter(),
-              size: Size.infinite,
+            Positioned.fill(
+              child: CustomPaint(
+                painter: SacredPatternPainter(),
+              ),
             ),
 
           // 🕉️ Optional subtle Khanda symbol watermark
@@ -73,13 +78,13 @@ class GradientScaffold extends StatelessWidget {
             Positioned.fill(
               child: Center(
                 child: Opacity(
-                  opacity: 0.03,
+                  opacity: 0.02,
                   child: Transform.scale(
-                    scale: 3.0,
+                    scale: 2.5,
                     child: const Icon(
                       Icons.star_border_outlined, // Placeholder for Khanda symbol
                       size: 200,
-                      color: Color(0xFF8B4513),
+                      color: SacredColors.primaryAccent,
                     ),
                   ),
                 ),
@@ -102,15 +107,15 @@ class SacredPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFD4AF37).withValues(alpha:0.08) // Golden with low opacity
+      ..color = SacredColors.primaryAccent.withValues(alpha: 0.02) // Near invisible
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 0.5; // Thinner lines
 
     final dotPaint = Paint()
-      ..color = const Color(0xFFB8860B).withValues(alpha:0.15); // Darker gold for dots
+      ..color = SacredColors.primaryAccent.withValues(alpha: 0.04);
 
     const spacing = 60.0;
-    const radius = 25.0;
+    const radius = 20.0; // Slightly smaller
 
     // Draw interconnected circles pattern (representing unity and continuity)
     for (double y = radius; y < size.height; y += spacing) {
@@ -119,7 +124,7 @@ class SacredPatternPainter extends CustomPainter {
         canvas.drawCircle(Offset(x, y), radius, paint);
 
         // Small dot in center
-        canvas.drawCircle(Offset(x, y), 2.0, dotPaint);
+        canvas.drawCircle(Offset(x, y), 1.0, dotPaint);
 
         // Draw connecting lines to create web pattern
         if (x + spacing < size.width) {
@@ -149,11 +154,11 @@ class LotusPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFCD853F).withValues(alpha:0.06)
+      ..color = SacredColors.primaryAccent.withValues(alpha: 0.015)
       ..style = PaintingStyle.fill;
 
-    const spacing = 100.0;
-    const petalLength = 20.0;
+    const spacing = 120.0;
+    const petalLength = 15.0;
 
     // Draw stylized lotus petals pattern
     for (double y = 0; y < size.height; y += spacing) {
@@ -204,24 +209,24 @@ class ReadingOverlay extends StatelessWidget {
   const ReadingOverlay({
     super.key,
     required this.child,
-    this.opacity = 0.85,
+    this.opacity = 0.95, // Higher opacity for dark surfaces
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFDF7).withValues(alpha:opacity),
-        borderRadius: BorderRadius.circular(12),
+        color: SacredColors.surfacePrimary.withValues(alpha: opacity),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFE6D3A3).withValues(alpha:0.3),
+          color: SacredColors.borderGold.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD4C19C).withValues(alpha:0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -248,30 +253,23 @@ class SacredAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFFF5E6B8),
-            Color(0xFFE8D5A3),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0xFFD4C19C),
-            blurRadius: 4,
-            offset: Offset(0, 2),
+      decoration: BoxDecoration(
+        color: SacredColors.backgroundBlack.withValues(alpha: 0.8),
+        border: Border(
+          bottom: BorderSide(
+            color: SacredColors.borderGold.withValues(alpha: 0.1),
+            width: 1,
           ),
-        ],
+        ),
       ),
       child: AppBar(
         title: Text(
           title,
           style: const TextStyle(
-            color: Color(0xFF8B4513),
+            color: SacredColors.textPrimary,
             fontWeight: FontWeight.w600,
             fontSize: 20,
+            letterSpacing: 0.5,
           ),
         ),
         backgroundColor: Colors.transparent,
@@ -280,7 +278,7 @@ class SacredAppBar extends StatelessWidget implements PreferredSizeWidget {
         leading: leading,
         actions: actions,
         iconTheme: const IconThemeData(
-          color: Color(0xFF8B4513),
+          color: SacredColors.primaryAccent,
         ),
       ),
     );

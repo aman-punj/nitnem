@@ -1,7 +1,9 @@
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../models/content_category.dart';
 import '../models/content_item.dart';
 import '../screens/prayer_page.dart';
+import '../services/firebase_category_service.dart';
 import '../services/firebase_content_service.dart';
 import '../services/local_content_service.dart';
 import '../services/transcript_sync_service.dart';
@@ -9,18 +11,22 @@ import '../services/shared_prefs_service.dart';
 
 class HomeController extends GetxController {
   final FirebaseContentService _firebaseContentService;
+  final FirebaseCategoryService _firebaseCategoryService;
   final LocalContentService _localContentService;
   final TranscriptSyncService _syncService;
 
   HomeController({
     required FirebaseContentService firebaseContentService,
+    required FirebaseCategoryService firebaseCategoryService,
     required LocalContentService localContentService,
     required TranscriptSyncService syncService,
   })  : _firebaseContentService = firebaseContentService,
+        _firebaseCategoryService = firebaseCategoryService,
         _localContentService = localContentService,
         _syncService = syncService;
 
   final RxList<ContentItem> contentItems = <ContentItem>[].obs;
+  final RxList<ContentCategory> categories = <ContentCategory>[].obs;
   final RxBool isLoading = false.obs;
   final RxString currentLang = 'pa'.obs;
 
@@ -42,6 +48,7 @@ class HomeController extends GetxController {
   Future<void> refreshContent() async {
     isLoading.value = true;
     try {
+      categories.value = await _firebaseCategoryService.fetchCategories();
       final remoteItems = await _firebaseContentService.fetchContentCatalog();
       if (remoteItems.isNotEmpty) {
         contentItems.value = remoteItems;
@@ -53,6 +60,14 @@ class HomeController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Map<String, List<ContentItem>> get groupedContent {
+    final grouped = <String, List<ContentItem>>{};
+    for (final item in contentItems) {
+      grouped.putIfAbsent(item.categoryId, () => <ContentItem>[]).add(item);
+    }
+    return grouped;
   }
 
   void _syncAllContent(List<ContentItem> items) async {
@@ -86,6 +101,8 @@ class HomeController extends GetxController {
           transcriptPath: transcriptPath ?? '',
           audioIsLocalFile: audioPath != null,
           transcriptIsLocalFile: transcriptPath != null,
+          contentItem: item,
+          currentLang: currentLang.value,
         ));
   }
 

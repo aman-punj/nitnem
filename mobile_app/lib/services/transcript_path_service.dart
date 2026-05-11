@@ -34,7 +34,8 @@ class TranscriptPathService {
     final packageInfo = await PackageInfo.fromPlatform();
     final appInfo = SharedPrefsService.getAppInfo();
 
-    if (appInfo.currentVersion != packageInfo.version) {
+    final currentBuild = int.tryParse(packageInfo.buildNumber) ?? 0;
+    if (appInfo.shouldForceUpdate(currentBuild)) {
       // Clear outdated downloads if app version changed
       await storageService.cleanDownloadedFiles();
       return false;

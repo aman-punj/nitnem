@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
 import 'package:nitnem/services/firebase_content_service.dart';
+import 'package:nitnem/services/firebase_category_service.dart';
 import 'package:nitnem/services/local_content_service.dart';
 import 'package:nitnem/services/prayer_asset_service.dart';
 import 'package:nitnem/services/prayer_storage_service.dart';
@@ -19,6 +20,7 @@ class DependencyInjection {
     Get.put(PrayerStorageService());
     Get.put(PrayerAssetService());
     Get.put(FirebaseContentService());
+    Get.put(FirebaseCategoryService());
     Get.put(LocalContentService(SharedPrefsService.instance));
 
     // Domain layer
@@ -31,6 +33,7 @@ class DependencyInjection {
     ));
     Get.put(HomeController(
       firebaseContentService: Get.find(),
+      firebaseCategoryService: Get.find(),
       localContentService: Get.find(),
       syncService: Get.find(),
     ));

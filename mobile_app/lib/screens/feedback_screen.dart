@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:nitnem/utils/app_theme.dart';
 import 'package:nitnem/utils/gradient_scaffold.dart';
+import '../core/design_system/tokens/colors.dart';
 
 import '../controllers/feedback_controller.dart';
 
@@ -13,7 +13,7 @@ class FeedbackScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GradientScaffold(
-      appBar: SacredAppBar(title: "Feedback"),
+      appBar: const SacredAppBar(title: "Feedback"),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: Column(
@@ -22,24 +22,17 @@ class FeedbackScreen extends StatelessWidget {
             // Feedback Input
             Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFFFFFDF7).withValues(alpha:0.95),
-                    const Color(0xFFF5E6B8).withValues(alpha:0.85),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: SacredColors.surfacePrimary,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFFD4AF37).withValues(alpha:0.3),
+                  color: SacredColors.borderGold.withValues(alpha: 0.2),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFD4C19C).withValues(alpha:0.25),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 10,
-                    offset: const Offset(0, 3),
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -51,12 +44,12 @@ class FeedbackScreen extends StatelessWidget {
                   FocusManager.instance.primaryFocus?.unfocus();
                 },
                 style: const TextStyle(
-                  color: Color(0xFF8B4513),
+                  color: SacredColors.textPrimary,
                   fontSize: 16,
                 ),
                 decoration: const InputDecoration(
                   hintText: 'Write your feedback...',
-                  hintStyle: TextStyle(color: Color(0xFF8B4513)),
+                  hintStyle: TextStyle(color: SacredColors.textSecondary),
                   border: InputBorder.none,
                 ),
               ),
@@ -76,22 +69,22 @@ class FeedbackScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: const Color(0xFFD4AF37).withValues(alpha:0.3),
+                              color: SacredColors.borderGold.withValues(alpha: 0.3),
                             ),
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: Image.file(image, fit: BoxFit.cover),
                         ),
                         Positioned(
-                          top: 4,
-                          right: 4,
+                          top: 8,
+                          right: 8,
                           child: CircleAvatar(
-                            radius: 14,
-                            backgroundColor: Colors.white,
+                            radius: 16,
+                            backgroundColor: Colors.black.withValues(alpha: 0.6),
                             child: IconButton(
                               padding: EdgeInsets.zero,
                               icon: const Icon(Icons.close,
-                                  size: 16, color: Colors.red),
+                                  size: 18, color: Colors.white),
                               onPressed: controller.removeImage,
                             ),
                           ),
@@ -101,7 +94,7 @@ class FeedbackScreen extends StatelessWidget {
                   : const SizedBox.shrink();
             }),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // Buttons
             Row(
@@ -109,18 +102,22 @@ class FeedbackScreen extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: controller.pickImage,
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.image,
                       size: 18,
-                      color: const Color(0xFF8B4513),
+                      color: SacredColors.primaryAccent,
                     ),
                     label: const Text('Add Image'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF3E5AB),
-                      foregroundColor: const Color(0xFF8B4513),
+                      backgroundColor: SacredColors.surfacePrimary,
+                      foregroundColor: SacredColors.textPrimary,
                       elevation: 4,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
+                        side: BorderSide(
+                          color: SacredColors.borderGold.withValues(alpha: 0.2),
+                        ),
                       ),
                     ),
                   ),
@@ -129,13 +126,13 @@ class FeedbackScreen extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: controller.submitFeedback,
-                    icon:
-                        Icon(Icons.send, size: 18, color: AppTheme.lightCream),
+                    icon: const Icon(Icons.send, size: 18, color: Colors.black),
                     label: const Text('Submit'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
-                      foregroundColor: AppTheme.lightCream,
-                      elevation: 4,
+                      backgroundColor: SacredColors.primaryAccent,
+                      foregroundColor: Colors.black,
+                      elevation: 6,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),

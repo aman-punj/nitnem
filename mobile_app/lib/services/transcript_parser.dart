@@ -23,8 +23,8 @@ class TranscriptParser {
       final end = i + 1 < raw.length ? raw[i + 1]['start'] as double : start + 6;
       segments.add(
         TranscriptSegment(
-          start: start,
-          end: end,
+          startTime: start,
+          endTime: end,
           pa: current['pa'] as String,
           hi: (hiLines != null && i < hiLines.length) ? hiLines[i] : '',
           en: (enLines != null && i < enLines.length) ? enLines[i] : '',

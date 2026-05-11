@@ -1,6 +1,6 @@
 export type Segment = {
-  start: number
-  end: number
+  startTime: number | null
+  endTime: number | null
   pa: string
   hi: string
   en: string
@@ -19,8 +19,8 @@ export function parseLrc(lrc: string): Segment[] {
 
   if (timestamped.length > 0) {
     return timestamped.map((entry, idx) => ({
-      start: entry.start,
-      end: timestamped[idx + 1]?.start ?? entry.start + 6,
+      startTime: entry.start,
+      endTime: timestamped[idx + 1]?.start ?? entry.start + 6,
       pa: entry.text,
       hi: '',
       en: '',
@@ -29,8 +29,8 @@ export function parseLrc(lrc: string): Segment[] {
 
   // Fallback: treat each line as a plain text segment (Mode B/C support)
   return lines.map((line) => ({
-    start: 0,
-    end: 0,
+    startTime: null,
+    endTime: null,
     pa: line.trim(),
     hi: '',
     en: '',

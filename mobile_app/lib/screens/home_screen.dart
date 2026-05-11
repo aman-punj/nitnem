@@ -3,12 +3,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:nitnem/core/design_system/tokens/colors.dart';
+import 'package:nitnem/core/design_system/widgets/sacred_section_header.dart';
+import 'package:nitnem/core/design_system/widgets/sacred_tile.dart';
 import 'package:nitnem/utils/gradient_scaffold.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../controllers/home_controller.dart';
-import '../utils/nitnem_appbar.dart';
+import '../core/design_system/widgets/sacred_app_bar.dart';
 import 'drawer.dart';
 import 'feedback_screen.dart';
 
@@ -20,26 +23,39 @@ class HomeScreen extends StatelessWidget {
     final controller = Get.find<HomeController>();
 
     return GradientScaffold(
-      showKhandaSymbol: true,
-      appBar: SimpleNitnemAppBar(
+      showKhandaSymbol: false,
+      appBar: const SacredDsAppBar(
         title: 'Bani Sagar',
-        centerTitle: true,
       ),
       drawer: HomeDrawer(onItemSelected: (item) => _onDrawerItemSelect(item)),
       body: Obx(() {
         if (controller.isLoading.value && controller.contentItems.isEmpty) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)));
+          return const Center(child: CircularProgressIndicator(color: SacredColors.primaryAccent, strokeWidth: 2));
         }
+
+        final grouped = controller.groupedContent;
+        final categoryIds = grouped.keys.toList();
 
         return RefreshIndicator(
           onRefresh: controller.refreshContent,
-          child: ListView.separated(
+          color: SacredColors.primaryAccent,
+          backgroundColor: SacredColors.surfacePrimary,
+          child: ListView.builder(
             padding: const EdgeInsets.only(top: 12, left: 18, right: 18),
-            itemCount: controller.contentItems.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemCount: categoryIds.length,
             itemBuilder: (context, index) {
-              final content = controller.contentItems[index];
-              return _buildContentTile(content, controller);
+              final categoryId = categoryIds[index];
+              final sectionItems = grouped[categoryId] ?? const [];
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SacredSectionHeader(title: _categoryTitle(categoryId)),
+                  ...sectionItems.map((content) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _buildContentTile(content, controller),
+                      )),
+                ],
+              );
             },
           ),
         );
@@ -48,19 +64,19 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildContentTile(content, HomeController controller) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        title: Text(
-          content.titles.getForLanguage(controller.currentLang.value),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(content.type.toString().toUpperCase()),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => controller.onContentTap(content),
-      ),
+    return SacredTile(
+      title: content.titles.getForLanguage(controller.currentLang.value),
+      subtitle: content.type.toString().split('.').last.toUpperCase(),
+      onTap: () => controller.onContentTap(content),
     );
+  }
+
+  String _categoryTitle(String categoryId) {
+    return categoryId
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((e) => e.isEmpty ? e : '${e[0].toUpperCase()}${e.substring(1)}')
+        .join(' ');
   }
 
   void _onDrawerItemSelect(item) {

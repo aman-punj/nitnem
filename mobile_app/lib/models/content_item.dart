@@ -114,6 +114,7 @@ class ContentItem {
   final Map<String, PrayerTrack> tracks;
   final String? youtubeUrl;
   final String? thumbnail;
+  final String categoryId;
   // Phase 2 Fields
   final int displayOrder;
   final bool pinToTop;
@@ -128,6 +129,7 @@ class ContentItem {
     this.tracks = const {},
     this.youtubeUrl,
     this.thumbnail,
+    this.categoryId = 'uncategorized',
     this.displayOrder = 100,
     this.pinToTop = false,
     this.contentPriorityType = 'normal',
@@ -153,6 +155,7 @@ class ContentItem {
       tracks: trackMap,
       youtubeUrl: map['youtube_url'],
       thumbnail: map['thumbnail'],
+      categoryId: map['categoryId'] ?? 'uncategorized',
       displayOrder: map['displayOrder'] ?? 100,
       pinToTop: map['pinToTop'] ?? false,
       contentPriorityType: map['contentPriorityType'] ?? 'normal',
@@ -169,6 +172,7 @@ class ContentItem {
       'tracks': tracks.map((key, value) => MapEntry(key, value.toMap())),
       'youtube_url': youtubeUrl,
       'thumbnail': thumbnail,
+      'categoryId': categoryId,
       'displayOrder': displayOrder,
       'pinToTop': pinToTop,
       'contentPriorityType': contentPriorityType,

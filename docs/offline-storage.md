@@ -1,14 +1,17 @@
 # Offline Storage
 
 ## Strategy
-- Persist audio and transcript under app documents folder:
-- `prayers/{prayerId}/{trackId}/audio.mp3`
-- `prayers/{prayerId}/{trackId}/transcript_{lang}.json`
+- Persist audio and transcript files under app documents directory.
+- Cache content catalog in local storage before remote refresh.
 
-## Service
-- `PrayerAssetService` provides pathing and save/load helpers.
-- `HomeController` prefers local files, then falls back to bundled assets.
+## Paths
+- `prayers/{contentId}/{trackId}/audio.mp3`
+- `prayers/{contentId}/{trackId}/transcript_{lang}.json`
 
-## Versioning
-- `PrayerUpdateService.syncTrackAssets` stores per-track version markers in `SharedPreferences`.
-- Only changed versions are downloaded.
+## Metadata
+- Sync metadata stores active track, local paths, and per-file versions.
+- Version comparisons drive download decisions to avoid redundant transfers.
+
+## Compatibility and Dynamic Data
+- Content without `categoryId` uses `uncategorized` fallback.
+- Home grouping is dynamic but local catalog behavior remains offline-first.

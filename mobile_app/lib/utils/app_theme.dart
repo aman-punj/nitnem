@@ -1,30 +1,42 @@
 import 'package:flutter/material.dart';
+import '../core/design_system/tokens/colors.dart';
 
 class AppTheme {
-  static const Color primaryGold = Color(0xFFD4AF37);
-  static const Color secondaryGold = Color(0xFFB8860B);
-  static const Color textBrown = Color(0xFF8B4513);
-  static const Color lightCream = Color(0xFFFFFDF7);
-  static const Color warmBeige = Color(0xFFD4C19C);
+  // New AMOLED-first palette (mapped to SacredColors)
+  static const Color primaryGold = SacredColors.primaryAccent;
+  static const Color accentSoft = SacredColors.accentSoft;
+  
+  // Legacy color mappings (updated for dark theme compatibility)
+  static const Color textBrown = SacredColors.textPrimary; // Was #8B4513
+  static const Color lightCream = SacredColors.backgroundBlack; // Was #FFFDF7
+  static const Color warmBeige = SacredColors.surfacePrimary; // Was #D4C19C
 
   static const TextStyle headingStyle = TextStyle(
-    color: textBrown,
+    color: SacredColors.textPrimary,
     fontSize: 24,
     fontWeight: FontWeight.bold,
     height: 1.4,
+    letterSpacing: 0.5,
   );
 
   static const TextStyle bodyStyle = TextStyle(
-    color: textBrown,
+    color: SacredColors.textPrimary,
     fontSize: 16,
     height: 1.6,
     letterSpacing: 0.5,
   );
 
   static const TextStyle gurmukhiStyle = TextStyle(
-    color: textBrown,
-    fontSize: 18,
+    color: SacredColors.primaryAccent,
+    fontSize: 20,
     height: 1.8,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w600,
+  );
+  
+  static const TextStyle metaStyle = TextStyle(
+    color: SacredColors.textSecondary,
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0.3,
   );
 }

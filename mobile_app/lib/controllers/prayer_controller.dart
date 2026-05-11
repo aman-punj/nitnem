@@ -7,16 +7,27 @@ import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
+import '../models/content_item.dart';
 import '../models/transcript_segment.dart';
+import '../services/local_content_service.dart';
 import '../services/transcript_parser.dart';
 import '../services/transcript_sync_engine.dart';
+import '../services/transcript_sync_service.dart';
 
 enum ReadingMode { synced, audioOnlyText, textOnly }
 
 class PrayerController extends GetxController {
-  PrayerController({required this.transcriptSyncEngine});
+  PrayerController({
+    required this.transcriptSyncEngine,
+    TranscriptSyncService? syncService,
+    LocalContentService? localContentService,
+  })  : _syncService = syncService,
+        _localContentService = localContentService;
 
   final TranscriptSyncEngine transcriptSyncEngine;
+  final TranscriptSyncService? _syncService;
+  final LocalContentService? _localContentService;
+
   final AudioPlayer _player = AudioPlayer();
   final ItemScrollController itemScrollController = ItemScrollController();
   final ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
@@ -27,6 +38,7 @@ class PrayerController extends GetxController {
   final RxInt selectedIndex = (-1).obs;
   final RxBool isPlaying = false.obs;
   final RxBool isLoading = true.obs;
+  final RxString loadingMessage = ''.obs;
   final RxBool isTextOnlyMode = false.obs;
   final RxBool isFocusReadingMode = false.obs;
   final RxBool isUserSeeking = false.obs;
@@ -100,25 +112,52 @@ class PrayerController extends GetxController {
     required String transcriptPath,
     required bool audioIsLocalFile,
     required bool transcriptIsLocalFile,
+    ContentItem? item,
+    String? currentLang,
   }) async {
     isLoading.value = true;
+    loadingMessage.value = 'Preparing prayer...';
+    
     try {
-      // 1. Load Transcript
-      if (transcriptPath.isNotEmpty) {
-        final transcriptContent = transcriptIsLocalFile
-            ? await File(transcriptPath).readAsString()
-            : await rootBundle.loadString(transcriptPath);
+      String finalAudioPath = audioPath;
+      String finalTranscriptPath = transcriptPath;
+      bool finalAudioIsLocal = audioIsLocalFile;
+      bool finalTranscriptIsLocal = transcriptIsLocalFile;
+
+      // 1. Check if we need to sync first (e.g. content was just added from backend)
+      if (item != null && _syncService != null && _localContentService != null) {
+        if (finalAudioPath.isEmpty || finalTranscriptPath.isEmpty) {
+          loadingMessage.value = 'Downloading prayer content...';
+          await _syncService!.syncContent(item);
+          
+          final localMetadata = _localContentService!.getSyncMetadata(item.id);
+          if (localMetadata != null) {
+            finalAudioPath = localMetadata.audioLocalPath ?? '';
+            finalTranscriptPath = localMetadata.transcriptLocalPaths[currentLang ?? 'pa'] ?? '';
+            finalAudioIsLocal = finalAudioPath.isNotEmpty;
+            finalTranscriptIsLocal = finalTranscriptPath.isNotEmpty;
+          }
+        }
+      }
+
+      loadingMessage.value = 'Loading transcript...';
+      // 2. Load Transcript
+      if (finalTranscriptPath.isNotEmpty) {
+        final transcriptContent = finalTranscriptIsLocal
+            ? await File(finalTranscriptPath).readAsString()
+            : await rootBundle.loadString(finalTranscriptPath);
         segments.value = TranscriptParser.parseJsonString(transcriptContent);
       }
 
-      // 2. Load Audio
+      loadingMessage.value = 'Loading audio...';
+      // 3. Load Audio
       bool hasAudio = false;
-      if (audioPath.isNotEmpty) {
+      if (finalAudioPath.isNotEmpty) {
         try {
-          if (audioIsLocalFile) {
-            await _player.setFilePath(audioPath);
+          if (finalAudioIsLocal) {
+            await _player.setFilePath(finalAudioPath);
           } else {
-            await _player.setAsset(audioPath);
+            await _player.setAsset(finalAudioPath);
           }
           hasAudio = true;
         } catch (e) {
@@ -126,7 +165,7 @@ class PrayerController extends GetxController {
         }
       }
 
-      // 3. Determine Mode
+      // 4. Determine Mode
       final hasTimings = segments.any((s) => s.start > 0 || s.end > 0);
       
       if (!hasAudio) {
@@ -138,8 +177,12 @@ class PrayerController extends GetxController {
         readingMode.value = ReadingMode.synced;
       }
 
+    } catch (e) {
+      debugPrint('Error in loadContent: $e');
+      Get.snackbar('Error', 'Failed to load prayer content');
     } finally {
       isLoading.value = false;
+      loadingMessage.value = '';
     }
   }
 

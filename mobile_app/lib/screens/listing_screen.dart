@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/design_system/tokens/colors.dart';
 
 class BaniListTile extends StatefulWidget {
   final IconData icon;
@@ -94,31 +95,19 @@ class _BaniListTileState extends State<BaniListTile>
               padding: const EdgeInsets.all(20),
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFFFFFDF7).withValues(alpha:0.9),
-                    const Color(0xFFF5E6B8).withValues(alpha:0.8),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: SacredColors.surfacePrimary,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: widget.isCompleted
-                      ? const Color(0xFFD4AF37).withValues(alpha:0.5)
-                      : const Color(0xFFE6D3A3).withValues(alpha:0.4),
+                      ? SacredColors.primaryAccent.withValues(alpha: 0.4)
+                      : SacredColors.borderGold.withValues(alpha: 0.1),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFD4C19C).withValues(alpha:0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                  BoxShadow(
-                    color: Colors.white.withValues(alpha:0.8),
-                    blurRadius: 8,
-                    offset: const Offset(0, -1),
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -128,23 +117,16 @@ class _BaniListTileState extends State<BaniListTile>
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFFD4AF37).withValues(alpha:0.2),
-                          const Color(0xFFB8860B).withValues(alpha:0.15),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: SacredColors.surfaceSecondary,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFFD4AF37).withValues(alpha:0.3),
+                        color: SacredColors.borderGold.withValues(alpha: 0.1),
                         width: 1,
                       ),
                     ),
                     child: Icon(
                       widget.icon,
-                      color: const Color(0xFF8B4513),
+                      color: SacredColors.primaryAccent,
                       size: 24,
                     ),
                   ),
@@ -159,10 +141,11 @@ class _BaniListTileState extends State<BaniListTile>
                         Text(
                           widget.title,
                           style: const TextStyle(
-                            color: Color(0xFF8B4513),
+                            color: SacredColors.textPrimary,
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             height: 1.3,
+                            letterSpacing: 0.3,
                           ),
                         ),
                         if (widget.subtitle != null) ...[
@@ -170,26 +153,26 @@ class _BaniListTileState extends State<BaniListTile>
                           Text(
                             widget.subtitle!,
                             style: TextStyle(
-                              color: const Color(0xFF8B4513).withValues(alpha:0.7),
+                              color: SacredColors.textSecondary,
                               fontSize: 14,
                               height: 1.2,
                             ),
                           ),
                         ],
                         if (widget.showEstimatedTime && widget.estimatedTime != null) ...[
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Icon(
                                 Icons.access_time_rounded,
                                 size: 14,
-                                color: const Color(0xFF8B4513).withValues(alpha:0.6),
+                                color: SacredColors.primaryAccent.withValues(alpha: 0.6),
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 6),
                               Text(
                                 _formatDuration(widget.estimatedTime!),
                                 style: TextStyle(
-                                  color: const Color(0xFF8B4513).withValues(alpha:0.6),
+                                  color: SacredColors.textSecondary,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -209,16 +192,16 @@ class _BaniListTileState extends State<BaniListTile>
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFD4AF37).withValues(alpha:0.2),
+                            color: SacredColors.primaryAccent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: const Color(0xFFD4AF37).withValues(alpha:0.4),
+                              color: SacredColors.primaryAccent.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
                           child: const Icon(
                             Icons.check_rounded,
-                            color: Color(0xFFB8860B),
+                            color: SacredColors.primaryAccent,
                             size: 16,
                           ),
                         ),
@@ -228,7 +211,7 @@ class _BaniListTileState extends State<BaniListTile>
                       // Arrow indicator
                       Icon(
                         Icons.arrow_forward_ios_rounded,
-                        color: const Color(0xFF8B4513).withValues(alpha:0.5),
+                        color: SacredColors.primaryAccent.withValues(alpha: 0.3),
                         size: 16,
                       ),
                     ],
@@ -277,27 +260,20 @@ class _CompactBaniListTileState extends State<CompactBaniListTile> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         transform: Matrix4.identity()..scale(_isPressed ? 0.98 : 1.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFFFFFDF7).withValues(alpha:0.8),
-              const Color(0xFFF5E6B8).withValues(alpha:0.6),
-            ],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
+          color: SacredColors.surfacePrimary,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFFE6D3A3).withValues(alpha:0.4),
+            color: SacredColors.borderGold.withValues(alpha: 0.1),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFD4C19C).withValues(alpha:0.15),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -305,30 +281,30 @@ class _CompactBaniListTileState extends State<CompactBaniListTile> {
           children: [
             Icon(
               widget.icon,
-              color: const Color(0xFF8B4513),
+              color: SacredColors.primaryAccent,
               size: 20,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Text(
                 widget.title,
                 style: const TextStyle(
-                  color: Color(0xFF8B4513),
+                  color: SacredColors.textPrimary,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
             if (widget.isCompleted)
-              Icon(
+              const Icon(
                 Icons.check_circle_rounded,
-                color: const Color(0xFFD4AF37),
+                color: SacredColors.primaryAccent,
                 size: 18,
               )
             else
               Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: const Color(0xFF8B4513).withValues(alpha:0.4),
+                color: SacredColors.primaryAccent.withValues(alpha: 0.3),
                 size: 14,
               ),
           ],
@@ -359,32 +335,25 @@ class SpecialBaniTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = accentColor ?? const Color(0xFFD4AF37);
+    final accent = accentColor ?? SacredColors.primaryAccent;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.all(24),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.white.withValues(alpha:0.95),
-              accent.withValues(alpha:0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(18),
+          color: SacredColors.surfacePrimary,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: accent.withValues(alpha:0.3),
-            width: 2,
+            color: accent.withValues(alpha: 0.2),
+            width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: accent.withValues(alpha:0.15),
+              color: Colors.black.withValues(alpha: 0.4),
               blurRadius: 12,
-              offset: const Offset(0, 4),
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -396,16 +365,16 @@ class SpecialBaniTile extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: accent.withValues(alpha:0.15),
-                    borderRadius: BorderRadius.circular(14),
+                    color: SacredColors.surfaceSecondary,
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: accent.withValues(alpha:0.3),
+                      color: accent.withValues(alpha: 0.1),
                       width: 1,
                     ),
                   ),
                   child: Icon(
                     icon,
-                    color: const Color(0xFF8B4513),
+                    color: accent,
                     size: 28,
                   ),
                 ),
@@ -414,7 +383,7 @@ class SpecialBaniTile extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: accent.withValues(alpha:0.2),
+                      color: accent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Icon(
@@ -425,26 +394,27 @@ class SpecialBaniTile extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             if (gurmukhiTitle != null) ...[
               Text(
                 gurmukhiTitle!,
                 style: const TextStyle(
-                  color: Color(0xFF8B4513),
-                  fontSize: 20,
+                  color: SacredColors.primaryAccent,
+                  fontSize: 22,
                   fontWeight: FontWeight.w600,
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
             ],
             Text(
               title,
               style: TextStyle(
-                color: const Color(0xFF8B4513).withValues(alpha:0.8),
+                color: SacredColors.textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
                 height: 1.3,
+                letterSpacing: 0.3,
               ),
             ),
           ],

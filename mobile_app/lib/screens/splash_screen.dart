@@ -98,15 +98,15 @@ class _SplashScreenState extends State<SplashScreen>
     if (appInfo == null) return;
 
     final packageInfo = await PackageInfo.fromPlatform();
-    final localVersion = packageInfo.version;
+    final localBuild = int.tryParse(packageInfo.buildNumber) ?? 0;
 
-    if (appInfo.forceUpdate && appInfo.currentVersion != localVersion) {
+    if (appInfo.shouldForceUpdate(localBuild)) {
       showDialog(
         context: Get.context!,
         barrierDismissible: false,
         builder: (_) => AlertDialog(
           title: const Text("Update Required"),
-          content: Text(appInfo.updateNotes),
+          content: Text(appInfo.updateMessage),
           actions: [
             TextButton(
               onPressed: () {
@@ -121,7 +121,7 @@ class _SplashScreenState extends State<SplashScreen>
     }
 
     // New Firestore-driven sync logic
-    if (appInfo.minorUpdateAvailable) {
+    if (appInfo.shouldRecommendUpdate(localBuild)) {
       try {
         final firebaseContentService = Get.find<FirebaseContentService>();
         final transcriptSyncService = Get.find<TranscriptSyncService>();

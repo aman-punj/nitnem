@@ -51,12 +51,10 @@ class SharedPrefsService {
     } catch (_) {}
 
     return AppInfoModel(
-      updateFor: [],
-      updateNotes: '',
-      currentVersion: '1.0.0',
-      minorUpdateAvailable: false,
+      latestBuild: 0,
+      minimumSupportedBuild: 0,
       forceUpdate: false,
-      lastMinorUpdateTime: DateTime.now(),
+      updateMessage: '',
     );
   }
 

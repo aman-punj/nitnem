@@ -1,22 +1,24 @@
 # Transcript Format
 
-## Canonical Segment
+## Unified Segment Shape
 ```json
 {
-  "start": 9.16,
-  "end": 10.45,
-  "pa": "??? ??? ?????? ??? ?",
+  "text": "???? ???? ? ????",
+  "startTime": null,
+  "endTime": null,
+  "pa": "???? ???? ? ????",
   "hi": "",
   "en": "",
   "flagged": false
 }
 ```
 
-## Rules
-- `end` equals next segment `start`.
-- Final segment may use `start + fallbackSeconds` if unknown.
-- `pa` is required; `hi` and `en` are optional.
+## Timed vs Untimed
+- Timed segment: `startTime` and `endTime` are numbers.
+- Untimed segment: `startTime` / `endTime` are `null`.
+- Single schema supports synced mode and plain/focus reading mode.
 
 ## Compatibility
-- Legacy `text` field is still accepted and mapped to `pa`.
-- Both `{ "segments": [...] }` and bare `[...]` JSON arrays are parsed.
+- Legacy keys (`start`, `end`, `text`) are still parsed.
+- Both `{ "segments": [...] }` and bare `[...]` arrays remain supported.
+- `pa` stays the canonical primary transcript field.
