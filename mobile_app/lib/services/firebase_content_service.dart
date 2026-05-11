@@ -12,12 +12,38 @@ class FirebaseContentService {
       final snapshot = await _firestore
           .collection('content')
           .where('enabled', isEqualTo: true)
-          .orderBy('titles.en')
           .get();
 
-      return snapshot.docs
+      final items = snapshot.docs
           .map((doc) => ContentItem.fromMap(doc.data()))
           .toList();
+
+      // Implement Priority Sorting:
+      // 1. pinned content (pinToTop == true)
+      // 2. manual displayOrder ascending
+      // 3. prayers before youtube/live
+      // 4. alphabetical fallback (titles.en)
+      items.sort((a, b) {
+        // 1. pinToTop
+        if (a.pinToTop != b.pinToTop) {
+          return a.pinToTop ? -1 : 1;
+        }
+
+        // 2. displayOrder
+        if (a.displayOrder != b.displayOrder) {
+          return a.displayOrder.compareTo(b.displayOrder);
+        }
+
+        // 3. Type priority (Prayer > YouTube)
+        if (a.type != b.type) {
+          return a.type == ContentType.prayer ? -1 : 1;
+        }
+
+        // 4. Alphabetical fallback
+        return a.titles.en.compareTo(b.titles.en);
+      });
+
+      return items;
     } catch (e) {
       print('Error fetching content catalog: $e');
       return [];

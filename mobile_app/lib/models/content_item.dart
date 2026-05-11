@@ -114,6 +114,10 @@ class ContentItem {
   final Map<String, PrayerTrack> tracks;
   final String? youtubeUrl;
   final String? thumbnail;
+  // Phase 2 Fields
+  final int displayOrder;
+  final bool pinToTop;
+  final String contentPriorityType; // e.g., 'high', 'normal', 'low'
 
   const ContentItem({
     required this.id,
@@ -124,6 +128,9 @@ class ContentItem {
     this.tracks = const {},
     this.youtubeUrl,
     this.thumbnail,
+    this.displayOrder = 100,
+    this.pinToTop = false,
+    this.contentPriorityType = 'normal',
   });
 
   factory ContentItem.fromMap(Map<String, dynamic> map) {
@@ -146,6 +153,9 @@ class ContentItem {
       tracks: trackMap,
       youtubeUrl: map['youtube_url'],
       thumbnail: map['thumbnail'],
+      displayOrder: map['displayOrder'] ?? 100,
+      pinToTop: map['pinToTop'] ?? false,
+      contentPriorityType: map['contentPriorityType'] ?? 'normal',
     );
   }
 
@@ -159,6 +169,9 @@ class ContentItem {
       'tracks': tracks.map((key, value) => MapEntry(key, value.toMap())),
       'youtube_url': youtubeUrl,
       'thumbnail': thumbnail,
+      'displayOrder': displayOrder,
+      'pinToTop': pinToTop,
+      'contentPriorityType': contentPriorityType,
     };
   }
 }

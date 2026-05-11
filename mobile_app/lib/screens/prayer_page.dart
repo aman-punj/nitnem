@@ -46,6 +46,13 @@ class PrayerPage extends StatelessWidget {
         title: title,
         actions: [
           Obx(() => IconButton(
+                icon: Icon(controller.isFocusReadingMode.value
+                    ? Icons.center_focus_strong
+                    : Icons.center_focus_weak),
+                onPressed: controller.toggleFocusReadingMode,
+                tooltip: 'Focus Reading Mode',
+              )),
+          Obx(() => IconButton(
                 icon: Icon(controller.isTextOnlyMode.value
                     ? Icons.headphones
                     : Icons.text_fields),
@@ -86,40 +93,62 @@ class PrayerPage extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   itemBuilder: (context, index) {
                     final segment = controller.segments[index];
-                    final isHighlighted =
+                    
+                    final isPlaybackHighlighted =
                         index == controller.currentSegmentIndex.value;
+                    final isFocusHighlighted = 
+                        controller.isFocusReadingMode.value && index == controller.centerFocusIndex.value;
+                    
+                    final isHighlighted = isPlaybackHighlighted || isFocusHighlighted;
+                    
+                    // Fading logic for Focus Reading Mode
+                    double opacity = 1.0;
+                    if (controller.isFocusReadingMode.value && !isFocusHighlighted) {
+                      opacity = 0.4; // Faded
+                    }
+
                     return GestureDetector(
-                      onTap: () => controller.onTapSegment(segment),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          gradient: isHighlighted
-                              ? const LinearGradient(
-                                  colors: [
-                                    Color(0xFFD4AF37),
-                                    Color(0xFFB8860B)
-                                  ],
-                                )
-                              : null,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          segment.forLanguage(
-                            controller.languageCode.value,
-                            enableHindi: controller.enableHindi.value,
-                            enableEnglish: controller.enableEnglish.value,
+                      onTap: () => controller.onTapSegment(index),
+                      onDoubleTap: () => controller.onDoubleTapSegment(segment, index),
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 300),
+                        opacity: opacity,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            gradient: isHighlighted
+                                ? LinearGradient(
+                                    colors: isFocusHighlighted && !isPlaybackHighlighted
+                                        ? [
+                                            const Color(0xFFD4AF37).withValues(alpha: 0.7),
+                                            const Color(0xFFB8860B).withValues(alpha: 0.7)
+                                          ]
+                                        : [
+                                            const Color(0xFFD4AF37),
+                                            const Color(0xFFB8860B)
+                                          ],
+                                  )
+                                : null,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          style: TextStyle(
-                            color: isHighlighted
-                                ? Colors.white
-                                : const Color(0xFF8B4513),
-                            fontWeight: isHighlighted
-                                ? FontWeight.bold
-                                : FontWeight.w500,
-                            fontSize: 18,
-                            height: 1.6,
+                          child: Text(
+                            segment.forLanguage(
+                              controller.languageCode.value,
+                              enableHindi: controller.enableHindi.value,
+                              enableEnglish: controller.enableEnglish.value,
+                            ),
+                            style: TextStyle(
+                              color: isHighlighted
+                                  ? Colors.white
+                                  : const Color(0xFF8B4513),
+                              fontWeight: isHighlighted
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              fontSize: isFocusHighlighted ? 20 : 18,
+                              height: 1.6,
+                            ),
                           ),
                         ),
                       ),

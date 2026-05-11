@@ -16,13 +16,34 @@ const CONTENT_COLLECTION = 'content'
 
 export async function fetchContentList(): Promise<ContentItem[]> {
   try {
-    const q = query(collection(db, CONTENT_COLLECTION), orderBy('titles.en'))
-    const snap = await getDocs(q)
-    return snap.docs.map((item) => item.data() as ContentItem)
-  } catch (_) {
     const snap = await getDocs(collection(db, CONTENT_COLLECTION))
-    const list = snap.docs.map((item) => item.data() as ContentItem)
-    return list.sort((a, b) => (a.titles.en || a.id).localeCompare(b.titles.en || b.id))
+    const items = snap.docs.map((item) => item.data() as ContentItem)
+    
+    // Multi-criteria sort (matching mobile app logic)
+    items.sort((a, b) => {
+      // 1. pinToTop
+      if (a.pinToTop !== b.pinToTop) {
+        return a.pinToTop ? -1 : 1
+      }
+
+      // 2. displayOrder
+      if (a.displayOrder !== b.displayOrder) {
+        return a.displayOrder - b.displayOrder
+      }
+
+      // 3. Type priority (Prayer > YouTube)
+      if (a.type !== b.type) {
+        return a.type === 'prayer' ? -1 : 1
+      }
+
+      // 4. Alphabetical fallback
+      return (a.titles.en || '').localeCompare(b.titles.en || '')
+    })
+    
+    return items
+  } catch (err) {
+    console.error('Error fetching content list:', err)
+    return []
   }
 }
 

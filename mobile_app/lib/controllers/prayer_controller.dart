@@ -11,6 +11,8 @@ import '../models/transcript_segment.dart';
 import '../services/transcript_parser.dart';
 import '../services/transcript_sync_engine.dart';
 
+enum ReadingMode { synced, audioOnlyText, textOnly }
+
 class PrayerController extends GetxController {
   PrayerController({required this.transcriptSyncEngine});
 
@@ -21,9 +23,12 @@ class PrayerController extends GetxController {
 
   final RxList<TranscriptSegment> segments = <TranscriptSegment>[].obs;
   final RxInt currentSegmentIndex = (-1).obs;
+  final RxInt centerFocusIndex = (-1).obs;
+  final RxInt selectedIndex = (-1).obs;
   final RxBool isPlaying = false.obs;
   final RxBool isLoading = true.obs;
   final RxBool isTextOnlyMode = false.obs;
+  final RxBool isFocusReadingMode = false.obs;
   final RxBool isUserSeeking = false.obs;
   final RxBool enableHindi = false.obs;
   final RxBool enableEnglish = false.obs;
@@ -31,6 +36,7 @@ class PrayerController extends GetxController {
   final Rx<Duration> currentPosition = Duration.zero.obs;
   final Rx<Duration> totalDuration = Duration.zero.obs;
   final RxDouble playbackSpeed = 1.0.obs;
+  final Rx<ReadingMode> readingMode = ReadingMode.synced.obs;
 
   Timer? _seekDebounce;
 
@@ -41,7 +47,7 @@ class PrayerController extends GetxController {
     super.onInit();
     _player.positionStream.listen((position) {
       currentPosition.value = position;
-      if (!isUserSeeking.value) {
+      if (!isUserSeeking.value && readingMode.value == ReadingMode.synced) {
         _updateCurrentSegment(position);
       }
     });
@@ -51,6 +57,42 @@ class PrayerController extends GetxController {
     _player.playingStream.listen((playing) {
       isPlaying.value = playing;
     });
+
+    itemPositionsListener.itemPositions.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (isFocusReadingMode.value) {
+      _updateCenterFocusIndex();
+    }
+  }
+
+  void _updateCenterFocusIndex() {
+    final positions = itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
+
+    double minDistance = 1.0;
+    int closestIndex = -1;
+
+    for (final position in positions) {
+      final center = (position.itemLeadingEdge + position.itemTrailingEdge) / 2;
+      final distance = (center - 0.5).abs();
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = position.index;
+      }
+    }
+
+    if (closestIndex != -1 && closestIndex != centerFocusIndex.value) {
+      centerFocusIndex.value = closestIndex;
+    }
+  }
+
+  void toggleFocusReadingMode() {
+    isFocusReadingMode.value = !isFocusReadingMode.value;
+    if (isFocusReadingMode.value) {
+      _updateCenterFocusIndex();
+    }
   }
 
   Future<void> loadContent({
@@ -61,22 +103,49 @@ class PrayerController extends GetxController {
   }) async {
     isLoading.value = true;
     try {
-      final transcriptContent = transcriptIsLocalFile
-          ? await File(transcriptPath).readAsString()
-          : await rootBundle.loadString(transcriptPath);
-      segments.value = TranscriptParser.parseJsonString(transcriptContent);
-
-      if (audioIsLocalFile) {
-        await _player.setFilePath(audioPath);
-      } else {
-        await _player.setAsset(audioPath);
+      // 1. Load Transcript
+      if (transcriptPath.isNotEmpty) {
+        final transcriptContent = transcriptIsLocalFile
+            ? await File(transcriptPath).readAsString()
+            : await rootBundle.loadString(transcriptPath);
+        segments.value = TranscriptParser.parseJsonString(transcriptContent);
       }
+
+      // 2. Load Audio
+      bool hasAudio = false;
+      if (audioPath.isNotEmpty) {
+        try {
+          if (audioIsLocalFile) {
+            await _player.setFilePath(audioPath);
+          } else {
+            await _player.setAsset(audioPath);
+          }
+          hasAudio = true;
+        } catch (e) {
+          debugPrint('Error loading audio: $e');
+        }
+      }
+
+      // 3. Determine Mode
+      final hasTimings = segments.any((s) => s.start > 0 || s.end > 0);
+      
+      if (!hasAudio) {
+        readingMode.value = ReadingMode.textOnly;
+        isTextOnlyMode.value = true;
+      } else if (!hasTimings) {
+        readingMode.value = ReadingMode.audioOnlyText;
+      } else {
+        readingMode.value = ReadingMode.synced;
+      }
+
     } finally {
       isLoading.value = false;
     }
   }
 
   void _updateCurrentSegment(Duration position) {
+    if (isTextOnlyMode.value) return;
+
     final index = transcriptSyncEngine.findSegmentIndexByTime(
       segments,
       position.inMilliseconds / 1000.0,
@@ -89,15 +158,40 @@ class PrayerController extends GetxController {
 
   void _scrollToIndex(int index) {
     if (!itemScrollController.isAttached) return;
+
+    // Check if the item is already comfortably visible
+    final positions = itemPositionsListener.itemPositions.value;
+    if (positions.isNotEmpty) {
+      final targetPos = positions.where((p) => p.index == index).toList();
+      if (targetPos.isNotEmpty) {
+        final pos = targetPos.first;
+        
+        // Thresholds for "comfortable" visibility
+        const double topThreshold = 0.1;
+        const double bottomThreshold = 0.9;
+
+        // Special case for the first few items: if index is small and it's already at the top, don't scroll
+        if (index < 5 && pos.itemLeadingEdge >= 0 && pos.itemLeadingEdge < topThreshold) {
+          return;
+        }
+
+        // If item is already well within the viewport, don't scroll
+        if (pos.itemLeadingEdge >= topThreshold && pos.itemTrailingEdge <= bottomThreshold) {
+          return;
+        }
+      }
+    }
+
     itemScrollController.scrollTo(
       index: index,
       duration: const Duration(milliseconds: 350),
-      curve: Curves.easeOut,
+      curve: Curves.easeInOutCubic,
       alignment: 0.25,
     );
   }
 
   void seekToWithDebounce(Duration position) {
+    if (isTextOnlyMode.value) return;
     isUserSeeking.value = true;
     _player.seek(position);
     _seekDebounce?.cancel();
@@ -107,7 +201,14 @@ class PrayerController extends GetxController {
     });
   }
 
-  void onTapSegment(TranscriptSegment segment) {
+  void onTapSegment(int index) {
+    currentSegmentIndex.value = index;
+    // For single tap, we only highlight visually as per requirements.
+    // If audio is playing, it will eventually sync back to current position.
+  }
+
+  void onDoubleTapSegment(TranscriptSegment segment, int index) {
+    currentSegmentIndex.value = index;
     seekToWithDebounce(Duration(milliseconds: (segment.start * 1000).round()));
   }
 

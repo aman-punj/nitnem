@@ -38,6 +38,12 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
   const [titles, setTitles] = useState<LocalizedTitles>(item?.titles ?? { en: '', pa: '', hi: '' })
   const [enabled, setEnabled] = useState(item?.enabled ?? true)
 
+  // Phase 2 Fields
+  const [pinToTop, setPinToTop] = useState(item?.pinToTop ?? false)
+  const [contentPriorityType, setContentPriorityType] = useState<'high' | 'normal' | 'low'>(
+    item?.contentPriorityType ?? 'normal'
+  )
+
   const [youtubeUrl, setYoutubeUrl] = useState(item?.type === 'youtube_live' ? item.youtube_url : '')
   const [youtubeThumbnail, setYoutubeThumbnail] = useState(item?.type === 'youtube_live' ? item.thumbnail ?? '' : '')
 
@@ -74,6 +80,9 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
           youtube_url: youtubeUrl,
           thumbnail: youtubeThumbnail,
           enabled,
+          displayOrder: item?.displayOrder ?? 100, // Keep existing order or default
+          pinToTop,
+          contentPriorityType,
         }
         await onSave(payload)
       } else {
@@ -84,6 +93,9 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
           enabled,
           active_track: activeTrackId,
           tracks,
+          displayOrder: item?.displayOrder ?? 100,
+          pinToTop,
+          contentPriorityType,
         }
         await onSave(payload)
       }
@@ -122,10 +134,9 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
     setSaveError('')
 
     const existing = tracks[trackEditor.id]
-    const isFirst = Object.keys(tracks).length === 0 && trackEditor.mode === 'add'
-
+    
     if (!trackEditor.title) return setSaveError('Track title required')
-    if (isFirst && !trackEditor.audioFile) return setSaveError('First track needs audio')
+    // Removed mandatory audio requirement for Task 8
 
     setIsSaving(true)
     try {
@@ -237,6 +248,31 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
             <div className="label-group">
               <label>Hindi Title</label>
               <input value={titles.hi} onChange={(e) => setTitles({ ...titles, hi: e.target.value })} />
+            </div>
+          </div>
+
+          <div className="grid" style={{ marginTop: '16px', borderTop: '1px solid #eee', paddingTop: '16px' }}>
+            <div className="label-group">
+              <label>Priority Type</label>
+              <select 
+                value={contentPriorityType} 
+                onChange={(e) => setContentPriorityType(e.target.value as any)}
+              >
+                <option value="low">Low</option>
+                <option value="normal">Normal</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            <div className="row" style={{ gap: '20px', alignItems: 'center' }}>
+              <div className="label-group" style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <input 
+                  type="checkbox" 
+                  checked={pinToTop} 
+                  onChange={(e) => setPinToTop(e.target.checked)}
+                  id="pin-check"
+                />
+                <label htmlFor="pin-check" style={{ marginBottom: 0, marginLeft: '8px' }}>Pin to Top</label>
+              </div>
             </div>
           </div>
         </div>

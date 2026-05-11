@@ -96,10 +96,4 @@ class HomeController extends GetxController {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
   }
-
-  String _validateLanguageCode(String code) {
-    const supportedLanguages = ['en', 'hi', 'pn', 'pa'];
-    if (code == 'pn' || code == 'pa') return 'pn';
-    return supportedLanguages.contains(code) ? code : 'en';
-  }
 }

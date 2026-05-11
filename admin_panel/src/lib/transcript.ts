@@ -9,7 +9,7 @@ export type Segment = {
 
 export function parseLrc(lrc: string): Segment[] {
   const lines = lrc.split(/\r?\n/).filter(Boolean)
-  const parsed = lines
+  const timestamped = lines
     .map((line) => {
       const m = line.match(/^\[(\d{2}):(\d{2}\.\d{1,3})\](.*)$/)
       if (!m) return null
@@ -17,10 +17,21 @@ export function parseLrc(lrc: string): Segment[] {
     })
     .filter(Boolean) as { start: number; text: string }[]
 
-  return parsed.map((entry, idx) => ({
-    start: entry.start,
-    end: parsed[idx + 1]?.start ?? entry.start + 6,
-    pa: entry.text,
+  if (timestamped.length > 0) {
+    return timestamped.map((entry, idx) => ({
+      start: entry.start,
+      end: timestamped[idx + 1]?.start ?? entry.start + 6,
+      pa: entry.text,
+      hi: '',
+      en: '',
+    }))
+  }
+
+  // Fallback: treat each line as a plain text segment (Mode B/C support)
+  return lines.map((line) => ({
+    start: 0,
+    end: 0,
+    pa: line.trim(),
     hi: '',
     en: '',
   }))
