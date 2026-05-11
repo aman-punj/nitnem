@@ -46,7 +46,9 @@ class PrayerPage extends StatelessWidget {
         title: title,
         actions: [
           Obx(() => IconButton(
-                icon: Icon(controller.isTextOnlyMode.value ? Icons.headphones : Icons.text_fields),
+                icon: Icon(controller.isTextOnlyMode.value
+                    ? Icons.headphones
+                    : Icons.text_fields),
                 onPressed: controller.toggleTextOnlyMode,
               )),
           PopupMenuButton<double>(
@@ -64,7 +66,8 @@ class PrayerPage extends StatelessWidget {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)));
+          return const Center(
+              child: CircularProgressIndicator(color: Color(0xFFD4AF37)));
         }
 
         return Column(
@@ -83,16 +86,21 @@ class PrayerPage extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   itemBuilder: (context, index) {
                     final segment = controller.segments[index];
-                    final isHighlighted = index == controller.currentSegmentIndex.value;
+                    final isHighlighted =
+                        index == controller.currentSegmentIndex.value;
                     return GestureDetector(
                       onTap: () => controller.onTapSegment(segment),
                       child: Container(
                         margin: const EdgeInsets.symmetric(vertical: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
                           gradient: isHighlighted
                               ? const LinearGradient(
-                                  colors: [Color(0xFFD4AF37), Color(0xFFB8860B)],
+                                  colors: [
+                                    Color(0xFFD4AF37),
+                                    Color(0xFFB8860B)
+                                  ],
                                 )
                               : null,
                           borderRadius: BorderRadius.circular(12),
@@ -104,8 +112,12 @@ class PrayerPage extends StatelessWidget {
                             enableEnglish: controller.enableEnglish.value,
                           ),
                           style: TextStyle(
-                            color: isHighlighted ? Colors.white : const Color(0xFF8B4513),
-                            fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w500,
+                            color: isHighlighted
+                                ? Colors.white
+                                : const Color(0xFF8B4513),
+                            fontWeight: isHighlighted
+                                ? FontWeight.bold
+                                : FontWeight.w500,
                             fontSize: 18,
                             height: 1.6,
                           ),
@@ -125,7 +137,8 @@ class PrayerPage extends StatelessWidget {
                   value: controller.currentPosition.value.inMilliseconds
                       .clamp(0, controller.totalDuration.value.inMilliseconds)
                       .toDouble(),
-                  onChanged: (value) => controller.seekToWithDebounce(Duration(milliseconds: value.toInt())),
+                  onChanged: (value) => controller.seekToWithDebounce(
+                      Duration(milliseconds: value.toInt())),
                 ),
               ),
               Padding(
@@ -133,23 +146,32 @@ class PrayerPage extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(controller.formatDuration(controller.currentPosition.value)),
+                    Text(controller
+                        .formatDuration(controller.currentPosition.value)),
                     Obx(() => Text('${controller.playbackSpeed.value}x')),
-                    Text(controller.formatDuration(controller.totalDuration.value)),
+                    Text(controller
+                        .formatDuration(controller.totalDuration.value)),
                   ],
                 ),
               ),
-              Row(
+              SafeArea(
+                  child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  IconButton(icon: const Icon(Icons.replay_10), onPressed: controller.skipBackward),
                   IconButton(
-                    icon: Icon(controller.isPlaying.value ? Icons.pause : Icons.play_arrow),
+                      icon: const Icon(Icons.replay_10),
+                      onPressed: controller.skipBackward),
+                  IconButton(
+                    icon: Icon(controller.isPlaying.value
+                        ? Icons.pause
+                        : Icons.play_arrow),
                     onPressed: controller.togglePlayback,
                   ),
-                  IconButton(icon: const Icon(Icons.forward_10), onPressed: controller.skipForward),
+                  IconButton(
+                      icon: const Icon(Icons.forward_10),
+                      onPressed: controller.skipForward),
                 ],
-              ),
+              )),
               const SizedBox(height: 16),
             ],
           ],

@@ -24,7 +24,7 @@ class SharedPrefsService {
   }
 
   static String getLanguage() {
-    return _prefs?.getString(_keyLanguage) ?? "hi";
+    return _prefs?.getString(_keyLanguage) ?? "pa";
   }
 
   static Future<void> setPatchNum(String applied) async {

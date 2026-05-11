@@ -76,17 +76,16 @@ class HomeController extends GetxController {
     
     final title = item.titles.getForLanguage(currentLang.value);
     
-    // Fallback to assets if not synced yet
-    final audioPath = localMetadata?.audioLocalPath ?? 'assets/audios/${item.id}.mp3';
-    final transcriptPath = localMetadata?.transcriptLocalPaths[currentLang.value] ?? 
-        'assets/texts/${_validateLanguageCode(currentLang.value)}/${item.id}.json';
+    // Rely on synced local paths. Fallback removed as per task to remove old path assumptions.
+    final audioPath = localMetadata?.audioLocalPath;
+    final transcriptPath = localMetadata?.transcriptLocalPaths[currentLang.value];
 
     Get.to(() => PrayerPage(
           title: title,
-          audioPath: audioPath,
-          transcriptPath: transcriptPath,
-          audioIsLocalFile: localMetadata?.audioLocalPath != null,
-          transcriptIsLocalFile: localMetadata?.transcriptLocalPaths[currentLang.value] != null,
+          audioPath: audioPath ?? '',
+          transcriptPath: transcriptPath ?? '',
+          audioIsLocalFile: audioPath != null,
+          transcriptIsLocalFile: transcriptPath != null,
         ));
   }
 

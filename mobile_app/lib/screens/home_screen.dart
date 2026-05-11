@@ -56,7 +56,7 @@ class HomeScreen extends StatelessWidget {
           content.titles.getForLanguage(controller.currentLang.value),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(content.type.name.toUpperCase()),
+        subtitle: Text(content.type.toString().toUpperCase()),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => controller.onContentTap(content),
       ),

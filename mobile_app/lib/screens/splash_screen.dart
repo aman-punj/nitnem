@@ -1,9 +1,10 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
-import 'package:nitnem/services/prayer_update_service.dart';
+import 'package:nitnem/services/firebase_content_service.dart';
+import 'package:nitnem/services/transcript_sync_service.dart';
+import 'package:nitnem/models/content_item.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -97,7 +98,6 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (appInfo == null) return;
 
-
     final packageInfo = await PackageInfo.fromPlatform();
     final localVersion = packageInfo.version;
 
@@ -111,6 +111,7 @@ class _SplashScreenState extends State<SplashScreen>
           actions: [
             TextButton(
               onPressed: () {
+                // TODO: Implement app update logic here (e.g., open app store link)
               },
               child: const Text("Update Now"),
             )
@@ -120,17 +121,24 @@ class _SplashScreenState extends State<SplashScreen>
       return;
     }
 
+    // New Firestore-driven sync logic
     if (appInfo.minorUpdateAvailable) {
-      final lastAppliedPatchVersion = SharedPrefsService.getPatchNum();
-      if (lastAppliedPatchVersion != "1.0.02") {
+      try {
+        final firebaseContentService = Get.find<FirebaseContentService>();
+        final transcriptSyncService = Get.find<TranscriptSyncService>();
 
-        //TODO: Just for testing
-        // await applyMinorPatch(appInfo.currentVersion);
-        // await SharedPrefsService.setPatchNum(appInfo.currentVersion);
+        // Fetch all content items from Firestore
+        final List<ContentItem> remoteItems = await firebaseContentService.fetchContentCatalog();
 
-        await PrayerUpdateService().fetchUpdatedPrayers(appInfo.updateFor);
+        // Sync each item. The syncContent method will handle checking if updates are needed.
+        for (final item in remoteItems) {
+          await transcriptSyncService.syncContent(item);
+        }
+
+      } catch (e) {
+        print('Error during Firestore sync in SplashScreen: $e');
+        // Optionally, show a user-facing error message or log this error.
       }
     }
   }
-
 }
