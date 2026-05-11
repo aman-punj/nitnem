@@ -5,7 +5,6 @@ import 'package:nitnem/controllers/app_info_controller.dart';
 import 'package:nitnem/services/firebase_content_service.dart';
 import 'package:nitnem/services/transcript_sync_service.dart';
 import 'package:nitnem/models/content_item.dart';
-import 'package:nitnem/services/shared_prefs_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'home_screen.dart';
@@ -136,7 +135,6 @@ class _SplashScreenState extends State<SplashScreen>
         }
 
       } catch (e) {
-        print('Error during Firestore sync in SplashScreen: $e');
         // Optionally, show a user-facing error message or log this error.
       }
     }
