@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart'; // For debugPrint
 import 'package:nitnem/models/app_info_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -45,16 +46,48 @@ class SharedPrefsService {
     try {
       final jsonString = _prefs?.getString(_appInfo);
       if (jsonString != null && jsonString.isNotEmpty) {
-        final map = json.decode(jsonString) as Map<String, dynamic>;
-        return AppInfoModel.fromMap(map);
+        final decodedData = json.decode(jsonString);
+        if (decodedData is Map) {
+          return AppInfoModel.fromMap(Map<String, dynamic>.from(decodedData));
+        } else {
+          debugPrint('Error: Decoded data from SharedPreferences is not a Map<String, dynamic>. Type: ${decodedData.runtimeType}');
+          // Optionally clear corrupted data if it's a persistent issue
+          // await _prefs?.remove(_appInfo);
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error decoding AppInfoModel from SharedPreferences: $e');
+      // Optionally, clear corrupted data if it's a persistent issue
+      // await _prefs?.remove(_appInfo);
+    }
 
+    // Return a default AppInfoModel if decoding fails, string is empty, or data is not a map
     return AppInfoModel(
-      latestBuild: 0,
-      minimumSupportedBuild: 0,
-      forceUpdate: false,
-      updateMessage: '',
+      appName: '',
+      environment: 'Production',
+      versionControl: const VersionControlConfig(
+        latestBuild: 0,
+        minimumSupportedBuild: 0,
+        latestVersionName: '',
+        forceUpdate: false,
+        updateMessage: '',
+        androidStoreUrl: '',
+        iosStoreUrl: '',
+      ),
+      maintenance: const MaintenanceConfig(
+        isUnderMaintenance: false,
+        maintenanceMessage: '',
+      ),
+      featureFlags: const FeatureFlagsConfig(
+        languages: LanguageFlags(
+          punjabi: true,
+          english: true,
+          hindi: true,
+        ),
+        focusReadingMode: false,
+        newPlayerUi: false,
+        experimentalHome: false,
+      ),
     );
   }
 
