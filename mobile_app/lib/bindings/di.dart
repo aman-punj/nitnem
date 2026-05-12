@@ -7,6 +7,7 @@ import 'package:nitnem/services/local_content_service.dart';
 import 'package:nitnem/services/prayer_asset_service.dart';
 import 'package:nitnem/services/prayer_storage_service.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
+import 'package:nitnem/services/preference_service.dart';
 import 'package:nitnem/services/transcript_sync_service.dart';
 
 import '../controllers/home_controller.dart';
@@ -17,6 +18,7 @@ import '../services/transcript_path_service.dart';
 class DependencyInjection {
   static void init() {
     // Data layer
+    Get.put(PreferenceService());
     Get.put(PrayerStorageService());
     Get.put(PrayerAssetService());
     Get.put(FirebaseContentService());

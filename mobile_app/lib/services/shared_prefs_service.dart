@@ -65,4 +65,12 @@ class SharedPrefsService {
   static Future<void> clearWithKey(String clearKey) async {
       await _prefs?.remove(clearKey);
   }
+
+  static Future<void> setBool(String key, bool value) async {
+    await _prefs?.setBool(key, value);
+  }
+
+  static bool getBool(String key, {bool defaultValue = false}) {
+    return _prefs?.getBool(key) ?? defaultValue;
+  }
 }

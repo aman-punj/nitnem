@@ -1,9 +1,12 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
+import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/core/design_system/widgets/focus_transcript_line.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_loader.dart';
+import 'package:nitnem/core/design_system/widgets/sacred_segmented_control.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../controllers/prayer_controller.dart';
@@ -60,30 +63,11 @@ class PrayerPage extends StatelessWidget {
     return GradientScaffold(
       showKhandaSymbol: false,
       appBar: SacredDsAppBar(
-        title: title,
+        title: '', // Title moved to header area
         actions: [
-          Obx(() => IconButton(
-                icon: Icon(
-                  controller.isFocusReadingMode.value
-                      ? Icons.center_focus_strong_rounded
-                      : Icons.center_focus_weak_rounded,
-                  color: SacredColors.primaryAccent,
-                ),
-                onPressed: controller.toggleFocusReadingMode,
-                tooltip: 'Focus Reading Mode',
-              )),
-          Obx(() => IconButton(
-                icon: Icon(
-                  controller.isTextOnlyMode.value
-                      ? Icons.headphones_rounded
-                      : Icons.text_fields_rounded,
-                  color: SacredColors.primaryAccent,
-                ),
-                onPressed: controller.toggleTextOnlyMode,
-              )),
           PopupMenuButton<double>(
             icon: const Icon(Icons.speed_rounded, color: SacredColors.primaryAccent),
-            color: SacredColors.surfacePrimary,
+            color: SacredColors.surfaceContainer,
             onSelected: controller.changePlaybackSpeed,
             itemBuilder: (context) => const [
               PopupMenuItem(value: 0.5, child: Text('0.5x', style: TextStyle(color: SacredColors.textPrimary))),
@@ -100,128 +84,223 @@ class PrayerPage extends StatelessWidget {
           return SacredLoader(text: controller.loadingMessage.value);
         }
 
-        return Column(
+        return Stack(
           children: [
-            Expanded(
-              child: ScrollablePositionedList.builder(
-                itemScrollController: controller.itemScrollController,
-                itemPositionsListener: controller.itemPositionsListener,
-                itemCount: controller.segments.length,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-                itemBuilder: (context, index) {
-                  final segment = controller.segments[index];
-                  
-                  final isPlaybackHighlighted =
-                      index == controller.currentSegmentIndex.value;
-                  final isFocusHighlighted = 
-                      controller.isFocusReadingMode.value && index == controller.centerFocusIndex.value;
-                  
-                  return GestureDetector(
-                    onTap: () => controller.onTapSegment(index),
-                    onDoubleTap: () => controller.onDoubleTapSegment(segment, index),
-                    child: FocusTranscriptLine(
-                      text: segment.forLanguage(
-                        controller.languageCode.value,
-                        enableHindi: controller.enableHindi.value,
-                        enableEnglish: controller.enableEnglish.value,
+            Column(
+              children: [
+                // Header Area
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                  child: Column(
+                    children: [
+                      Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: SacredTypography.headlineLgMobile.copyWith(
+                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      isPlaybackHighlighted: isPlaybackHighlighted,
-                      isFocusHighlighted: isFocusHighlighted,
-                      isFocusMode: controller.isFocusReadingMode.value,
-                    ),
-                  );
-                },
-              ),
-            ),
-            if (!controller.isTextOnlyMode.value) ...[
-              // Audio Control Bar (Premium dark surface)
-              Container(
-                padding: const EdgeInsets.only(top: 8, bottom: 16),
-                decoration: BoxDecoration(
-                  color: SacredColors.backgroundBlack.withValues(alpha: 0.8),
-                  border: const Border(
-                    top: BorderSide(color: SacredColors.borderGold, width: 0.5),
+                      if (gurmukhiTitle != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          gurmukhiTitle!,
+                          style: SacredTypography.transcriptSm.copyWith(
+                            color: SacredColors.textSecondary.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      // Primary Mode Switcher
+                      SacredSegmentedControl<PrimaryMode>(
+                        segments: const {
+                          PrimaryMode.listen: 'Listen',
+                          PrimaryMode.read: 'Read',
+                        },
+                        selected: controller.primaryMode.value,
+                        onSelected: controller.setPrimaryMode,
+                      ),
+                      
+                      // Secondary Switcher (Only in Read Mode)
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 300),
+                        child: controller.primaryMode.value == PrimaryMode.read
+                            ? Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: SacredSegmentedControl<ReadingStyle>(
+                                  segments: const {
+                                    ReadingStyle.standard: 'Standard',
+                                    ReadingStyle.focus: 'Focus',
+                                  },
+                                  selected: controller.readingStyle.value,
+                                  onSelected: controller.setReadingStyle,
+                                  isSecondary: true,
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                      
+                      // Sync Status Info (In Listen Mode if no timings)
+                      if (controller.primaryMode.value == PrimaryMode.listen && !controller.hasTimings.value)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Text(
+                            'Basic listening mode • Sync unavailable',
+                            style: SacredTypography.labelSm.copyWith(
+                              color: SacredColors.textSecondary.withValues(alpha: 0.5),
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      child: SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 2,
-                          activeTrackColor: SacredColors.primaryAccent,
-                          inactiveTrackColor: SacredColors.borderGold.withValues(alpha: 0.2),
-                          thumbColor: SacredColors.primaryAccent,
-                          overlayColor: SacredColors.primaryAccent.withValues(alpha: 0.1),
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+
+                // Transcript
+                Expanded(
+                  child: ScrollablePositionedList.builder(
+                    itemScrollController: controller.itemScrollController,
+                    itemPositionsListener: controller.itemPositionsListener,
+                    itemCount: controller.segments.length,
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 180), // Extra bottom padding for player
+                    itemBuilder: (context, index) {
+                      final segment = controller.segments[index];
+                      
+                      final isPlaybackHighlighted =
+                          controller.primaryMode.value == PrimaryMode.listen &&
+                          index == controller.currentSegmentIndex.value;
+                      
+                      final isFocusHighlighted = 
+                          controller.primaryMode.value == PrimaryMode.read &&
+                          controller.readingStyle.value == ReadingStyle.focus &&
+                          index == controller.centerFocusIndex.value;
+                      
+                      return GestureDetector(
+                        onTap: () => controller.onTapSegment(index),
+                        onDoubleTap: () => controller.onDoubleTapSegment(segment, index),
+                        child: FocusTranscriptLine(
+                          text: segment.forLanguage(
+                            controller.languageCode.value,
+                            enableHindi: controller.enableHindi.value,
+                            enableEnglish: controller.enableEnglish.value,
+                          ),
+                          isPlaybackHighlighted: isPlaybackHighlighted,
+                          isFocusHighlighted: isFocusHighlighted,
+                          isFocusMode: controller.primaryMode.value == PrimaryMode.read && 
+                                       controller.readingStyle.value == ReadingStyle.focus,
                         ),
-                        child: Slider(
-                          min: 0,
-                          max: controller.totalDuration.value.inMilliseconds.toDouble(),
-                          value: controller.currentPosition.value.inMilliseconds
-                              .clamp(0, controller.totalDuration.value.inMilliseconds)
-                              .toDouble(),
-                          onChanged: (value) => controller.seekToWithDebounce(
-                              Duration(milliseconds: value.toInt())),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            // Glassmorphic Player Section
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+                    decoration: BoxDecoration(
+                      color: SacredColors.surfaceContainerLowest.withValues(alpha: 0.7),
+                      border: Border(
+                        top: BorderSide(
+                          color: SacredColors.borderGold.withValues(alpha: 0.15),
+                          width: 0.5,
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            controller.formatDuration(controller.currentPosition.value),
-                            style: const TextStyle(color: SacredColors.textSecondary, fontSize: 12),
-                          ),
-                          Obx(() => Text(
-                            '${controller.playbackSpeed.value}x',
-                            style: const TextStyle(color: SacredColors.primaryAccent, fontSize: 12, fontWeight: FontWeight.bold),
-                          )),
-                          Text(
-                            controller.formatDuration(controller.totalDuration.value),
-                            style: const TextStyle(color: SacredColors.textSecondary, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.replay_10_rounded, color: SacredColors.textPrimary, size: 28),
-                          onPressed: controller.skipBackward,
-                        ),
-                        const SizedBox(width: 24),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: SacredColors.primaryAccent,
-                            borderRadius: BorderRadius.circular(40),
+                        // Progress Bar
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            trackHeight: 2,
+                            activeTrackColor: SacredColors.primaryAccent,
+                            inactiveTrackColor: SacredColors.primaryAccent.withValues(alpha: 0.1),
+                            thumbColor: SacredColors.primaryAccent,
+                            overlayColor: SacredColors.primaryAccent.withValues(alpha: 0.1),
+                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                            trackShape: const RectangularSliderTrackShape(),
                           ),
-                          child: IconButton(
-                            icon: Icon(
-                              controller.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                              color: Colors.black,
-                              size: 36,
+                          child: Slider(
+                            min: 0,
+                            max: controller.totalDuration.value.inMilliseconds.toDouble(),
+                            value: controller.currentPosition.value.inMilliseconds
+                                .clamp(0, controller.totalDuration.value.inMilliseconds)
+                                .toDouble(),
+                            onChanged: (value) => controller.seekToWithDebounce(
+                                Duration(milliseconds: value.toInt())),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                controller.formatDuration(controller.currentPosition.value),
+                                style: SacredTypography.labelSm.copyWith(color: SacredColors.textSecondary),
+                              ),
+                              Text(
+                                controller.formatDuration(controller.totalDuration.value),
+                                style: SacredTypography.labelSm.copyWith(color: SacredColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Main Controls
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.replay_10_rounded, color: SacredColors.textPrimary, size: 28),
+                              onPressed: controller.skipBackward,
                             ),
-                            onPressed: controller.togglePlayback,
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-                        IconButton(
-                          icon: const Icon(Icons.forward_10_rounded, color: SacredColors.textPrimary, size: 28),
-                          onPressed: controller.skipForward,
+                            const SizedBox(width: 32),
+                            GestureDetector(
+                              onTap: controller.togglePlayback,
+                              child: Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: SacredColors.primaryAccent,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: SacredColors.primaryAccent.withValues(alpha: 0.3),
+                                      blurRadius: 20,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  controller.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                  color: Colors.black,
+                                  size: 40,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 32),
+                            IconButton(
+                              icon: const Icon(Icons.forward_10_rounded, color: SacredColors.textPrimary, size: 28),
+                              onPressed: controller.skipForward,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ],
+            ),
           ],
         );
       }),

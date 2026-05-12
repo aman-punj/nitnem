@@ -26,11 +26,27 @@ import {
   signInAdminWithGoogle,
   signOutAdmin,
 } from '../lib/firebase'
+import { fetchRemoteConfig, saveRemoteConfig } from '../lib/remoteConfigService'
+import { DEFAULT_REMOTE_CONFIG, type RemoteConfig } from '../lib/remoteConfigTypes'
 import { PrayerCard } from '../components/admin/PrayerCard'
 import { ContentEditor } from '../components/admin/ContentEditor'
+import { RemoteConfigEditor } from '../components/admin/RemoteConfigEditor'
 
 type AuthStatus = 'checking' | 'signed_out' | 'signed_in' | 'error'
-type AdminSection = 'dashboard' | 'content' | 'categories' | 'feedback' | 'live' | 'app_config' | 'storage' | 'settings'
+type AdminSection =
+  | 'dashboard'
+  | 'content'
+  | 'categories'
+  | 'feedback'
+  | 'live'
+  | 'app_config'
+  | 'version_control'
+  | 'feature_flags'
+  | 'maintenance'
+  | 'languages'
+  | 'experimental'
+  | 'storage'
+  | 'settings'
 
 function SortableItem({ item, onEdit }: { item: ContentItem; onEdit: () => void }) {
   const {
@@ -74,6 +90,12 @@ export function AdminApp() {
 
   const [editingItem, setEditingItem] = useState<ContentItem | null>(null)
   const [isAddingNew, setIsAddingNew] = useState(false)
+
+  const [remoteConfig, setRemoteConfig] = useState<RemoteConfig>(DEFAULT_REMOTE_CONFIG)
+  const [remoteConfigLoading, setRemoteConfigLoading] = useState(false)
+  const [remoteConfigError, setRemoteConfigError] = useState('')
+  const [dirtyRemoteConfig, setDirtyRemoteConfig] = useState(false)
+  const [publishing, setPublishing] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -140,6 +162,7 @@ export function AdminApp() {
   useEffect(() => {
     if (!isAuthed) return
     void loadContentList()
+    void loadRemoteConfig()
   }, [isAuthed])
 
   async function loadContentList(): Promise<void> {
@@ -155,6 +178,38 @@ export function AdminApp() {
     }
   }
 
+  async function loadRemoteConfig(): Promise<void> {
+    setRemoteConfigLoading(true)
+    setRemoteConfigError('')
+    try {
+      const data = await fetchRemoteConfig()
+      setRemoteConfig(data)
+      setDirtyRemoteConfig(false)
+    } catch (error) {
+      setRemoteConfigError(error instanceof Error ? error.message : 'Failed to load remote config.')
+    } finally {
+      setRemoteConfigLoading(false)
+    }
+  }
+
+  async function publishRemoteConfig(): Promise<void> {
+    setPublishing(true)
+    try {
+      const saved = await saveRemoteConfig(remoteConfig)
+      setRemoteConfig(saved)
+      setDirtyRemoteConfig(false)
+    } catch (error) {
+      setRemoteConfigError(error instanceof Error ? error.message : 'Failed to publish config.')
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  function handleRemoteConfigChange(nextConfig: RemoteConfig) {
+    setRemoteConfig(nextConfig)
+    setDirtyRemoteConfig(true)
+  }
+
   async function onSignIn(): Promise<void> {
     setAuthLoading(true)
     setAuthMessage('')
@@ -163,8 +218,16 @@ export function AdminApp() {
       setAuthStatus('signed_in')
       setAuthUserEmail(user.email ?? '')
     } catch (error) {
-      setAuthStatus('error')
-      setAuthMessage(error instanceof Error ? error.message : 'Google sign-in failed.')
+      const code = (error as { code?: string })?.code
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        setAuthStatus('signed_out')
+        setAuthMessage(
+          'Google sign-in did not complete. If you did not close the popup, please allow popups in your browser and try again. (' + code + ')' 
+        )
+      } else {
+        setAuthStatus('error')
+        setAuthMessage(error instanceof Error ? error.message : `Google sign-in failed. ${(error as any)?.code ?? ''}`)
+      }
     } finally {
       setAuthLoading(false)
     }
@@ -239,23 +302,43 @@ export function AdminApp() {
     setIsAddingNew(false)
   }
 
+  function formatTimestampLabel(value: unknown) {
+    if (!value) return 'Never published'
+    const timestamp = value as any
+    if (timestamp?.toDate) {
+      return timestamp.toDate().toLocaleString()
+    }
+    if (timestamp instanceof Date) {
+      return timestamp.toLocaleString()
+    }
+    if (typeof timestamp === 'string') {
+      return timestamp
+    }
+    return 'Recently'
+  }
+
   const sectionMenu: Array<{ id: AdminSection; label: string }> = [
     { id: 'dashboard', label: 'Dashboard' },
-    { id: 'content', label: 'Content' },
-    { id: 'categories', label: 'Categories' },
-    { id: 'feedback', label: 'Feedback' },
-    { id: 'live', label: 'Live Content' },
     { id: 'app_config', label: 'App Config' },
-    { id: 'storage', label: 'Storage' },
+    { id: 'version_control', label: 'Version Control' },
+    { id: 'feature_flags', label: 'Feature Flags' },
+    { id: 'maintenance', label: 'Maintenance' },
+    { id: 'languages', label: 'Languages' },
+    { id: 'experimental', label: 'Experimental' },
+    { id: 'content', label: 'Content' },
     { id: 'settings', label: 'Settings' },
   ]
 
   const isContentSection = section === 'content'
+  const isRemoteConfigSection = ['app_config', 'version_control', 'feature_flags', 'maintenance', 'languages', 'experimental'].includes(section)
 
   return (
     <div className="app fade-in">
       <header className="row spread" style={{ marginBottom: '40px' }}>
-        <h1>Nitnem Admin</h1>
+        <div>
+          <h1>Nitnem Admin</h1>
+          <p className="info-text">Premium internal control center for Bani Sagar mobile configuration.</p>
+        </div>
         {isAuthed && (
           <div className="row">
             <span className="info-text">Admin: {authUserEmail}</span>
@@ -304,71 +387,143 @@ export function AdminApp() {
             ))}
           </aside>
           <main className="stack" style={{ flex: 1 }}>
-          {!isContentSection && <div className="card">Section scaffold: {section}</div>}
-          {isContentSection && (
-            <div className="stack">
-          {(editingItem || isAddingNew) ? (
-            <ContentEditor 
-              item={editingItem} 
-              onSave={handleSaveItem} 
-              onClose={() => { setEditingItem(null); setIsAddingNew(false); }} 
-            />
-          ) : (
-            <div className="stack">
-              <div className="row spread">
-                <div className="row" style={{ flex: 1 }}>
-                  <input 
-                    style={{ flex: 1, maxWidth: '400px' }}
-                    value={search} 
-                    onChange={(e) => setSearch(e.target.value)} 
-                    placeholder="Search prayers by title or ID..." 
+            {isRemoteConfigSection && (
+              <div className="stack">
+                <div className="row spread top-bar" style={{ marginBottom: '24px' }}>
+                  <div className="stack" style={{ flex: 1, minWidth: 0 }}>
+                    <span className="eyebrow">Config controls</span>
+                    <div className="row" style={{ gap: '12px', flexWrap: 'wrap' }}>
+                      <span className="info-text">Environment: {remoteConfig.environment}</span>
+                      <span className="info-text">Last updated: {formatTimestampLabel(remoteConfig.updatedAt)}</span>
+                      {dirtyRemoteConfig && <span className="badge accent">Unsaved changes</span>}
+                    </div>
+                  </div>
+                  <div className="row" style={{ gap: '12px', flexWrap: 'wrap' }}>
+                    <button className="secondary" onClick={() => void loadRemoteConfig()} disabled={remoteConfigLoading || publishing}>
+                      Refresh
+                    </button>
+                    <button onClick={() => void publishRemoteConfig()} disabled={!dirtyRemoteConfig || publishing || remoteConfigLoading}>
+                      {publishing ? 'Publishing...' : 'Publish Changes'}
+                    </button>
+                  </div>
+                </div>
+
+                {remoteConfigError && <div className="card error-text">{remoteConfigError}</div>}
+                {remoteConfigLoading ? (
+                  <div className="card empty-state">Loading configuration...</div>
+                ) : (
+                  <RemoteConfigEditor
+                    remoteConfig={remoteConfig}
+                    activeSection={section}
+                    onChange={handleRemoteConfigChange}
+                    saving={publishing}
+                    lastPublishedLabel={formatTimestampLabel(remoteConfig.updatedAt)}
+                    updatedBy={remoteConfig.updatedBy ?? ''}
+                    dirty={dirtyRemoteConfig}
                   />
-                  {loadingItems && <span className="info-text">Refreshing...</span>}
-                </div>
-                <button onClick={() => setIsAddingNew(true)}>+ Add Content</button>
+                )}
               </div>
+            )}
 
-              {itemsError && <div className="card error-text">{itemsError}</div>}
-              
-              {!loadingItems && items.length === 0 && (
-                <div className="card empty-state">
-                  No content found. Create your first prayer or YouTube live item!
+            {section === 'dashboard' && (
+              <div className="card">
+                <h2>Operational Dashboard</h2>
+                <p className="field-description">A calm cockpit for configuration, releases, and maintenance state.</p>
+                <div className="grid" style={{ marginTop: '20px' }}>
+                  <div className="card small-card">
+                    <p className="field-label">Current environment</p>
+                    <strong>{remoteConfig.environment}</strong>
+                  </div>
+                  <div className="card small-card">
+                    <p className="field-label">Remote config state</p>
+                    <strong>{dirtyRemoteConfig ? 'Unsaved changes' : 'Synced'}</strong>
+                  </div>
+                  <div className="card small-card">
+                    <p className="field-label">Maintenance</p>
+                    <strong>{remoteConfig.maintenance.isUnderMaintenance ? 'Active' : 'Inactive'}</strong>
+                  </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                {pinnedItems.length > 0 && (
-                  <div className="stack" style={{ marginTop: '20px' }}>
-                    <h2 style={{ fontSize: '1.2rem', color: 'var(--accent)' }}>Pinned Content</h2>
-                    <SortableContext items={pinnedItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                      <div className="grid">
-                        {pinnedItems.map((item) => (
-                          <SortableItem key={item.id} item={item} onEdit={() => setEditingItem(item)} />
-                        ))}
+            {section === 'settings' && (
+              <div className="card">
+                <h2>Settings</h2>
+                <p className="field-description">General admin preferences and access controls for the panel.</p>
+                <div className="stack" style={{ marginTop: '20px' }}>
+                  <div className="field-group">
+                    <label>Admin account</label>
+                    <input readOnly value={authUserEmail} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isContentSection && (
+              <div className="stack">
+                {(editingItem || isAddingNew) ? (
+                  <ContentEditor
+                    item={editingItem}
+                    onSave={handleSaveItem}
+                    onClose={() => { setEditingItem(null); setIsAddingNew(false); }}
+                  />
+                ) : (
+                  <div className="stack">
+                    <div className="row spread">
+                      <div className="row" style={{ flex: 1 }}>
+                        <input
+                          style={{ flex: 1, maxWidth: '400px' }}
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          placeholder="Search prayers by title or ID..."
+                        />
+                        {loadingItems && <span className="info-text">Refreshing...</span>}
                       </div>
-                    </SortableContext>
+                      <button onClick={() => setIsAddingNew(true)}>+ Add Content</button>
+                    </div>
+
+                    {itemsError && <div className="card error-text">{itemsError}</div>}
+
+                    {!loadingItems && items.length === 0 && (
+                      <div className="card empty-state">
+                        No content found. Create your first prayer or YouTube live item!
+                      </div>
+                    )}
+
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      {pinnedItems.length > 0 && (
+                        <div className="stack" style={{ marginTop: '20px' }}>
+                          <h2 style={{ fontSize: '1.2rem', color: 'var(--accent)' }}>Pinned Content</h2>
+                          <SortableContext items={pinnedItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                            <div className="grid">
+                              {pinnedItems.map((item) => (
+                                <SortableItem key={item.id} item={item} onEdit={() => setEditingItem(item)} />
+                              ))}
+                            </div>
+                          </SortableContext>
+                        </div>
+                      )}
+
+                      <div className="stack" style={{ marginTop: '20px' }}>
+                        <h2 style={{ fontSize: '1.2rem' }}>All Content</h2>
+                        <SortableContext items={normalItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                          <div className="grid">
+                            {normalItems.map((item) => (
+                              <SortableItem key={item.id} item={item} onEdit={() => setEditingItem(item)} />
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </div>
+                    </DndContext>
                   </div>
                 )}
-
-                <div className="stack" style={{ marginTop: '20px' }}>
-                  <h2 style={{ fontSize: '1.2rem' }}>All Content</h2>
-                  <SortableContext items={normalItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                    <div className="grid">
-                      {normalItems.map((item) => (
-                        <SortableItem key={item.id} item={item} onEdit={() => setEditingItem(item)} />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </div>
-              </DndContext>
-            </div>
-          )}
-        </div>)}
-        </main>
+              </div>
+            )}
+          </main>
         </div>
       )}
     </div>

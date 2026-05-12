@@ -48,3 +48,6 @@ admin_panel/.env.*
 # Shared
 shared/node_modules/
 
+# Brand Identity
+stitch_bani_sagar_brand_identity/
+

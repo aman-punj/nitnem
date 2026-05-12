@@ -37,6 +37,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
+  color: "#000000"
   image_path: "mobile_app/assets/images/bani_sagar_logo.png"
 
 flutter:

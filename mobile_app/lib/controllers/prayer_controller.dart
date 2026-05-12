@@ -14,7 +14,8 @@ import '../services/transcript_parser.dart';
 import '../services/transcript_sync_engine.dart';
 import '../services/transcript_sync_service.dart';
 
-enum ReadingMode { synced, audioOnlyText, textOnly }
+enum PrimaryMode { listen, read }
+enum ReadingStyle { standard, focus }
 
 class PrayerController extends GetxController {
   PrayerController({
@@ -39,8 +40,12 @@ class PrayerController extends GetxController {
   final RxBool isPlaying = false.obs;
   final RxBool isLoading = true.obs;
   final RxString loadingMessage = ''.obs;
-  final RxBool isTextOnlyMode = false.obs;
-  final RxBool isFocusReadingMode = false.obs;
+  
+  final Rx<PrimaryMode> primaryMode = PrimaryMode.listen.obs;
+  final Rx<ReadingStyle> readingStyle = ReadingStyle.standard.obs;
+  final RxBool hasTimings = false.obs;
+  final RxBool hasAudio = false.obs;
+
   final RxBool isUserSeeking = false.obs;
   final RxBool enableHindi = false.obs;
   final RxBool enableEnglish = false.obs;
@@ -48,7 +53,6 @@ class PrayerController extends GetxController {
   final Rx<Duration> currentPosition = Duration.zero.obs;
   final Rx<Duration> totalDuration = Duration.zero.obs;
   final RxDouble playbackSpeed = 1.0.obs;
-  final Rx<ReadingMode> readingMode = ReadingMode.synced.obs;
 
   Timer? _seekDebounce;
 
@@ -59,7 +63,7 @@ class PrayerController extends GetxController {
     super.onInit();
     _player.positionStream.listen((position) {
       currentPosition.value = position;
-      if (!isUserSeeking.value && readingMode.value == ReadingMode.synced) {
+      if (!isUserSeeking.value && primaryMode.value == PrimaryMode.listen && hasTimings.value) {
         _updateCurrentSegment(position);
       }
     });
@@ -74,7 +78,7 @@ class PrayerController extends GetxController {
   }
 
   void _onScroll() {
-    if (isFocusReadingMode.value) {
+    if (primaryMode.value == PrimaryMode.read && readingStyle.value == ReadingStyle.focus) {
       _updateCenterFocusIndex();
     }
   }
@@ -100,9 +104,17 @@ class PrayerController extends GetxController {
     }
   }
 
-  void toggleFocusReadingMode() {
-    isFocusReadingMode.value = !isFocusReadingMode.value;
-    if (isFocusReadingMode.value) {
+  void setPrimaryMode(PrimaryMode mode) {
+    primaryMode.value = mode;
+    if (mode == PrimaryMode.listen) {
+      // If switching back to listen, sync to current position
+      _updateCurrentSegment(currentPosition.value);
+    }
+  }
+
+  void setReadingStyle(ReadingStyle style) {
+    readingStyle.value = style;
+    if (style == ReadingStyle.focus) {
       _updateCenterFocusIndex();
     }
   }
@@ -124,7 +136,7 @@ class PrayerController extends GetxController {
       bool finalAudioIsLocal = audioIsLocalFile;
       bool finalTranscriptIsLocal = transcriptIsLocalFile;
 
-      // 1. Check if we need to sync first (e.g. content was just added from backend)
+      // 1. Check if we need to sync first
       if (item != null && _syncService != null && _localContentService != null) {
         if (finalAudioPath.isEmpty || finalTranscriptPath.isEmpty) {
           loadingMessage.value = 'Downloading prayer content...';
@@ -151,7 +163,7 @@ class PrayerController extends GetxController {
 
       loadingMessage.value = 'Loading audio...';
       // 3. Load Audio
-      bool hasAudio = false;
+      bool audioLoaded = false;
       if (finalAudioPath.isNotEmpty) {
         try {
           if (finalAudioIsLocal) {
@@ -159,22 +171,20 @@ class PrayerController extends GetxController {
           } else {
             await _player.setAsset(finalAudioPath);
           }
-          hasAudio = true;
+          audioLoaded = true;
         } catch (e) {
           debugPrint('Error loading audio: $e');
         }
       }
+      hasAudio.value = audioLoaded;
 
-      // 4. Determine Mode
-      final hasTimings = segments.any((s) => s.start > 0 || s.end > 0);
+      // 4. Determine Capabilities
+      hasTimings.value = segments.any((s) => s.start > 0 || s.end > 0);
       
-      if (!hasAudio) {
-        readingMode.value = ReadingMode.textOnly;
-        isTextOnlyMode.value = true;
-      } else if (!hasTimings) {
-        readingMode.value = ReadingMode.audioOnlyText;
+      if (!hasAudio.value) {
+        primaryMode.value = PrimaryMode.read;
       } else {
-        readingMode.value = ReadingMode.synced;
+        primaryMode.value = PrimaryMode.listen;
       }
 
     } catch (e) {
@@ -187,7 +197,7 @@ class PrayerController extends GetxController {
   }
 
   void _updateCurrentSegment(Duration position) {
-    if (isTextOnlyMode.value) return;
+    if (!hasTimings.value) return;
 
     final index = transcriptSyncEngine.findSegmentIndexByTime(
       segments,
@@ -234,7 +244,7 @@ class PrayerController extends GetxController {
   }
 
   void seekToWithDebounce(Duration position) {
-    if (isTextOnlyMode.value) return;
+    if (primaryMode.value == PrimaryMode.read && !hasAudio.value) return;
     isUserSeeking.value = true;
     _player.seek(position);
     _seekDebounce?.cancel();
@@ -252,10 +262,13 @@ class PrayerController extends GetxController {
 
   void onDoubleTapSegment(TranscriptSegment segment, int index) {
     currentSegmentIndex.value = index;
-    seekToWithDebounce(Duration(milliseconds: (segment.start * 1000).round()));
+    if (hasAudio.value) {
+      seekToWithDebounce(Duration(milliseconds: (segment.start * 1000).round()));
+    }
   }
 
   void togglePlayback() async {
+    if (!hasAudio.value) return;
     if (_player.playing) {
       await _player.pause();
     } else {
@@ -263,9 +276,13 @@ class PrayerController extends GetxController {
     }
   }
 
-  void skipForward() => seekToWithDebounce(currentPosition.value + const Duration(seconds: 10));
+  void skipForward() {
+    if (!hasAudio.value) return;
+    seekToWithDebounce(currentPosition.value + const Duration(seconds: 10));
+  }
 
   void skipBackward() {
+    if (!hasAudio.value) return;
     final candidate = currentPosition.value - const Duration(seconds: 10);
     seekToWithDebounce(candidate.isNegative ? Duration.zero : candidate);
   }
@@ -273,10 +290,6 @@ class PrayerController extends GetxController {
   void changePlaybackSpeed(double speed) {
     playbackSpeed.value = speed;
     _player.setSpeed(speed);
-  }
-
-  void toggleTextOnlyMode() {
-    isTextOnlyMode.value = !isTextOnlyMode.value;
   }
 
   String formatDuration(Duration duration) {

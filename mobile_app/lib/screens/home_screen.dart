@@ -14,6 +14,7 @@ import '../controllers/home_controller.dart';
 import '../core/design_system/widgets/sacred_app_bar.dart';
 import 'drawer.dart';
 import 'feedback_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
