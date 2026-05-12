@@ -92,7 +92,7 @@ class GradientScaffold extends StatelessWidget {
             ),
 
           // 📜 Content body
-          body,
+          SafeArea(top: false,child: body),
         ],
       ),
       floatingActionButton: floatingActionButton,

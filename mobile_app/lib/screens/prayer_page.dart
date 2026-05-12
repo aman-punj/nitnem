@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
-import 'package:nitnem/core/design_system/tokens/radius.dart';
 import 'package:nitnem/core/design_system/widgets/focus_transcript_line.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_loader.dart';
@@ -9,7 +8,9 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../controllers/prayer_controller.dart';
 import '../models/content_item.dart';
+import '../services/local_content_service.dart';
 import '../services/transcript_sync_engine.dart';
+import '../services/transcript_sync_service.dart';
 import '../utils/gradient_scaffold.dart';
 
 class PrayerPage extends StatelessWidget {
@@ -39,8 +40,8 @@ class PrayerPage extends StatelessWidget {
     final controller = Get.put(
       PrayerController(
         transcriptSyncEngine: const TranscriptSyncEngine(),
-        syncService: Get.find(),
-        localContentService: Get.find(),
+        syncService: Get.find<TranscriptSyncService>(),
+        localContentService: Get.find<LocalContentService>(),
       ),
       tag: title,
     );
