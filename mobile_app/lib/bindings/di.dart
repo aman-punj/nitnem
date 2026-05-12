@@ -38,6 +38,7 @@ class DependencyInjection {
       firebaseCategoryService: Get.find(),
       localContentService: Get.find(),
       syncService: Get.find(),
+      appInfoController: Get.find(),
     ));
   }
 }

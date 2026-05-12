@@ -114,9 +114,10 @@ export function AdminApp() {
 
     const filtered = search.trim().toLowerCase()
       ? sorted.filter((item) => {
-          const t = (item.titles.en || item.id).toLowerCase()
           return (
-            t.includes(search.toLowerCase()) ||
+            item.titles.en?.toLowerCase().includes(search.toLowerCase()) ||
+            item.titles.pa?.toLowerCase().includes(search.toLowerCase()) ||
+            item.titles.hi?.toLowerCase().includes(search.toLowerCase()) ||
             item.id.toLowerCase().includes(search.toLowerCase())
           )
         })

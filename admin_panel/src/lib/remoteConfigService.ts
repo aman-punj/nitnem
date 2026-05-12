@@ -8,7 +8,7 @@ import {
 import { auth, db } from './firebase'
 import { DEFAULT_REMOTE_CONFIG, type RemoteConfig } from './remoteConfigTypes'
 
-const REMOTE_CONFIG_DOCUMENT = doc(db, 'admin_config', 'remote_control')
+const REMOTE_CONFIG_DOCUMENT = doc(db, 'app_config', 'mobile')
 
 export async function fetchRemoteConfig(): Promise<RemoteConfig> {
   const snapshot = await getDoc(REMOTE_CONFIG_DOCUMENT)

@@ -1,4 +1,10 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:nitnem/controllers/app_info_controller.dart';
+import 'package:nitnem/core/design_system/tokens/colors.dart';
+import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/content_category.dart';
 import '../models/content_item.dart';
@@ -14,16 +20,19 @@ class HomeController extends GetxController {
   final FirebaseCategoryService _firebaseCategoryService;
   final LocalContentService _localContentService;
   final TranscriptSyncService _syncService;
+  final AppInfoController _appInfoController;
 
   HomeController({
     required FirebaseContentService firebaseContentService,
     required FirebaseCategoryService firebaseCategoryService,
     required LocalContentService localContentService,
     required TranscriptSyncService syncService,
+    required AppInfoController appInfoController,
   })  : _firebaseContentService = firebaseContentService,
         _firebaseCategoryService = firebaseCategoryService,
         _localContentService = localContentService,
-        _syncService = syncService;
+        _syncService = syncService,
+        _appInfoController = appInfoController;
 
   final RxList<ContentItem> contentItems = <ContentItem>[].obs;
   final RxList<ContentCategory> categories = <ContentCategory>[].obs;
@@ -35,6 +44,54 @@ class HomeController extends GetxController {
     super.onInit();
     currentLang.value = SharedPrefsService.getLanguage();
     _loadInitialContent();
+    _checkUpdate();
+  }
+
+  Future<void> _checkUpdate() async {
+    if (await _appInfoController.shouldRecommendUpdate()) {
+      _showUpdateDialog();
+    }
+  }
+
+  void _showUpdateDialog() {
+    final config = _appInfoController.appInfo.value?.versionControl;
+    if (config == null) return;
+
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: SacredColors.surfacePrimary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          "Update Available",
+          style: SacredTypography.headlineMd.copyWith(color: SacredColors.primaryAccent),
+        ),
+        content: Text(
+          config.updateMessage,
+          style: SacredTypography.bodyMd,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text("Later", style: TextStyle(color: SacredColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: SacredColors.primaryAccent,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () async {
+              Get.back();
+              final url = Uri.parse(Platform.isAndroid ? config.androidStoreUrl : config.iosStoreUrl);
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+            },
+            child: Text("Update Now"),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadInitialContent() async {

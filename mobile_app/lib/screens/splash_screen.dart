@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
+import 'package:nitnem/screens/operational_status_screen.dart';
 import 'package:nitnem/services/firebase_content_service.dart';
 import 'package:nitnem/services/transcript_sync_service.dart';
 import 'package:nitnem/models/content_item.dart';
@@ -24,11 +26,12 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   late AnimationController _loadingController;
+  bool _isOperationalBlocked = false;
 
   @override
   void initState() {
     super.initState();
-    getAppInfo();
+    _initApp();
     
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1500),
@@ -45,8 +48,15 @@ class _SplashScreenState extends State<SplashScreen>
     )..repeat();
 
     _fadeController.forward();
+  }
+
+  Future<void> _initApp() async {
+    await getAppInfo();
+    
+    if (_isOperationalBlocked) return;
 
     Timer(const Duration(seconds: 4), () {
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
@@ -235,52 +245,76 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  void getAppInfo() async {
+  Future<void> getAppInfo() async {
     final controller = Get.find<AppInfoController>();
-    final appInfo = await controller.loadAppInfo();
+    await controller.loadAppInfo();
 
-    if (appInfo == null) return;
+    if (controller.appInfo.value == null) return;
 
-    final packageInfo = await PackageInfo.fromPlatform();
-    final localBuild = int.tryParse(packageInfo.buildNumber) ?? 0;
-
-    if (appInfo.shouldForceUpdate(localBuild)) {
-      showDialog(
-        context: Get.context!,
-        barrierDismissible: false,
-        builder: (_) => AlertDialog(
-          title: const Text("Update Required"),
-          content: Text(appInfo.updateMessage),
-          actions: [
-            TextButton(
-              onPressed: () {
-                // TODO: Implement app update logic here (e.g., open app store link)
-              },
-              child: const Text("Update Now"),
-            )
-          ],
-        ),
-      );
+    // 1. Check Maintenance
+    if (controller.isUnderMaintenance) {
+      if (mounted) {
+        setState(() => _isOperationalBlocked = true);
+        _navigateToOperationalStatus(
+          status: OperationalStatus.maintenance,
+          message: controller.maintenanceMessage,
+        );
+      }
       return;
     }
 
-    // New Firestore-driven sync logic
-    if (appInfo.shouldRecommendUpdate(localBuild)) {
-      try {
-        final firebaseContentService = Get.find<FirebaseContentService>();
-        final transcriptSyncService = Get.find<TranscriptSyncService>();
-
-        // Fetch all content items from Firestore
-        final List<ContentItem> remoteItems = await firebaseContentService.fetchContentCatalog();
-
-        // Sync each item. The syncContent method will handle checking if updates are needed.
-        for (final item in remoteItems) {
-          await transcriptSyncService.syncContent(item);
-        }
-
-      } catch (e) {
-        // Optionally, show a user-facing error message or log this error.
+    // 2. Check Force Update
+    if (await controller.shouldForceUpdate()) {
+      if (mounted) {
+        setState(() => _isOperationalBlocked = true);
+        final config = controller.appInfo.value!.versionControl;
+        _navigateToOperationalStatus(
+          status: OperationalStatus.forceUpdate,
+          message: config.updateMessage,
+          storeUrl: Platform.isAndroid ? config.androidStoreUrl : config.iosStoreUrl,
+        );
       }
+      return;
+    }
+
+    // 3. Recommended Update (Non-blocking)
+    if (await controller.shouldRecommendUpdate()) {
+      _handleRecommendedUpdate();
+    }
+  }
+
+  void _navigateToOperationalStatus({
+    required OperationalStatus status,
+    required String message,
+    String? storeUrl,
+  }) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => OperationalStatusScreen(
+          status: status,
+          message: message,
+          storeUrl: storeUrl,
+        ),
+      ),
+    );
+  }
+
+  void _handleRecommendedUpdate() {
+    _syncContent();
+  }
+
+  Future<void> _syncContent() async {
+    try {
+      final firebaseContentService = Get.find<FirebaseContentService>();
+      final transcriptSyncService = Get.find<TranscriptSyncService>();
+
+      final List<ContentItem> remoteItems = await firebaseContentService.fetchContentCatalog();
+
+      for (final item in remoteItems) {
+        await transcriptSyncService.syncContent(item);
+      }
+    } catch (e) {
+      // Silent fail for sync in splash
     }
   }
 }
