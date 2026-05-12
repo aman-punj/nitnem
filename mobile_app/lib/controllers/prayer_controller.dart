@@ -128,9 +128,9 @@ class PrayerController extends GetxController {
       if (item != null && _syncService != null && _localContentService != null) {
         if (finalAudioPath.isEmpty || finalTranscriptPath.isEmpty) {
           loadingMessage.value = 'Downloading prayer content...';
-          await _syncService!.syncContent(item);
+          await _syncService.syncContent(item);
           
-          final localMetadata = _localContentService!.getSyncMetadata(item.id);
+          final localMetadata = _localContentService.getSyncMetadata(item.id);
           if (localMetadata != null) {
             finalAudioPath = localMetadata.audioLocalPath ?? '';
             finalTranscriptPath = localMetadata.transcriptLocalPaths[currentLang ?? 'pa'] ?? '';
