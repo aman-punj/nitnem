@@ -12,6 +12,7 @@ import 'package:nitnem/services/transcript_sync_service.dart';
 import 'package:nitnem/models/content_item.dart';
 import 'package:nitnem/utils/gradient_scaffold.dart';
 
+import 'package:nitnem/services/notification_service.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -51,23 +52,39 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _initApp() async {
-    await getAppInfo();
+    // 1. Run initialization tasks in parallel
+    final initializationTasks = Future.wait([
+      _ensureNotificationService(),
+      getAppInfo(),
+      Future.delayed(const Duration(seconds: 4)), // Minimum splash duration
+    ]);
+
+    await initializationTasks;
 
     if (_isOperationalBlocked) return;
 
-    Timer(const Duration(seconds: 4), () {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const HomeScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 800),
-        ),
-      );
-    });
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const HomeScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 800),
+      ),
+    );
+  }
+
+  Future<void> _ensureNotificationService() async {
+    NotificationService notificationService;
+    if (Get.isRegistered<NotificationService>()) {
+      notificationService = Get.find<NotificationService>();
+    } else {
+      notificationService = Get.put(NotificationService());
+      await notificationService.init();
+    }
+    await notificationService.requestPermissions();
   }
 
   @override
@@ -317,9 +334,7 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  void _handleRecommendedUpdate() {
-    _syncContent();
-  }
+
 
   Future<void> _syncContent() async {
     try {

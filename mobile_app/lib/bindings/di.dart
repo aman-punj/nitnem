@@ -17,10 +17,10 @@ import '../services/transcript_path_service.dart';
 
 
 class DependencyInjection {
-  static void init() {
+  static Future<void> init() async {
     // Data layer
     Get.put(PreferenceService());
-    Get.putAsync(() => NotificationService().init());
+    await Get.putAsync(() => NotificationService().init());
     Get.put(PrayerStorageService());
     Get.put(PrayerAssetService());
     Get.put(FirebaseContentService());

@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../models/content_item.dart';
@@ -32,6 +34,7 @@ class PrayerController extends GetxController {
   final ItemScrollController itemScrollController = ItemScrollController();
   final ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
 
+  final RxString prayerTitle = ''.obs;
   final RxList<TranscriptSegment> segments = <TranscriptSegment>[].obs;
   final RxInt currentSegmentIndex = (-1).obs;
   final RxInt centerFocusIndex = (-1).obs;
@@ -53,9 +56,12 @@ class PrayerController extends GetxController {
   final RxDouble playbackSpeed = 1.0.obs;
 
   final RxBool isHeaderVisible = true.obs;
+  final RxBool hasShownSyncWarning = false.obs;
   Timer? _headerHideTimer;
 
   Timer? _seekDebounce;
+
+
 
   AudioPlayer get player => _player;
 
@@ -116,13 +122,13 @@ class PrayerController extends GetxController {
     int closestIndex = -1;
 
     for (final position in positions) {
-      if (position.index == 0) continue; // Skip flower icon
+      if (hasTimings.value && position.index == 0) continue; // Skip flower icon if sync is active
 
       final center = (position.itemLeadingEdge + position.itemTrailingEdge) / 2;
       final distance = (center - targetAlignment).abs();
       if (distance < minDistance) {
         minDistance = distance;
-        closestIndex = position.index - 1; // Adjust back to segment index
+        closestIndex = hasTimings.value ? position.index - 1 : position.index;
       }
     }
 
@@ -136,8 +142,21 @@ class PrayerController extends GetxController {
     primaryMode.value = mode;
     
     if (mode == PrimaryMode.audio) {
+      if (!hasTimings.value && !hasShownSyncWarning.value) {
+        hasShownSyncWarning.value = true;
+        Get.snackbar(
+          'Sync Unavailable',
+          'Lyric synchronization is not available for this prayer.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.black.withValues(alpha: 0.7),
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(20),
+          duration: const Duration(seconds: 3),
+        );
+      }
+
       // Sync audio to what was centered in Focus mode
-      if (oldMode == PrimaryMode.focus && centerFocusIndex.value != -1 && hasAudio.value) {
+      if (oldMode == PrimaryMode.focus && centerFocusIndex.value != -1 && hasAudio.value && hasTimings.value) {
         final segment = segments[centerFocusIndex.value];
         if (segment.start >= 0) {
           seekToWithDebounce(Duration(milliseconds: (segment.start * 1000).round()));
@@ -165,7 +184,7 @@ class PrayerController extends GetxController {
   void _scrollToCenter(int index) {
     if (!itemScrollController.isAttached || segments.isEmpty) return;
     itemScrollController.scrollTo(
-      index: index + 1, // Offset for flower icon
+      index: hasTimings.value ? index + 1 : index, // Offset for flower icon only if sync available
       duration: const Duration(milliseconds: 600),
       curve: Curves.easeInOutCubic,
       alignment: 0.4, // Slightly above center for better reading position
@@ -219,11 +238,27 @@ class PrayerController extends GetxController {
       bool audioLoaded = false;
       if (finalAudioPath.isNotEmpty) {
         try {
-          if (finalAudioIsLocal) {
-            await _player.setFilePath(finalAudioPath);
-          } else {
-            await _player.setAsset(finalAudioPath);
-          }
+          final audioSource = finalAudioIsLocal
+              ? AudioSource.file(
+                  finalAudioPath,
+                  tag: MediaItem(
+                    id: item?.id ?? 'prayer_id',
+                    album: "Nitnem",
+                    title: prayerTitle.value.isEmpty ? (item?.titles.pa ?? 'Prayer') : prayerTitle.value,
+                    artUri: Uri.parse("asset:///assets/images/bani_sagar_logo.png"),
+                  ),
+                )
+              : AudioSource.uri(
+                  Uri.parse('asset:///$finalAudioPath'),
+                  tag: MediaItem(
+                    id: item?.id ?? 'prayer_id',
+                    album: "Nitnem",
+                    title: prayerTitle.value.isEmpty ? (item?.titles.pa ?? 'Prayer') : prayerTitle.value,
+                    artUri: Uri.parse("asset:///assets/images/bani_sagar_logo.png"),
+                  ),
+                );
+
+          await _player.setAudioSource(audioSource);
           audioLoaded = true;
         } catch (e) {
           debugPrint('Error loading audio: $e');
@@ -234,7 +269,8 @@ class PrayerController extends GetxController {
       // 4. Determine Capabilities
       hasTimings.value = segments.any((s) => s.start > 0 || s.end > 0);
       
-      if (!hasAudio.value) {
+      // 5. Default Mode
+      if (!hasAudio.value || !hasTimings.value) {
         primaryMode.value = PrimaryMode.focus;
       } else {
         primaryMode.value = PrimaryMode.audio;
@@ -268,7 +304,7 @@ class PrayerController extends GetxController {
     // Check if the item is already comfortably visible
     final positions = itemPositionsListener.itemPositions.value;
     if (positions.isNotEmpty) {
-      final targetPos = positions.where((p) => p.index == index + 1).toList();
+      final targetPos = positions.where((p) => p.index == (hasTimings.value ? index + 1 : index)).toList();
       if (targetPos.isNotEmpty) {
         final pos = targetPos.first;
         
@@ -284,7 +320,7 @@ class PrayerController extends GetxController {
     }
 
     itemScrollController.scrollTo(
-      index: index + 1, // Offset for flower icon
+      index: hasTimings.value ? index + 1 : index, // Offset for flower icon only if sync available
       duration: const Duration(milliseconds: 800), // Increased for smoothness
       curve: Curves.easeInOutQuart, // Gentler curve
       alignment: 0.35, // Position item in the upper-mid section

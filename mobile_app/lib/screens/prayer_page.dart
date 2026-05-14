@@ -40,7 +40,7 @@ class PrayerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(
+    final controller = Get.put<PrayerController>(
       PrayerController(
         transcriptSyncEngine: const TranscriptSyncEngine(),
         syncService: Get.find<TranscriptSyncService>(),
@@ -50,6 +50,7 @@ class PrayerPage extends StatelessWidget {
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.prayerTitle.value = title;
       controller.loadContent(
         audioPath: audioPath,
         transcriptPath: transcriptPath,
@@ -92,9 +93,15 @@ class PrayerPage extends StatelessWidget {
 
         return LayoutBuilder(
           builder: (context, constraints) {
-            // Calculate padding needed to allow centering of the first/last items.
-            // Using 45% of viewport height as vertical padding.
-            final verticalPadding = constraints.maxHeight * 0.45;
+            final hasTimings = controller.hasTimings.value;
+            final isAudioMode = controller.primaryMode.value == PrimaryMode.audio;
+            
+            // Calculate padding: 
+            // - Large padding (45%) for Focus mode OR Audio mode WITH sync
+            // - Normal padding (24) for Audio mode WITHOUT sync
+            final double verticalPadding = (hasTimings || !isAudioMode) 
+                ? constraints.maxHeight * 0.45 
+                : 24.0;
 
             return Column(
               children: [
@@ -103,13 +110,14 @@ class PrayerPage extends StatelessWidget {
                   child: ScrollablePositionedList.builder(
                     itemScrollController: controller.itemScrollController,
                     itemPositionsListener: controller.itemPositionsListener,
-                    itemCount: controller.segments.length + 1,
+                    itemCount: controller.segments.length + (hasTimings ? 1 : 0),
                     padding: EdgeInsets.symmetric(
                       horizontal: 24, 
                       vertical: verticalPadding,
                     ),
                     itemBuilder: (context, index) {
-                      if (index == 0) {
+                      // Only show flower if sync is available
+                      if (hasTimings && index == 0) {
                         return Center(
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 60),
@@ -122,7 +130,7 @@ class PrayerPage extends StatelessWidget {
                         );
                       }
 
-                      final segmentIndex = index - 1;
+                      final segmentIndex = hasTimings ? index - 1 : index;
                       final segment = controller.segments[segmentIndex];
                       
                       return Obx(() {

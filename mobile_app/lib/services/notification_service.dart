@@ -7,7 +7,7 @@ class NotificationService extends GetxService {
 
   Future<NotificationService> init() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('ic_notification');
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings();
@@ -17,8 +17,28 @@ class NotificationService extends GetxService {
       iOS: initializationSettingsIOS,
     );
 
-    await _notificationsPlugin.initialize(initializationSettings);
-    await requestPermissions();
+    await _notificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse details) {
+        if (details.payload == 'audio_playback') {
+          // Handle notification tap if needed
+        }
+        
+        // Handle actions
+        if (details.actionId == 'pause_action') {
+          // We need a way to communicate back to the controller
+          // Since we are using GetX, we can find the controller if it's active
+          try {
+             // This is a bit tricky since PrayerController uses tags. 
+             // For now, let's assume we might need a global event or similar if we want to support multiple tags.
+             // But usually only one prayer is playing.
+          } catch (e) {
+            // Error handling notification action
+          }
+        }
+      },
+    );
+    
     return this;
   }
 
@@ -56,12 +76,6 @@ class NotificationService extends GetxService {
     );
   }
 
-  // Placeholder for audio notification
-  Future<void> showAudioNotification({
-    required String title,
-    required String body,
-    required double progress,
-  }) async {
-    // Implement audio notification logic here later
-  }
+  // Note: Standard push notifications are still used for non-media events.
+  // Audio playback is now handled by just_audio_background.
 }

@@ -6,12 +6,21 @@ import 'package:nitnem/screens/splash_screen.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
 import 'package:nitnem/core/design_system/models/theme_config.dart';
 import 'package:nitnem/core/design_system/theme/app_theme.dart';
+import 'package:just_audio_background/just_audio_background.dart';
+import 'package:nitnem/bindings/di.dart';
+import 'package:nitnem/firebase_options.dart';
 
-import 'bindings/di.dart';
-import 'firebase_options.dart';
-
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
+    androidNotificationChannelName: 'Audio playback',
+    androidNotificationOngoing: true,
+    androidNotificationIcon: 'drawable/ic_notification',
+    fastForwardInterval: const Duration(seconds: 10),
+    rewindInterval: const Duration(seconds: 10),
+  );
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
@@ -21,7 +30,7 @@ void main() async {
 
   await SharedPrefsService.init();
 
-  DependencyInjection.init();
+  await DependencyInjection.init();
 
   runApp(const MyApp());
 }
