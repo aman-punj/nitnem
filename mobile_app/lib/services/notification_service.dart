@@ -76,6 +76,5 @@ class NotificationService extends GetxService {
     );
   }
 
-  // Note: Standard push notifications are still used for non-media events.
-  // Audio playback is now handled by just_audio_background.
+  // Note: Standard push notifications are used for non-media events.
 }

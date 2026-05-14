@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_background/just_audio_background.dart';
-import 'package:audio_service/audio_service.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../models/content_item.dart';
@@ -239,24 +237,8 @@ class PrayerController extends GetxController {
       if (finalAudioPath.isNotEmpty) {
         try {
           final audioSource = finalAudioIsLocal
-              ? AudioSource.file(
-                  finalAudioPath,
-                  tag: MediaItem(
-                    id: item?.id ?? 'prayer_id',
-                    album: "Nitnem",
-                    title: prayerTitle.value.isEmpty ? (item?.titles.pa ?? 'Prayer') : prayerTitle.value,
-                    artUri: Uri.parse("asset:///assets/images/bani_sagar_logo.png"),
-                  ),
-                )
-              : AudioSource.uri(
-                  Uri.parse('asset:///$finalAudioPath'),
-                  tag: MediaItem(
-                    id: item?.id ?? 'prayer_id',
-                    album: "Nitnem",
-                    title: prayerTitle.value.isEmpty ? (item?.titles.pa ?? 'Prayer') : prayerTitle.value,
-                    artUri: Uri.parse("asset:///assets/images/bani_sagar_logo.png"),
-                  ),
-                );
+              ? AudioSource.file(finalAudioPath)
+              : AudioSource.uri(Uri.parse('asset:///$finalAudioPath'));
 
           await _player.setAudioSource(audioSource);
           audioLoaded = true;
