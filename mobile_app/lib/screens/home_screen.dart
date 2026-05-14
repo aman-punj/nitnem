@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/screens/listing_screen.dart';
 import 'package:nitnem/screens/feedback_screen.dart';
 import 'package:nitnem/screens/drawer.dart';
@@ -20,6 +21,10 @@ class HomeScreen extends StatelessWidget {
       showKhandaSymbol: false,
       appBar: SacredDsAppBar(
         title: 'Bani Sagar',
+        appBarStyle: TextStyle(
+          fontSize: 24,
+          color: SacredColors.primary
+        )
       ),
       drawer: HomeDrawer(onItemSelected: (item) => _onDrawerItemSelect(item)),
       body: const ListingScreen(),
@@ -45,7 +50,7 @@ class HomeScreen extends StatelessWidget {
 
   void onShareApp() async {
     try {
-      const imageAssetPath = 'assets/images/khanda_image.png';
+      const imageAssetPath = 'assets/images/bani_sagar_logo.png';
       const fallbackApkUrl =
           'https://drive.google.com/file/d/your_apk_id/view?usp=sharing';
 
@@ -53,7 +58,7 @@ class HomeScreen extends StatelessWidget {
       final buffer = byteData.buffer;
 
       final tempDir = await getTemporaryDirectory();
-      final tempImageFile = File('${tempDir.path}/khanda_image.png');
+      final tempImageFile = File('${tempDir.path}/bani_sagar_logo.png');
       await tempImageFile.writeAsBytes(buffer.asUint8List());
 
       await Share.shareXFiles(

@@ -48,7 +48,7 @@ class ListingScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color:
                       SacredColors.surfaceContainerLow.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(25),
                   border: Border.all(
                     color: SacredColors.borderGold.withValues(alpha: 0.1),
                   ),

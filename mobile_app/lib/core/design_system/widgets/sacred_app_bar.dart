@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import '../tokens/colors.dart';
 
 class SacredDsAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const SacredDsAppBar({super.key, required this.title, this.actions});
+  const SacredDsAppBar({super.key, required this.title, this.actions, this.appBarStyle});
 
   final String title;
   final List<Widget>? actions;
+  final TextStyle? appBarStyle;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -28,7 +29,7 @@ class SacredDsAppBar extends StatelessWidget implements PreferredSizeWidget {
         foregroundColor: SacredColors.textPrimary,
         title: Text(
           title,
-          style: const TextStyle(
+          style: appBarStyle ??  const TextStyle(
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
           ),

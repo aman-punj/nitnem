@@ -134,7 +134,7 @@ class HomeDrawer extends StatelessWidget {
                         ),
 
                         const Text(
-                          '© 2026 Bani Sagar • All rights reserved',
+                          'Bani Sagar',
                           style: TextStyle(
                             color: SacredColors.textSecondary,
                             fontSize: 12,
