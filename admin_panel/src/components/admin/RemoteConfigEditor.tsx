@@ -1,54 +1,12 @@
-import { useState } from 'react'
-import { type RemoteConfig } from '../../lib/remoteConfigTypes'
+import type { RemoteConfig } from '../../lib/remoteConfigTypes'
 
 type RemoteConfigEditorProps = {
-  remoteConfig: RemoteConfig
-  activeSection: string
+  appConfig: RemoteConfig
   onChange: (nextConfig: RemoteConfig) => void
   saving: boolean
   lastPublishedLabel: string
   updatedBy: string
   dirty: boolean
-}
-
-const sectionTitles: Record<string, string> = {
-  app_config: 'Remote Control Center',
-  version_control: 'Version Control',
-  feature_flags: 'Feature Flags',
-  maintenance: 'Maintenance',
-  languages: 'Language Rollout',
-  experimental: 'Experimental Controls',
-}
-
-const STATUS_STYLE: Record<string, { label: string; tone: string }> = {
-  up_to_date: { label: 'Up to date', tone: 'success' },
-  optional_update: { label: 'Optional update', tone: 'accent' },
-  force_update: { label: 'Force update required', tone: 'warning' },
-}
-
-function formatDateLabel(value: unknown) {
-  if (!value) return 'Never published'
-  const timestamp = value as any
-  if (timestamp?.toDate) {
-    return timestamp.toDate().toLocaleString()
-  }
-  if (timestamp instanceof Date) {
-    return timestamp.toLocaleString()
-  }
-  if (typeof timestamp === 'string') {
-    return timestamp
-  }
-  return 'Recently'
-}
-
-function statusFromBuilds(currentBuild: number, latestBuild: number, minimumSupportedBuild: number) {
-  if (currentBuild < minimumSupportedBuild) {
-    return STATUS_STYLE.force_update
-  }
-  if (currentBuild < latestBuild) {
-    return STATUS_STYLE.optional_update
-  }
-  return STATUS_STYLE.up_to_date
 }
 
 function ToggleRow({
@@ -69,35 +27,6 @@ function ToggleRow({
         <p className="field-description">{description}</p>
       </div>
       <label className="switch">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(event) => onChange(event.target.checked)}
-        />
-        <span className="slider" />
-      </label>
-    </div>
-  )
-}
-
-function FlagRow({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string
-  description: string
-  checked: boolean
-  onChange: (value: boolean) => void
-}) {
-  return (
-    <div className="flag-row">
-      <div>
-        <p className="field-label">{label}</p>
-        <p className="field-description">{description}</p>
-      </div>
-      <label className="switch small">
         <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
         <span className="slider" />
       </label>
@@ -105,296 +34,212 @@ function FlagRow({
   )
 }
 
-export function RemoteConfigEditor({
-  remoteConfig,
-  onChange,
-  activeSection,
-  saving,
-  lastPublishedLabel,
-  updatedBy,
-  dirty,
-}: RemoteConfigEditorProps) {
-  const focusTitle = sectionTitles[activeSection] ?? sectionTitles.app_config
-  const { versionControl, maintenance, featureFlags } = remoteConfig
-  const [previewBuild, setPreviewBuild] = useState(versionControl.latestBuild)
-
-  const status = statusFromBuilds(previewBuild, versionControl.latestBuild, versionControl.minimumSupportedBuild)
-
-  const updateVersionControl = (changes: Partial<typeof versionControl>) => {
+export function RemoteConfigEditor({ appConfig, onChange }: RemoteConfigEditorProps) {
+  const updateConfig = (changes: Partial<RemoteConfig>) => {
     onChange({
-      ...remoteConfig,
-      versionControl: {
-        ...versionControl,
-        ...changes,
-      },
-    })
-  }
-
-  const updateMaintenance = (changes: Partial<typeof maintenance>) => {
-    onChange({
-      ...remoteConfig,
-      maintenance: {
-        ...maintenance,
-        ...changes,
-      },
-    })
-  }
-
-  const updateFeatureFlags = (changes: Partial<typeof featureFlags>) => {
-    onChange({
-      ...remoteConfig,
-      featureFlags: {
-        ...featureFlags,
-        ...changes,
-      },
-    })
-  }
-
-  const updateLanguageFlag = (language: keyof typeof featureFlags.languages, value: boolean) => {
-    onChange({
-      ...remoteConfig,
-      featureFlags: {
-        ...featureFlags,
-        languages: {
-          ...featureFlags.languages,
-          [language]: value,
+      ...appConfig,
+      ...changes,
+      versions: { ...appConfig.versions, ...(changes.versions ?? {}) },
+      messages: {
+        ...appConfig.messages,
+        ...(changes.messages ?? {}),
+        minorUpdate: {
+          ...appConfig.messages.minorUpdate,
+          ...(changes.messages?.minorUpdate ?? {}),
+        },
+        forceUpdate: {
+          ...appConfig.messages.forceUpdate,
+          ...(changes.messages?.forceUpdate ?? {}),
+        },
+        maintenance: {
+          ...appConfig.messages.maintenance,
+          ...(changes.messages?.maintenance ?? {}),
         },
       },
+      maintenance: { ...appConfig.maintenance, ...(changes.maintenance ?? {}) },
+      storeUrl: { ...appConfig.storeUrl, ...(changes.storeUrl ?? {}) },
     })
   }
-
-  const statusChipClass = status.tone === 'success' ? 'status-chip success-chip' : status.tone === 'warning' ? 'status-chip warning-chip' : 'status-chip accent-chip'
 
   return (
     <div className="remote-config-editor stack">
-      <div className="section-hero card panel-hero">
-        <div>
-          <span className="eyebrow">{focusTitle}</span>
-          <h2>Bani Sagar remote configuration</h2>
-          <p className="field-description" style={{ marginTop: '8px' }}>
-            Operational controls for app versions, update logic, maintenance, language rollout, and experimental flags.
-          </p>
-        </div>
-        <div className="row" style={{ gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span className="status-chip muted-chip">{remoteConfig.environment}</span>
-          <span className={statusChipClass}>{status.label}</span>
-          <span className="info-text">{dirty ? 'Unsaved changes' : 'Saved configuration'}</span>
+      <div className="card">
+        <h3>Maintenance</h3>
+        <ToggleRow
+          label="Enable Maintenance Mode"
+          description="When active, users are routed to the maintenance screen."
+          checked={appConfig.maintenance.enabled}
+          onChange={(value) => updateConfig({ maintenance: { enabled: value } })}
+        />
+      </div>
+
+      <div className="card">
+        <h3>Updates</h3>
+        <div className="field-grid">
+          <div className="field-group">
+            <label>Latest Build</label>
+            <input
+              type="number"
+              value={appConfig.versions.latest}
+              onChange={(e) => updateConfig({ versions: { latest: Number(e.target.value) } as RemoteConfig['versions'] })}
+            />
+          </div>
+          <div className="field-group">
+            <label>Minor Update Build</label>
+            <input
+              type="number"
+              value={appConfig.versions.minorUpdate ?? ''}
+              onChange={(e) =>
+                updateConfig({
+                  versions: {
+                    minorUpdate: e.target.value ? Number(e.target.value) : null,
+                  } as RemoteConfig['versions'],
+                })
+              }
+            />
+          </div>
+          <div className="field-group">
+            <label>Force Update Build</label>
+            <input
+              type="number"
+              value={appConfig.versions.forceUpdate ?? ''}
+              onChange={(e) =>
+                updateConfig({
+                  versions: {
+                    forceUpdate: e.target.value ? Number(e.target.value) : null,
+                  } as RemoteConfig['versions'],
+                })
+              }
+            />
+          </div>
         </div>
       </div>
 
-      <div className="panel-grid">
-        <section className="card config-card">
-          <div className="section-header">
-            <div>
-              <h3>Version Control</h3>
-              <p className="field-description">Manage builds, update messaging, and store destinations.</p>
-            </div>
-            <span className="badge accent">Critical</span>
+      <div className="card">
+        <h3>Messages</h3>
+        <h4>Force Update</h4>
+        <div className="field-grid">
+          <div className="field-group full-width">
+            <label>Title</label>
+            <input
+              value={appConfig.messages.forceUpdate.title}
+              onChange={(e) =>
+                updateConfig({ messages: { forceUpdate: { ...appConfig.messages.forceUpdate, title: e.target.value } } as RemoteConfig['messages'] })
+              }
+            />
           </div>
-
-          <div className="field-grid">
-            <div className="field-group">
-              <label>Latest Build Number</label>
-              <input
-                type="number"
-                value={versionControl.latestBuild}
-                min={1}
-                onChange={(event) => updateVersionControl({ latestBuild: Number(event.target.value) })}
-              />
-            </div>
-            <div className="field-group">
-              <label>Minimum Supported Build</label>
-              <input
-                type="number"
-                value={versionControl.minimumSupportedBuild}
-                min={1}
-                onChange={(event) => updateVersionControl({ minimumSupportedBuild: Number(event.target.value) })}
-              />
-            </div>
-            <div className="field-group">
-              <label>Latest Version Name</label>
-              <input
-                value={versionControl.latestVersionName}
-                onChange={(event) => updateVersionControl({ latestVersionName: event.target.value })}
-              />
-            </div>
-            <div className="field-group toggle-group">
-              <label>Force Update</label>
-              <ToggleRow
-                label="Force update"
-                description="Block older installations when version support expires."
-                checked={versionControl.forceUpdate}
-                onChange={(value) => updateVersionControl({ forceUpdate: value })}
-              />
-            </div>
-            <div className="field-group full-width">
-              <label>Update Message</label>
-              <textarea
-                value={versionControl.updateMessage}
-                onChange={(event) => updateVersionControl({ updateMessage: event.target.value })}
-              />
-            </div>
-            <div className="field-group">
-              <label>Android Store URL</label>
-              <input
-                value={versionControl.androidStoreUrl}
-                onChange={(event) => updateVersionControl({ androidStoreUrl: event.target.value })}
-              />
-            </div>
-            <div className="field-group">
-              <label>iOS Store URL</label>
-              <input
-                value={versionControl.iosStoreUrl}
-                onChange={(event) => updateVersionControl({ iosStoreUrl: event.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="section-divider" />
-
-          <div className="field-grid preview-grid">
-            <div className="field-group">
-              <label>Current device build</label>
-              <input
-                type="number"
-                min={1}
-                value={previewBuild}
-                onChange={(event) => setPreviewBuild(Number(event.target.value))}
-              />
-            </div>
-            <div className="field-group">
-              <label>Status preview</label>
-              <div className={`status-chip ${status.tone === 'success' ? 'success-chip' : status.tone === 'warning' ? 'warning-chip' : 'accent-chip'}`}>
-                {status.label}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="card config-card">
-          <div className="section-header">
-            <div>
-              <h3>Maintenance Mode</h3>
-              <p className="field-description">Enable scheduled downtime with a calm, informative message.</p>
-            </div>
-            <span className="badge warning">Safeguard</span>
-          </div>
-
-          <ToggleRow
-            label="Maintenance mode"
-            description="When active, users are routed to the maintenance screen with a gentle message."
-            checked={maintenance.isUnderMaintenance}
-            onChange={(value) => updateMaintenance({ isUnderMaintenance: value })}
-          />
-
-          <div className="field-group full-width" style={{ marginTop: '18px' }}>
-            <label>Maintenance message</label>
+          <div className="field-group full-width">
+            <label>Body</label>
             <textarea
-              value={maintenance.maintenanceMessage}
-              onChange={(event) => updateMaintenance({ maintenanceMessage: event.target.value })}
+              value={appConfig.messages.forceUpdate.body}
+              onChange={(e) =>
+                updateConfig({ messages: { forceUpdate: { ...appConfig.messages.forceUpdate, body: e.target.value } } as RemoteConfig['messages'] })
+              }
             />
           </div>
-        </section>
+          <div className="field-group full-width">
+            <label>Primary Button</label>
+            <input
+              value={appConfig.messages.forceUpdate.primaryButton}
+              onChange={(e) =>
+                updateConfig({
+                  messages: { forceUpdate: { ...appConfig.messages.forceUpdate, primaryButton: e.target.value } } as RemoteConfig['messages'],
+                })
+              }
+            />
+          </div>
+        </div>
 
-        <section className="card config-card">
-          <div className="section-header">
-            <div>
-              <h3>Feature Flags</h3>
-              <p className="field-description">Roll out language and experimental experiences safely.</p>
-            </div>
-            <span className="badge soft">Flexible</span>
+        <h4 style={{ marginTop: '20px' }}>Minor Update</h4>
+        <div className="field-grid">
+          <div className="field-group full-width">
+            <label>Title</label>
+            <input
+              value={appConfig.messages.minorUpdate.title}
+              onChange={(e) =>
+                updateConfig({ messages: { minorUpdate: { ...appConfig.messages.minorUpdate, title: e.target.value } } as RemoteConfig['messages'] })
+              }
+            />
           </div>
+          <div className="field-group full-width">
+            <label>Body</label>
+            <textarea
+              value={appConfig.messages.minorUpdate.body}
+              onChange={(e) =>
+                updateConfig({ messages: { minorUpdate: { ...appConfig.messages.minorUpdate, body: e.target.value } } as RemoteConfig['messages'] })
+              }
+            />
+          </div>
+          <div className="field-group">
+            <label>Primary Button</label>
+            <input
+              value={appConfig.messages.minorUpdate.primaryButton}
+              onChange={(e) =>
+                updateConfig({
+                  messages: { minorUpdate: { ...appConfig.messages.minorUpdate, primaryButton: e.target.value } } as RemoteConfig['messages'],
+                })
+              }
+            />
+          </div>
+          <div className="field-group">
+            <label>Secondary Button</label>
+            <input
+              value={appConfig.messages.minorUpdate.secondaryButton ?? ''}
+              onChange={(e) =>
+                updateConfig({
+                  messages: { minorUpdate: { ...appConfig.messages.minorUpdate, secondaryButton: e.target.value } } as RemoteConfig['messages'],
+                })
+              }
+            />
+          </div>
+        </div>
 
-          <div className="flag-grid">
-            <FlagRow
-              label="Punjabi language"
-              description="Control whether Punjabi language access is enabled in the app."
-              checked={featureFlags.languages.punjabi}
-              onChange={(value) => updateLanguageFlag('punjabi', value)}
-            />
-            <FlagRow
-              label="English language"
-              description="Enable English rollout for a wider set of users."
-              checked={featureFlags.languages.english}
-              onChange={(value) => updateLanguageFlag('english', value)}
-            />
-            <FlagRow
-              label="Hindi language"
-              description="Switch on Hindi rollout during phased release."
-              checked={featureFlags.languages.hindi}
-              onChange={(value) => updateLanguageFlag('hindi', value)}
-            />
-            <FlagRow
-              label="Focus reading mode"
-              description="Enable an immersive reading experience for active sessions."
-              checked={featureFlags.focus_reading_mode}
-              onChange={(value) => updateFeatureFlags({ focus_reading_mode: value })}
-            />
-            <FlagRow
-              label="New player UI"
-              description="Toggle the updated player experience for testing."
-              checked={featureFlags.new_player_ui}
-              onChange={(value) => updateFeatureFlags({ new_player_ui: value })}
-            />
-            <FlagRow
-              label="Experimental home"
-              description="Activate a preview home screen flow for internal review."
-              checked={featureFlags.experimental_home}
-              onChange={(value) => updateFeatureFlags({ experimental_home: value })}
+        <h4 style={{ marginTop: '20px' }}>Maintenance</h4>
+        <div className="field-grid">
+          <div className="field-group full-width">
+            <label>Title</label>
+            <input
+              value={appConfig.messages.maintenance.title}
+              onChange={(e) =>
+                updateConfig({ messages: { maintenance: { ...appConfig.messages.maintenance, title: e.target.value } } as RemoteConfig['messages'] })
+              }
             />
           </div>
-        </section>
+          <div className="field-group full-width">
+            <label>Body</label>
+            <textarea
+              value={appConfig.messages.maintenance.body}
+              onChange={(e) =>
+                updateConfig({ messages: { maintenance: { ...appConfig.messages.maintenance, body: e.target.value } } as RemoteConfig['messages'] })
+              }
+            />
+          </div>
+          <div className="field-group full-width">
+            <label>Primary Button</label>
+            <input
+              value={appConfig.messages.maintenance.primaryButton}
+              onChange={(e) =>
+                updateConfig({
+                  messages: { maintenance: { ...appConfig.messages.maintenance, primaryButton: e.target.value } } as RemoteConfig['messages'],
+                })
+              }
+            />
+          </div>
+        </div>
+      </div>
 
-        <section className="card preview-card">
-          <div className="section-header">
-            <div>
-              <h3>Preview & workflow</h3>
-              <p className="field-description">Simulate how the app will present updates, maintenance, and release status.</p>
-            </div>
+      <div className="card">
+        <h3>Store URLs</h3>
+        <div className="field-grid">
+          <div className="field-group full-width">
+            <label>Android URL</label>
+            <input value={appConfig.storeUrl.android} onChange={(e) => updateConfig({ storeUrl: { android: e.target.value } as RemoteConfig['storeUrl'] })} />
           </div>
-
-          <div className="preview-surface">
-            {maintenance.isUnderMaintenance ? (
-              <div className="preview-block">
-                <span className="preview-title">Maintenance mode active</span>
-                <p>{maintenance.maintenanceMessage}</p>
-                <div className="badge warning">Maintenance</div>
-              </div>
-            ) : versionControl.forceUpdate && previewBuild < versionControl.minimumSupportedBuild ? (
-              <div className="preview-block">
-                <span className="preview-title">Force update required</span>
-                <p>{versionControl.updateMessage}</p>
-                <button className="outline">Update now</button>
-              </div>
-            ) : previewBuild < versionControl.latestBuild ? (
-              <div className="preview-block">
-                <span className="preview-title">Optional update</span>
-                <p>{versionControl.updateMessage}</p>
-                <div className="row" style={{ gap: '10px', flexWrap: 'wrap' }}>
-                  <button className="secondary">Continue</button>
-                  <button>Update now</button>
-                </div>
-              </div>
-            ) : (
-              <div className="preview-block">
-                <span className="preview-title">App is up to date</span>
-                <p>Current build is within the supported range and no update flow is displayed.</p>
-                <div className="status-chip success-chip">Stable</div>
-              </div>
-            )}
+          <div className="field-group full-width">
+            <label>iOS URL</label>
+            <input value={appConfig.storeUrl.ios} onChange={(e) => updateConfig({ storeUrl: { ios: e.target.value } as RemoteConfig['storeUrl'] })} />
           </div>
-
-          <div className="field-grid" style={{ marginTop: '16px' }}>
-            <div>
-              <p className="field-label">Last published</p>
-              <p className="info-text">{lastPublishedLabel}</p>
-            </div>
-            <div>
-              <p className="field-label">Updated by</p>
-              <p className="info-text">{updatedBy || 'Unknown'}</p>
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
     </div>
   )

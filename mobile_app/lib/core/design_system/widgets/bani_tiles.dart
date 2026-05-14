@@ -3,8 +3,8 @@ import '../tokens/colors.dart';
 
 class BaniListTile extends StatefulWidget {
   final IconData icon;
-  final String title;
-  final String? subtitle;
+  final String gurmukhiTitle;
+  final String englishTitle;
   final VoidCallback onTap;
   final bool isCompleted;
   final Duration? estimatedTime;
@@ -13,8 +13,8 @@ class BaniListTile extends StatefulWidget {
   const BaniListTile({
     super.key,
     this.icon = Icons.auto_stories_outlined,
-    required this.title,
-    this.subtitle,
+    required this.gurmukhiTitle,
+    required this.englishTitle,
     required this.onTap,
     this.isCompleted = false,
     this.estimatedTime,
@@ -139,34 +139,35 @@ class _BaniListTileState extends State<BaniListTile>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.title,
+                          widget.gurmukhiTitle,
                           style: const TextStyle(
-                            color: SacredColors.textPrimary,
+                            color: SacredColors.primaryAccent,
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             height: 1.3,
                             letterSpacing: 0.3,
                           ),
                         ),
-                        if (widget.subtitle != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.subtitle!,
-                            style: TextStyle(
-                              color: SacredColors.textSecondary,
-                              fontSize: 14,
-                              height: 1.2,
-                            ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.englishTitle,
+                          style: TextStyle(
+                            color: SacredColors.textSecondary,
+                            fontSize: 14,
+                            height: 1.2,
+                            fontWeight: FontWeight.w500,
                           ),
-                        ],
-                        if (widget.showEstimatedTime && widget.estimatedTime != null) ...[
+                        ),
+                        if (widget.showEstimatedTime &&
+                            widget.estimatedTime != null) ...[
                           const SizedBox(height: 8),
                           Row(
                             children: [
                               Icon(
                                 Icons.access_time_rounded,
                                 size: 14,
-                                color: SacredColors.primaryAccent.withValues(alpha: 0.6),
+                                color: SacredColors.primaryAccent
+                                    .withValues(alpha: 0.6),
                               ),
                               const SizedBox(width: 6),
                               Text(
@@ -192,10 +193,12 @@ class _BaniListTileState extends State<BaniListTile>
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: SacredColors.primaryAccent.withValues(alpha: 0.1),
+                            color: SacredColors.primaryAccent
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: SacredColors.primaryAccent.withValues(alpha: 0.3),
+                              color: SacredColors.primaryAccent
+                                  .withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
@@ -211,7 +214,8 @@ class _BaniListTileState extends State<BaniListTile>
                       // Arrow indicator
                       Icon(
                         Icons.arrow_forward_ios_rounded,
-                        color: SacredColors.primaryAccent.withValues(alpha: 0.3),
+                        color:
+                            SacredColors.primaryAccent.withValues(alpha: 0.3),
                         size: 16,
                       ),
                     ],
@@ -227,8 +231,8 @@ class _BaniListTileState extends State<BaniListTile>
 }
 
 class SpecialBaniTile extends StatelessWidget {
-  final String title;
-  final String? gurmukhiTitle;
+  final String englishTitle;
+  final String gurmukhiTitle;
   final IconData icon;
   final VoidCallback onTap;
   final bool isCompleted;
@@ -236,8 +240,8 @@ class SpecialBaniTile extends StatelessWidget {
 
   const SpecialBaniTile({
     super.key,
-    required this.title,
-    this.gurmukhiTitle,
+    required this.englishTitle,
+    required this.gurmukhiTitle,
     this.icon = Icons.auto_stories_outlined,
     required this.onTap,
     this.isCompleted = false,
@@ -306,20 +310,18 @@ class SpecialBaniTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            if (gurmukhiTitle != null) ...[
-              Text(
-                gurmukhiTitle!,
-                style: const TextStyle(
-                  color: SacredColors.primaryAccent,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
             Text(
-              title,
+              gurmukhiTitle,
+              style: const TextStyle(
+                color: SacredColors.primaryAccent,
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              englishTitle,
               style: const TextStyle(
                 color: SacredColors.textPrimary,
                 fontSize: 16,

@@ -38,6 +38,7 @@ class HomeController extends GetxController {
   final RxList<ContentCategory> categories = <ContentCategory>[].obs;
   final RxBool isLoading = false.obs;
   final RxString currentLang = 'pa'.obs;
+  final RxString searchQuery = ''.obs;
 
   @override
   void onInit() {
@@ -54,40 +55,45 @@ class HomeController extends GetxController {
   }
 
   void _showUpdateDialog() {
-    final config = _appInfoController.appInfo.value?.versionControl;
-    if (config == null) return;
+    final config = _appInfoController.appConfig.value;
+    if (config == null || config.messages.minorUpdate == null) return;
 
     Get.dialog(
       AlertDialog(
         backgroundColor: SacredColors.surfacePrimary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          "Update Available",
-          style: SacredTypography.headlineMd.copyWith(color: SacredColors.primaryAccent),
+          config.messages.minorUpdate!.title,
+          style: SacredTypography.headlineMd
+              .copyWith(color: SacredColors.primaryAccent),
         ),
         content: Text(
-          config.updateMessage,
+          config.messages.minorUpdate!.body,
           style: SacredTypography.bodyMd,
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text("Later", style: TextStyle(color: SacredColors.textSecondary)),
+            child: Text(config.messages.minorUpdate!.secondaryButton ?? "Later",
+                style: TextStyle(color: SacredColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: SacredColors.primaryAccent,
               foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () async {
               Get.back();
-              final url = Uri.parse(Platform.isAndroid ? config.androidStoreUrl : config.iosStoreUrl);
+              final storeUrl =
+                  Platform.isIOS ? config.storeUrl.ios : config.storeUrl.android;
+              final url = Uri.parse(storeUrl);
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               }
             },
-            child: Text("Update Now"),
+            child: Text(config.messages.minorUpdate!.primaryButton),
           ),
         ],
       ),
@@ -97,7 +103,7 @@ class HomeController extends GetxController {
   Future<void> _loadInitialContent() async {
     // 1. Load from cache first
     contentItems.value = _localContentService.getCachedContentCatalog();
-    
+
     // 2. Fetch from Firebase
     await refreshContent();
   }
@@ -110,7 +116,7 @@ class HomeController extends GetxController {
       if (remoteItems.isNotEmpty) {
         contentItems.value = remoteItems;
         await _localContentService.cacheContentCatalog(remoteItems);
-        
+
         // Background sync for all items
         _syncAllContent(remoteItems);
       }
@@ -145,12 +151,13 @@ class HomeController extends GetxController {
 
   void _openPrayer(ContentItem item) async {
     final localMetadata = _localContentService.getSyncMetadata(item.id);
-    
+
     final title = item.titles.getForLanguage(currentLang.value);
-    
+
     // Rely on synced local paths. Fallback removed as per task to remove old path assumptions.
     final audioPath = localMetadata?.audioLocalPath;
-    final transcriptPath = localMetadata?.transcriptLocalPaths[currentLang.value];
+    final transcriptPath =
+        localMetadata?.transcriptLocalPaths[currentLang.value];
 
     Get.to(() => PrayerPage(
           title: title,

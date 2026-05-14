@@ -1,7 +1,9 @@
-import '../models/app_info_model.dart';
+import '../models/app_config_model.dart';
+import '../models/feature_flags_model.dart';
 
 abstract class AppInfoService {
-  Future<AppInfoModel?> fetchAppInfo();
+  Future<AppConfig?> fetchAppInfo();
+  Future<FeatureFlags?> fetchFeatureFlags();
 
   // Future<Map<String, dynamic>> updateJsonPerPrayer(String prayerId);
 }

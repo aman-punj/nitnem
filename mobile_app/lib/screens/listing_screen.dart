@@ -4,7 +4,7 @@ import 'package:nitnem/controllers/home_controller.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/core/design_system/widgets/bani_tiles.dart';
-import 'package:nitnem/utils/gradient_scaffold.dart';
+import 'package:nitnem/models/content_category.dart';
 
 class ListingScreen extends StatelessWidget {
   const ListingScreen({super.key});
@@ -23,52 +23,31 @@ class ListingScreen extends StatelessWidget {
         );
       }
 
-      final grouped = controller.groupedContent;
-      
-      final dailyNitnem = grouped['nitnem'] ?? [];
-      final otherItems = grouped.entries
-          .where((e) => e.key != 'nitnem')
-          .expand((e) => e.value)
-          .toList();
+      final groupedContent = _groupContentByCategories(controller);
+      final categoryMap = {
+        for (final category in controller.categories) category.id: category
+      };
+      final orderedCategoryIds = [
+        ...controller.categories
+            .where((cat) => cat.enabled)
+            .map((cat) => cat.id),
+        ...groupedContent.keys
+            .where((id) => !categoryMap.containsKey(id))
+            .toList()
+          ..sort(),
+      ].toSet().toList();
 
       return CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // ─── Hero Header ────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
-              child: Column(
-                children: [
-                  Text(
-                    'Sacred Library',
-                    style: SacredTypography.displayLg.copyWith(
-                      color: SacredColors.primaryAccent,
-                      fontSize: 40,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Explore the divine hymns and verses of the Nitnem and Sikh scriptures.',
-                    style: SacredTypography.bodyLg.copyWith(
-                      color: SacredColors.textSecondary.withValues(alpha: 0.8),
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
           // ─── Search Bar ─────────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: SacredColors.surfaceContainerLow.withValues(alpha: 0.5),
+                  color:
+                      SacredColors.surfaceContainerLow.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: SacredColors.borderGold.withValues(alpha: 0.1),
@@ -96,125 +75,170 @@ class ListingScreen extends StatelessWidget {
                     contentPadding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   onChanged: (val) {
-                    // TODO: Implement search in HomeController
+                    controller.searchQuery.value = val;
                   },
                 ),
               ),
             ),
           ),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 40)),
+          // ─── Content Sections ───────────────────────────────────────────
+          ..._buildCategorySections(
+              orderedCategoryIds, categoryMap, groupedContent, controller),
 
-          // ─── Daily Nitnem Section (Bento Cards) ────────────────────────
-          if (dailyNitnem.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Daily Nitnem',
-                      style: SacredTypography.headlineMd.copyWith(
-                        color: SacredColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      'View All',
-                      style: SacredTypography.labelSm.copyWith(
-                        color: SacredColors.primaryAccent,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = dailyNitnem[index];
-                    return SpecialBaniTile(
-                      title: item.titles.en,
-                      gurmukhiTitle: item.titles.pa,
-                      icon: _getBaniIcon(item.id),
-                      onTap: () => controller.onContentTap(item),
-                    );
-                  },
-                  childCount: dailyNitnem.length,
-                ),
-              ),
-            ),
-          ],
-
+          // ─── Bottom Spacer ──────────────────────────────────────────────
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
-
-          // ─── Other Banis Section (Compact Tiles) ───────────────────────
-          if (otherItems.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Text(
-                  'Other Banis',
-                  style: SacredTypography.headlineMd.copyWith(
-                    color: SacredColors.textPrimary,
-                  ),
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = otherItems[index];
-                    return BaniListTile(
-                      title: item.titles.getForLanguage(controller.currentLang.value),
-                      subtitle: item.titles.pa,
-                      icon: _getBaniIcon(item.id),
-                      onTap: () => controller.onContentTap(item),
-                    );
-                  },
-                  childCount: otherItems.length,
-                ),
-              ),
-            ),
-          ],
-
-          // ─── Decorative Spacer ──────────────────────────────────────────
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 64),
-              child: Center(
-                child: Opacity(
-                  opacity: 0.3,
-                  child: Icon(
-                    Icons.spa_rounded,
-                    color: SacredColors.primaryAccent,
-                    size: 40,
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       );
     });
   }
 
-  IconData _getBaniIcon(String id) {
-    switch (id.toLowerCase()) {
-      case 'japji_sahib':
+  List<Widget> _buildCategorySections(
+    List<String> orderedCategoryIds,
+    Map<String, ContentCategory> categoryMap,
+    Map<String, List<dynamic>> groupedContent,
+    HomeController controller,
+  ) {
+    final sections = <Widget>[];
+
+    if (controller.contentItems.isEmpty && !controller.isLoading.value) {
+      return [
+        const SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Text(
+              'No content available yet.',
+              style: TextStyle(color: SacredColors.textSecondary),
+            ),
+          ),
+        ),
+      ];
+    }
+
+    for (final categoryId in orderedCategoryIds) {
+      final category = categoryMap[categoryId];
+      final items = groupedContent[categoryId] ?? [];
+      if (items.isEmpty) continue;
+
+      final title = category?.title ?? _friendlyCategoryTitle(categoryId);
+      final iconKey = category?.iconKey;
+
+      sections.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+            child: Text(
+              title,
+              style: SacredTypography.headlineMd.copyWith(
+                color: SacredColors.textPrimary,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      sections.add(
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final item = items[index];
+                final isFirstInCategory = index == 0;
+                final isPinned = item.pinToTop;
+
+                if (isFirstInCategory && categoryId == 'nitnem' || isPinned) {
+                  return SpecialBaniTile(
+                    englishTitle: item.titles.en,
+                    gurmukhiTitle: item.titles.pa,
+                    icon: _getIconForCategory(iconKey),
+                    onTap: () => controller.onContentTap(item),
+                  );
+                } else {
+                  return BaniListTile(
+                    gurmukhiTitle: item.titles.pa,
+                    englishTitle: item.titles.en,
+                    icon: _getIconForCategory(iconKey),
+                    onTap: () => controller.onContentTap(item),
+                  );
+                }
+              },
+              childCount: items.length,
+            ),
+          ),
+        ),
+      );
+
+      sections.add(const SliverToBoxAdapter(child: SizedBox(height: 16)));
+    }
+
+    return sections;
+  }
+
+  Map<String, List<dynamic>> _groupContentByCategories(
+      HomeController controller) {
+    final grouped = <String, List<dynamic>>{};
+    final searchQuery = controller.searchQuery.value.toLowerCase();
+
+    for (final item in controller.contentItems) {
+      if (item.enabled) {
+        // Apply search filter
+        final matchesSearch = searchQuery.isEmpty ||
+            item.titles.en.toLowerCase().contains(searchQuery) ||
+            item.titles.pa.toLowerCase().contains(searchQuery) ||
+            item.titles.hi.toLowerCase().contains(searchQuery);
+
+        if (matchesSearch) {
+          grouped.putIfAbsent(item.categoryId, () => []).add(item);
+        }
+      }
+    }
+
+    // Sort items within each category
+    grouped.forEach((categoryId, items) {
+      items.sort((a, b) {
+        // Pinned items first, then by display order
+        if (a.pinToTop != b.pinToTop) return a.pinToTop ? -1 : 1;
+        return a.displayOrder.compareTo(b.displayOrder);
+      });
+    });
+
+    return grouped;
+  }
+
+  String _friendlyCategoryTitle(String categoryId) {
+    switch (categoryId.toLowerCase()) {
+      case 'nitnem':
+        return 'Nitnem';
+      case 'daily':
+        return 'Daily Banis';
+      case 'evening':
+        return 'Evening Banis';
+      case 'live':
+        return 'Live';
+      default:
+        return 'Other Banis';
+    }
+  }
+
+  IconData _getIconForCategory(String? iconKey) {
+    if (iconKey == null) return Icons.auto_stories_outlined;
+
+    switch (iconKey.toLowerCase()) {
+      case 'sun':
         return Icons.wb_sunny_outlined;
-      case 'jaap_sahib':
+      case 'star':
         return Icons.auto_awesome_rounded;
-      case 'rehras_sahib':
+      case 'moon':
         return Icons.nights_stay_rounded;
-      case 'chaupai_sahib':
+      case 'shield':
         return Icons.shield_outlined;
-      case 'anand_sahib':
+      case 'heart':
         return Icons.favorite_border_outlined;
+      case 'book':
+        return Icons.menu_book_rounded;
+      case 'live':
+        return Icons.live_tv_rounded;
       default:
         return Icons.auto_stories_outlined;
     }

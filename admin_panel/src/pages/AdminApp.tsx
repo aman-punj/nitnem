@@ -25,20 +25,7 @@ import { PrayerCard } from '../components/admin/PrayerCard'
 import { ContentEditor } from '../components/admin/ContentEditor'
 import { RemoteConfigEditor } from '../components/admin/RemoteConfigEditor'
 
-type AdminSection =
-  | 'dashboard'
-  | 'content'
-  | 'categories'
-  | 'feedback'
-  | 'live'
-  | 'app_config'
-  | 'version_control'
-  | 'feature_flags'
-  | 'maintenance'
-  | 'languages'
-  | 'experimental'
-  | 'storage'
-  | 'settings'
+type AdminSection = 'config' | 'content'
 
 function SortableItem({ item, onEdit }: { item: ContentItem; onEdit: () => void }) {
   const {
@@ -59,9 +46,9 @@ function SortableItem({ item, onEdit }: { item: ContentItem; onEdit: () => void 
 
   return (
     <div ref={setNodeRef} style={style}>
-      <PrayerCard 
-        item={item} 
-        onEdit={onEdit} 
+      <PrayerCard
+        item={item}
+        onEdit={onEdit}
         dragHandleProps={{ ...attributes, ...listeners }}
       />
     </div>
@@ -69,7 +56,7 @@ function SortableItem({ item, onEdit }: { item: ContentItem; onEdit: () => void 
 }
 
 export function AdminApp() {
-  const [section, setSection] = useState<AdminSection>('content')
+  const [section, setSection] = useState<AdminSection>('config')
 
   const [items, setItems] = useState<ContentItem[]>([])
   const [loadingItems, setLoadingItems] = useState(false)
@@ -183,7 +170,7 @@ export function AdminApp() {
     const newIndex = fullSectionItems.findIndex((i: ContentItem) => i.id === over.id)
 
     const reorderedSection = arrayMove(fullSectionItems, oldIndex, newIndex)
-    
+
     const updatedItems = reorderedSection.map((item: ContentItem, index: number) => ({
       ...item,
       displayOrder: index,
@@ -225,21 +212,6 @@ export function AdminApp() {
     return 'Recently'
   }
 
-  const sectionMenu: Array<{ id: AdminSection; label: string }> = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'app_config', label: 'App Config' },
-    { id: 'version_control', label: 'Version Control' },
-    { id: 'feature_flags', label: 'Feature Flags' },
-    { id: 'maintenance', label: 'Maintenance' },
-    { id: 'languages', label: 'Languages' },
-    { id: 'experimental', label: 'Experimental' },
-    { id: 'content', label: 'Content' },
-    { id: 'settings', label: 'Settings' },
-  ]
-
-  const isContentSection = section === 'content'
-  const isRemoteConfigSection = ['app_config', 'version_control', 'feature_flags', 'maintenance', 'languages', 'experimental'].includes(section)
-
   return (
     <div className="app fade-in">
       <header className="row spread" style={{ marginBottom: '40px' }}>
@@ -251,25 +223,28 @@ export function AdminApp() {
 
       <div className="admin-layout">
         <aside className="admin-sidebar card">
-          {sectionMenu.map((entry) => (
-            <button
-              key={entry.id}
-              className={section === entry.id ? '' : 'secondary'}
-              style={{ width: '100%', marginBottom: '8px' }}
-              onClick={() => setSection(entry.id)}
-            >
-              {entry.label}
-            </button>
-          ))}
+          <button
+            className={section === 'config' ? '' : 'secondary'}
+            style={{ width: '100%', marginBottom: '8px' }}
+            onClick={() => setSection('config')}
+          >
+            App Config
+          </button>
+          <button
+            className={section === 'content' ? '' : 'secondary'}
+            style={{ width: '100%', marginBottom: '8px' }}
+            onClick={() => setSection('content')}
+          >
+            Content Management
+          </button>
         </aside>
         <main className="stack" style={{ flex: 1 }}>
-          {isRemoteConfigSection && (
+          {section === 'config' && (
             <div className="stack">
               <div className="row spread top-bar" style={{ marginBottom: '24px' }}>
                 <div className="stack" style={{ flex: 1, minWidth: 0 }}>
                   <span className="eyebrow">Config controls</span>
                   <div className="row" style={{ gap: '12px', flexWrap: 'wrap' }}>
-                    <span className="info-text">Environment: {remoteConfig.environment}</span>
                     <span className="info-text">Last updated: {formatTimestampLabel(remoteConfig.updatedAt)}</span>
                     {dirtyRemoteConfig && <span className="badge accent">Unsaved changes</span>}
                   </div>
@@ -289,8 +264,7 @@ export function AdminApp() {
                 <div className="card empty-state">Loading configuration...</div>
               ) : (
                 <RemoteConfigEditor
-                  remoteConfig={remoteConfig}
-                  activeSection={section}
+                  appConfig={remoteConfig}
                   onChange={handleRemoteConfigChange}
                   saving={publishing}
                   lastPublishedLabel={formatTimestampLabel(remoteConfig.updatedAt)}
@@ -301,35 +275,7 @@ export function AdminApp() {
             </div>
           )}
 
-          {section === 'dashboard' && (
-            <div className="card">
-              <h2>Operational Dashboard</h2>
-              <p className="field-description">A calm cockpit for configuration, releases, and maintenance state.</p>
-              <div className="grid" style={{ marginTop: '20px' }}>
-                <div className="card small-card">
-                  <p className="field-label">Current environment</p>
-                  <strong>{remoteConfig.environment}</strong>
-                </div>
-                <div className="card small-card">
-                  <p className="field-label">Remote config state</p>
-                  <strong>{dirtyRemoteConfig ? 'Unsaved changes' : 'Synced'}</strong>
-                </div>
-                <div className="card small-card">
-                  <p className="field-label">Maintenance</p>
-                  <strong>{remoteConfig.maintenance.isUnderMaintenance ? 'Active' : 'Inactive'}</strong>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {section === 'settings' && (
-            <div className="card">
-              <h2>Settings</h2>
-              <p className="field-description">General admin preferences and access controls for the panel.</p>
-            </div>
-          )}
-
-          {isContentSection && (
+          {section === 'content' && (
             <div className="stack">
               {(editingItem || isAddingNew) ? (
                 <ContentEditor

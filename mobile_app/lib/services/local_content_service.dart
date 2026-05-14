@@ -24,8 +24,7 @@ class LocalContentService {
       final list = jsonDecode(json) as List;
       return list.map((e) => ContentItem.fromMap(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      print('Error parsing cached content catalog: $e');
-      return [];
+       return [];
     }
   }
 

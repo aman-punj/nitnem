@@ -2,107 +2,116 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
+import 'package:nitnem/core/design_system/tokens/spacing.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_button.dart';
 import 'package:nitnem/utils/gradient_scaffold.dart';
 
-enum OperationalStatus { maintenance, forceUpdate }
+enum OperationalStatus { maintenance, forceUpdate, minorUpdate }
 
 class OperationalStatusScreen extends StatelessWidget {
   final OperationalStatus status;
+  final String title;
   final String message;
+  final String primaryButtonText;
+  final String? secondaryButtonText;
   final String? storeUrl;
+  final VoidCallback? onSecondaryPressed;
 
   const OperationalStatusScreen({
     super.key,
     required this.status,
+    required this.title,
     required this.message,
+    required this.primaryButtonText,
+    this.secondaryButtonText,
     this.storeUrl,
+    this.onSecondaryPressed,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bool isMaintenance = status == OperationalStatus.maintenance;
-
     return GradientScaffold(
       showKhandaSymbol: true,
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
+          padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.xl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Icon with glow
+              // Immersive Icon
               Container(
-                width: 100,
-                height: 100,
+                padding: const EdgeInsets.all(SacredSpacing.lg),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: (isMaintenance
-                          ? Colors.orangeAccent
-                          : SacredColors.primaryAccent)
-                      .withValues(alpha: 0.1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (isMaintenance
-                              ? Colors.orangeAccent
-                              : SacredColors.primaryAccent)
-                          .withValues(alpha: 0.05),
-                      blurRadius: 40,
-                      spreadRadius: 10,
-                    ),
-                  ],
+                  color: SacredColors.primaryAccent.withValues(alpha: 0.05),
+                  border: Border.all(
+                    color: SacredColors.primaryAccent.withValues(alpha: 0.1),
+                    width: 1,
+                  ),
                 ),
                 child: Icon(
-                  isMaintenance ? Icons.engineering_rounded : Icons.system_update_rounded,
-                  size: 50,
-                  color: isMaintenance ? Colors.orangeAccent : SacredColors.primaryAccent,
+                  status == OperationalStatus.maintenance 
+                      ? Icons.pause_circle_outline_rounded 
+                      : Icons.system_update_rounded,
+                  size: 48,
+                  color: SacredColors.primaryAccent,
                 ),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: SacredSpacing.xl),
               
               // Title
               Text(
-                isMaintenance ? 'Sanctuary Under Care' : 'New Presence Awaits',
+                title,
                 textAlign: TextAlign.center,
-                style: SacredTypography.displayLg.copyWith(
-                  fontSize: 32,
+                style: SacredTypography.headlineLg.copyWith(
                   color: SacredColors.textPrimary,
-                  height: 1.2,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: SacredSpacing.sm),
               
               // Message
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: SacredTypography.bodyLg.copyWith(
-                  color: SacredColors.textSecondary.withValues(alpha: 0.8),
+                style: SacredTypography.bodyMd.copyWith(
+                  color: SacredColors.textSecondary,
                   height: 1.6,
                 ),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: SacredSpacing.xxl),
               
-              // Action Button
-              if (!isMaintenance && storeUrl != null)
-                SacredButton(
-                  label: 'Update Now',
+              // Primary CTA
+              SizedBox(
+                width: double.infinity,
+                child: SacredButton(
+                  label: primaryButtonText,
                   onPressed: () async {
-                    final Uri url = Uri.parse(storeUrl!);
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(url);
+                    if (storeUrl != null) {
+                      final Uri url = Uri.parse(storeUrl!);
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url);
+                      }
+                    } else if (status == OperationalStatus.maintenance) {
+                      // Logic for closing app
                     }
                   },
                 ),
+              ),
               
-              if (isMaintenance)
-                 Text(
-                    'WE WILL RETURN SHORTLY',
-                    style: SacredTypography.labelSm.copyWith(
-                      color: SacredColors.primaryAccent.withValues(alpha: 0.5),
-                      letterSpacing: 4.0,
+              // Secondary CTA
+              if (secondaryButtonText != null) ...[
+                const SizedBox(height: SacredSpacing.md),
+                TextButton(
+                  onPressed: onSecondaryPressed,
+                  child: Text(
+                    secondaryButtonText!,
+                    style: SacredTypography.bodySm.copyWith(
+                      color: SacredColors.textSecondary.withValues(alpha: 0.6),
+                      decoration: TextDecoration.underline,
                     ),
                   ),
+                ),
+              ],
             ],
           ),
         ),

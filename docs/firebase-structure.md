@@ -26,12 +26,12 @@ For prayer content:
 
 ## App Config Collection
 `app_config/mobile`
-- `latestBuild: number`
-- `minimumSupportedBuild: number`
-- `forceUpdate: boolean`
-- `updateMessage: string`
+- `versions: { latest: number, minorUpdate: number?, forceUpdate: number? }`
+- `messages: { minorUpdate: { title, body, primaryButton, secondaryButton? }?, forceUpdate: { title, body, primaryButton }?, maintenance: { title, body, primaryButton }? }`
+- `maintenance: { enabled: boolean }`
+- `storeUrl: string`
 
 Update policy:
-- `currentBuild < minimumSupportedBuild` => force update
-- `currentBuild < latestBuild` => recommended update
-- Build number comparison only (no semantic-version string comparison)
+- `currentBuild < forceUpdate` => force update
+- `currentBuild < minorUpdate` => recommended update
+- Build number comparison only.

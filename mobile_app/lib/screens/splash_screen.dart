@@ -5,12 +5,12 @@ import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
-import 'package:nitnem/screens/operational_status_screen.dart';
+import 'package:nitnem/core/design_system/widgets/sacred_update_sheet.dart';
+import 'package:nitnem/core/design_system/widgets/sacred_maintenance_sheet.dart';
 import 'package:nitnem/services/firebase_content_service.dart';
 import 'package:nitnem/services/transcript_sync_service.dart';
 import 'package:nitnem/models/content_item.dart';
 import 'package:nitnem/utils/gradient_scaffold.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 import 'home_screen.dart';
 
@@ -32,7 +32,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _initApp();
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -52,14 +52,15 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _initApp() async {
     await getAppInfo();
-    
+
     if (_isOperationalBlocked) return;
 
     Timer(const Duration(seconds: 4), () {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const HomeScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -100,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
             ),
-            
+
             // Central Branding
             Center(
               child: Column(
@@ -112,14 +113,17 @@ class _SplashScreenState extends State<SplashScreen>
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: SacredColors.surfaceContainerLow.withValues(alpha: 0.5),
+                      color: SacredColors.surfaceContainerLow
+                          .withValues(alpha: 0.5),
                       border: Border.all(
-                        color: SacredColors.primaryAccent.withValues(alpha: 0.2),
+                        color:
+                            SacredColors.primaryAccent.withValues(alpha: 0.2),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: SacredColors.primaryAccent.withValues(alpha: 0.1),
+                          color:
+                              SacredColors.primaryAccent.withValues(alpha: 0.1),
                           blurRadius: 30,
                           spreadRadius: 5,
                         ),
@@ -131,7 +135,8 @@ class _SplashScreenState extends State<SplashScreen>
                         width: 60,
                         height: 60,
                         // Fallback icon if image missing
-                        errorBuilder: (context, error, stackTrace) => const Icon(
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
                           Icons.spa_rounded,
                           color: SacredColors.primaryAccent,
                           size: 48,
@@ -175,7 +180,8 @@ class _SplashScreenState extends State<SplashScreen>
                     width: 180,
                     height: 2,
                     decoration: BoxDecoration(
-                      color: SacredColors.surfaceContainerHighest.withValues(alpha: 0.3),
+                      color: SacredColors.surfaceContainerHighest
+                          .withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                     child: AnimatedBuilder(
@@ -183,17 +189,22 @@ class _SplashScreenState extends State<SplashScreen>
                       builder: (context, child) {
                         return FractionallySizedBox(
                           alignment: Alignment(
-                            -1.0 + (Curves.easeInOut.transform(_loadingController.value) * 2),
+                            -1.0 +
+                                (Curves.easeInOut
+                                        .transform(_loadingController.value) *
+                                    2),
                             0,
                           ),
                           widthFactor: 0.3,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: SacredColors.primaryAccent.withValues(alpha: 0.6),
+                              color: SacredColors.primaryAccent
+                                  .withValues(alpha: 0.6),
                               borderRadius: BorderRadius.circular(2),
                               boxShadow: [
                                 BoxShadow(
-                                  color: SacredColors.primaryAccent.withValues(alpha: 0.4),
+                                  color: SacredColors.primaryAccent
+                                      .withValues(alpha: 0.4),
                                   blurRadius: 8,
                                 ),
                               ],
@@ -214,7 +225,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ],
               ),
             ),
-            
+
             // Footer
             Positioned(
               bottom: 32,
@@ -249,29 +260,40 @@ class _SplashScreenState extends State<SplashScreen>
     final controller = Get.find<AppInfoController>();
     await controller.loadAppInfo();
 
-    if (controller.appInfo.value == null) return;
+    final config = controller.appConfig.value;
+    final storeUrl =
+        Platform.isIOS ? config?.storeUrl.ios ?? '' : config?.storeUrl.android ?? '';
 
-    // 1. Check Maintenance
     if (controller.isUnderMaintenance) {
       if (mounted) {
         setState(() => _isOperationalBlocked = true);
-        _navigateToOperationalStatus(
-          status: OperationalStatus.maintenance,
-          message: controller.maintenanceMessage,
+        showModalBottomSheet(
+          context: context,
+          isDismissible: false,
+          builder: (_) => SacredMaintenanceSheet(
+            title: config?.messages.maintenance?.title ?? 'Maintenance',
+            body: config?.messages.maintenance?.body ?? 'Under maintenance.',
+            primaryButtonText:
+                config?.messages.maintenance?.primaryButton ?? 'Close',
+          ),
         );
       }
       return;
     }
 
-    // 2. Check Force Update
     if (await controller.shouldForceUpdate()) {
       if (mounted) {
         setState(() => _isOperationalBlocked = true);
-        final config = controller.appInfo.value!.versionControl;
-        _navigateToOperationalStatus(
-          status: OperationalStatus.forceUpdate,
-          message: config.updateMessage,
-          storeUrl: Platform.isAndroid ? config.androidStoreUrl : config.iosStoreUrl,
+        showModalBottomSheet(
+          context: context,
+          isDismissible: false,
+          builder: (_) => SacredUpdateSheet(
+            title: config?.messages.forceUpdate?.title ?? 'Update Required',
+            body: config?.messages.forceUpdate?.body ?? 'Please update.',
+            primaryButtonText:
+                config?.messages.forceUpdate?.primaryButton ?? 'Update',
+            storeUrl: storeUrl,
+          ),
         );
       }
       return;
@@ -279,24 +301,20 @@ class _SplashScreenState extends State<SplashScreen>
 
     // 3. Recommended Update (Non-blocking)
     if (await controller.shouldRecommendUpdate()) {
-      _handleRecommendedUpdate();
+      final message = config?.messages.minorUpdate;
+      if (message != null && mounted) {
+        showModalBottomSheet(
+          context: context,
+          builder: (_) => SacredUpdateSheet(
+            title: message.title,
+            body: message.body,
+            primaryButtonText: message.primaryButton,
+            secondaryButtonText: message.secondaryButton,
+            storeUrl: storeUrl,
+          ),
+        );
+      }
     }
-  }
-
-  void _navigateToOperationalStatus({
-    required OperationalStatus status,
-    required String message,
-    String? storeUrl,
-  }) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => OperationalStatusScreen(
-          status: status,
-          message: message,
-          storeUrl: storeUrl,
-        ),
-      ),
-    );
   }
 
   void _handleRecommendedUpdate() {
@@ -308,7 +326,8 @@ class _SplashScreenState extends State<SplashScreen>
       final firebaseContentService = Get.find<FirebaseContentService>();
       final transcriptSyncService = Get.find<TranscriptSyncService>();
 
-      final List<ContentItem> remoteItems = await firebaseContentService.fetchContentCatalog();
+      final List<ContentItem> remoteItems =
+          await firebaseContentService.fetchContentCatalog();
 
       for (final item in remoteItems) {
         await transcriptSyncService.syncContent(item);
