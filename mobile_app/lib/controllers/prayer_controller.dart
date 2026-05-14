@@ -14,8 +14,7 @@ import '../services/transcript_parser.dart';
 import '../services/transcript_sync_engine.dart';
 import '../services/transcript_sync_service.dart';
 
-enum PrimaryMode { listen, read }
-enum ReadingStyle { standard, focus }
+enum PrimaryMode { audio, focus }
 
 class PrayerController extends GetxController {
   PrayerController({
@@ -41,8 +40,7 @@ class PrayerController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxString loadingMessage = ''.obs;
   
-  final Rx<PrimaryMode> primaryMode = PrimaryMode.listen.obs;
-  final Rx<ReadingStyle> readingStyle = ReadingStyle.standard.obs;
+  final Rx<PrimaryMode> primaryMode = PrimaryMode.audio.obs;
   final RxBool hasTimings = false.obs;
   final RxBool hasAudio = false.obs;
 
@@ -54,6 +52,9 @@ class PrayerController extends GetxController {
   final Rx<Duration> totalDuration = Duration.zero.obs;
   final RxDouble playbackSpeed = 1.0.obs;
 
+  final RxBool isHeaderVisible = true.obs;
+  Timer? _headerHideTimer;
+
   Timer? _seekDebounce;
 
   AudioPlayer get player => _player;
@@ -63,7 +64,7 @@ class PrayerController extends GetxController {
     super.onInit();
     _player.positionStream.listen((position) {
       currentPosition.value = position;
-      if (!isUserSeeking.value && primaryMode.value == PrimaryMode.listen && hasTimings.value) {
+      if (!isUserSeeking.value && primaryMode.value == PrimaryMode.audio && hasTimings.value) {
         _updateCurrentSegment(position);
       }
     });
@@ -72,30 +73,56 @@ class PrayerController extends GetxController {
     });
     _player.playingStream.listen((playing) {
       isPlaying.value = playing;
+      if (playing) {
+        _startHeaderHideTimer();
+      } else {
+        showHeader();
+      }
     });
 
     itemPositionsListener.itemPositions.addListener(_onScroll);
   }
 
   void _onScroll() {
-    if (primaryMode.value == PrimaryMode.read && readingStyle.value == ReadingStyle.focus) {
+    if (primaryMode.value == PrimaryMode.focus) {
       _updateCenterFocusIndex();
     }
+    showHeader();
+  }
+
+  void showHeader() {
+    isHeaderVisible.value = true;
+    if (isPlaying.value) {
+      _startHeaderHideTimer();
+    }
+  }
+
+  void _startHeaderHideTimer() {
+    _headerHideTimer?.cancel();
+    _headerHideTimer = Timer(const Duration(seconds: 5), () {
+      if (isPlaying.value) {
+        isHeaderVisible.value = false;
+      }
+    });
   }
 
   void _updateCenterFocusIndex() {
     final positions = itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
+    // Target the 0.4 mark (slightly above middle) for the "magnifying glass"
+    const double targetAlignment = 0.4;
     double minDistance = 1.0;
     int closestIndex = -1;
 
     for (final position in positions) {
+      if (position.index == 0) continue; // Skip flower icon
+
       final center = (position.itemLeadingEdge + position.itemTrailingEdge) / 2;
-      final distance = (center - 0.5).abs();
+      final distance = (center - targetAlignment).abs();
       if (distance < minDistance) {
         minDistance = distance;
-        closestIndex = position.index;
+        closestIndex = position.index - 1; // Adjust back to segment index
       }
     }
 
@@ -105,18 +132,44 @@ class PrayerController extends GetxController {
   }
 
   void setPrimaryMode(PrimaryMode mode) {
+    final oldMode = primaryMode.value;
     primaryMode.value = mode;
-    if (mode == PrimaryMode.listen) {
-      // If switching back to listen, sync to current position
+    
+    if (mode == PrimaryMode.audio) {
+      // Sync audio to what was centered in Focus mode
+      if (oldMode == PrimaryMode.focus && centerFocusIndex.value != -1 && hasAudio.value) {
+        final segment = segments[centerFocusIndex.value];
+        if (segment.start >= 0) {
+          seekToWithDebounce(Duration(milliseconds: (segment.start * 1000).round()));
+        }
+      }
       _updateCurrentSegment(currentPosition.value);
+    } else {
+      // Pause audio when entering Focus mode
+      if (_player.playing) {
+        _player.pause();
+      }
+      // Sync focus to what was playing in Audio mode
+      if (currentSegmentIndex.value != -1) {
+        centerFocusIndex.value = currentSegmentIndex.value;
+        _scrollToCenter(currentSegmentIndex.value);
+      } else if (segments.isNotEmpty) {
+        // If nothing playing, center the first line
+        centerFocusIndex.value = 0;
+        _scrollToCenter(0);
+      }
     }
+    showHeader();
   }
 
-  void setReadingStyle(ReadingStyle style) {
-    readingStyle.value = style;
-    if (style == ReadingStyle.focus) {
-      _updateCenterFocusIndex();
-    }
+  void _scrollToCenter(int index) {
+    if (!itemScrollController.isAttached || segments.isEmpty) return;
+    itemScrollController.scrollTo(
+      index: index + 1, // Offset for flower icon
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeInOutCubic,
+      alignment: 0.4, // Slightly above center for better reading position
+    );
   }
 
   Future<void> loadContent({
@@ -182,9 +235,9 @@ class PrayerController extends GetxController {
       hasTimings.value = segments.any((s) => s.start > 0 || s.end > 0);
       
       if (!hasAudio.value) {
-        primaryMode.value = PrimaryMode.read;
+        primaryMode.value = PrimaryMode.focus;
       } else {
-        primaryMode.value = PrimaryMode.listen;
+        primaryMode.value = PrimaryMode.audio;
       }
 
     } catch (e) {
@@ -215,18 +268,13 @@ class PrayerController extends GetxController {
     // Check if the item is already comfortably visible
     final positions = itemPositionsListener.itemPositions.value;
     if (positions.isNotEmpty) {
-      final targetPos = positions.where((p) => p.index == index).toList();
+      final targetPos = positions.where((p) => p.index == index + 1).toList();
       if (targetPos.isNotEmpty) {
         final pos = targetPos.first;
         
-        // Thresholds for "comfortable" visibility
-        const double topThreshold = 0.1;
-        const double bottomThreshold = 0.9;
-
-        // Special case for the first few items: if index is small and it's already at the top, don't scroll
-        if (index < 5 && pos.itemLeadingEdge >= 0 && pos.itemLeadingEdge < topThreshold) {
-          return;
-        }
+        // Trigger scroll earlier (at 70% down the screen instead of 90%)
+        const double topThreshold = 0.15;
+        const double bottomThreshold = 0.7;
 
         // If item is already well within the viewport, don't scroll
         if (pos.itemLeadingEdge >= topThreshold && pos.itemTrailingEdge <= bottomThreshold) {
@@ -236,15 +284,15 @@ class PrayerController extends GetxController {
     }
 
     itemScrollController.scrollTo(
-      index: index,
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeInOutCubic,
-      alignment: 0.25,
+      index: index + 1, // Offset for flower icon
+      duration: const Duration(milliseconds: 800), // Increased for smoothness
+      curve: Curves.easeInOutQuart, // Gentler curve
+      alignment: 0.35, // Position item in the upper-mid section
     );
   }
 
   void seekToWithDebounce(Duration position) {
-    if (primaryMode.value == PrimaryMode.read && !hasAudio.value) return;
+    if (primaryMode.value == PrimaryMode.focus && !hasAudio.value) return;
     isUserSeeking.value = true;
     _player.seek(position);
     _seekDebounce?.cancel();

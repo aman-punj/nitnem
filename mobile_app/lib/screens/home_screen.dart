@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/screens/listing_screen.dart';
 import 'package:nitnem/screens/feedback_screen.dart';
+import 'package:nitnem/screens/manage_notifications_screen.dart';
 import 'package:nitnem/screens/drawer.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
 import 'package:nitnem/utils/gradient_scaffold.dart';
@@ -34,6 +35,9 @@ class HomeScreen extends StatelessWidget {
   void _onDrawerItemSelect(item) {
     Get.back();
     switch (item.id) {
+    case 'notifications':
+        Get.to(() => const ManageNotificationsScreen());
+        break;
       case 'language':
         break;
       case 'share':

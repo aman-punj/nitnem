@@ -69,7 +69,7 @@ class HomeDrawer extends StatelessWidget {
                             backgroundColor: SacredColors.surfacePrimary,
                             child: CircleAvatar(
                               radius: 29,
-                              backgroundImage: AssetImage('assets/images/khanda_image.png'),
+                              backgroundImage: AssetImage('assets/images/bani_sagar_logo.png'),
                               backgroundColor: Colors.transparent,
                             ),
                           ),
@@ -297,7 +297,7 @@ class CompactHomeDrawer extends StatelessWidget {
                         backgroundColor: SacredColors.surfacePrimary,
                         child: CircleAvatar(
                           radius: 19,
-                          backgroundImage: AssetImage('assets/images/khanda_image.png'),
+                          backgroundImage: AssetImage('assets/images/bani_sagar_logo.png'),
                         ),
                       ),
                     ),

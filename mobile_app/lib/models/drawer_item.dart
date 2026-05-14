@@ -9,6 +9,7 @@ class DrawerItem {
 }
 
 const List<DrawerItem> drawerItems = [
+  DrawerItem(title: 'Notifications', icon: Icons.notifications, id: 'notifications'),
   DrawerItem(title: 'Settings', icon: Icons.settings_rounded, id: 'settings'),
   DrawerItem(title: 'Change Language', icon: Icons.language, id: 'language'),
   DrawerItem(title: 'Share App', icon: Icons.share, id: 'share'),
