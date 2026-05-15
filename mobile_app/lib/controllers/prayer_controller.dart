@@ -254,6 +254,7 @@ class PrayerController extends GetxController {
               id: 'prayer_${item?.id ?? audioPath}',
               title: prayerTitle.value,
               artist: 'Nitnem',
+              artUri: Uri.parse('android.resource://com.example.nitnem/mipmap/ic_launcher'),
               duration: _audioHandler!.player.duration,
             );
             await _audioHandler!.updateCurrentMediaItem(mediaItem);

@@ -31,6 +31,7 @@ class DependencyInjection {
         config: const AudioServiceConfig(
           androidNotificationChannelId: 'com.example.nitnem.channel.audio',
           androidNotificationChannelName: 'Audio Playback',
+          androidNotificationIcon: 'drawable/ic_notification',
           androidNotificationOngoing: true,
         ),
       );
