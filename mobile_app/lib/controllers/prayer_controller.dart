@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../models/content_item.dart';
@@ -31,6 +32,8 @@ class PrayerController extends GetxController {
   final LocalContentService? _localContentService;
   MyAudioHandler? _audioHandler;
   final AudioPlayer _localPlayer = AudioPlayer();
+  String _lastNotificationTimeText = '';
+  Uri? _artworkFileUri;
 
   AudioPlayer get _player {
     _audioHandler ??= Get.isRegistered<MyAudioHandler>()
@@ -78,12 +81,16 @@ class PrayerController extends GetxController {
     super.onInit();
     _player.positionStream.listen((position) {
       currentPosition.value = position;
+      unawaited(_syncNotificationTimeText());
       if (!isUserSeeking.value && primaryMode.value == PrimaryMode.audio && hasTimings.value) {
         _updateCurrentSegment(position);
       }
     });
     _player.durationStream.listen((duration) {
-      if (duration != null) totalDuration.value = duration;
+      if (duration != null) {
+        totalDuration.value = duration;
+        unawaited(_syncNotificationTimeText());
+      }
     });
     _player.playingStream.listen((playing) {
       isPlaying.value = playing;
@@ -95,6 +102,44 @@ class PrayerController extends GetxController {
     });
 
     itemPositionsListener.itemPositions.addListener(_onScroll);
+  }
+
+  Future<void> _syncNotificationTimeText() async {
+    if (_audioHandler == null) return;
+    final currentItem = _audioHandler!.mediaItem.value;
+    if (currentItem == null) return;
+
+    final total = totalDuration.value;
+    final totalText = total > Duration.zero ? formatDuration(total) : '--:--';
+    final timeText = '${formatDuration(currentPosition.value)} / $totalText';
+    if (timeText == _lastNotificationTimeText) return;
+    _lastNotificationTimeText = timeText;
+
+    await _audioHandler!.updateCurrentMediaItem(
+      currentItem.copyWith(
+        displayDescription: timeText,
+        artUri: _artworkFileUri ?? currentItem.artUri,
+        duration: total > Duration.zero ? total : currentItem.duration,
+      ),
+    );
+  }
+
+  Future<Uri?> _resolveArtworkUri() async {
+    if (_artworkFileUri != null) return _artworkFileUri;
+    try {
+      final bytes = await rootBundle.load('assets/images/bani_sagar_logo.png');
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/bani_sagar_logo_notification.png');
+      await file.writeAsBytes(
+        bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
+        flush: true,
+      );
+      _artworkFileUri = Uri.file(file.path);
+      return _artworkFileUri;
+    } catch (e) {
+      debugPrint('Failed to prepare artwork file: $e');
+      return null;
+    }
   }
 
   void _onScroll() {
@@ -250,15 +295,17 @@ class PrayerController extends GetxController {
               ? AudioSource.file(finalAudioPath)
               : AudioSource.uri(Uri.parse('asset:///$finalAudioPath'));
           if (_audioHandler != null) {
+            final artUri = await _resolveArtworkUri();
             final mediaItem = MediaItem(
               id: 'prayer_${item?.id ?? audioPath}',
               title: prayerTitle.value,
               artist: 'Nitnem',
-              artUri: Uri.parse('android.resource://com.example.nitnem/mipmap/ic_launcher'),
+              artUri: artUri,
               duration: _audioHandler!.player.duration,
             );
             await _audioHandler!.updateCurrentMediaItem(mediaItem);
             await _audioHandler!.player.setAudioSource(audioSource);
+            await _syncNotificationTimeText();
           } else {
             await _localPlayer.setAudioSource(audioSource);
           }
