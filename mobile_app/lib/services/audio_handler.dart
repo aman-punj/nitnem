@@ -6,6 +6,12 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
 
   MyAudioHandler() {
     _player.playbackEventStream.listen(_broadcastState);
+    _player.durationStream.listen((duration) {
+      final item = mediaItem.value;
+      if (item != null && duration != null && item.duration != duration) {
+        mediaItem.add(item.copyWith(duration: duration));
+      }
+    });
   }
 
   // Update media item when playing a new track
@@ -29,12 +35,10 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   void _broadcastState(PlaybackEvent event) {
     playbackState.add(PlaybackState(
       controls: [
-        MediaControl.skipToPrevious,
         _player.playing ? MediaControl.pause : MediaControl.play,
-        MediaControl.skipToNext,
       ],
       systemActions: const {MediaAction.seek},
-      androidCompactActionIndices: const [0, 1, 2],
+      androidCompactActionIndices: const [0],
       processingState: const {
         ProcessingState.idle: AudioProcessingState.idle,
         ProcessingState.loading: AudioProcessingState.loading,

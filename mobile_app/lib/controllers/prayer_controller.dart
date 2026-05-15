@@ -212,6 +212,9 @@ class PrayerController extends GetxController {
   }) async {
     isLoading.value = true;
     loadingMessage.value = 'Preparing prayer...';
+    _audioHandler ??= Get.isRegistered<MyAudioHandler>()
+        ? Get.find<MyAudioHandler>()
+        : null;
     
     try {
       String finalAudioPath = audioPath;
@@ -259,8 +262,7 @@ class PrayerController extends GetxController {
               id: 'prayer_${item?.id ?? audioPath}',
               title: prayerTitle.value,
               artist: 'Nitnem',
-              artUri: Uri.parse('asset:///assets/images/bani_sagar_logo.png'),
-              duration: null, // Will be updated by just_audio
+              duration: _audioHandler!.player.duration,
             );
             
             await _audioHandler!.updateCurrentMediaItem(mediaItem);

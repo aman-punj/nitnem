@@ -31,8 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _requestNotificationPermission() async {
-    final notificationService = Get.put(NotificationService());
-    await notificationService.init();
+    final notificationService = Get.find<NotificationService>();
     
     // In a real app, use a proper permissions plugin like `permission_handler`
     // to check for 'denied' status specifically.
