@@ -6,9 +6,15 @@ import {
 } from 'firebase/firestore'
 
 import { auth, db } from './firebase'
-import { DEFAULT_REMOTE_CONFIG, type RemoteConfig } from './remoteConfigTypes'
+import { 
+  DEFAULT_REMOTE_CONFIG, 
+  type RemoteConfig,
+  DEFAULT_MENU_SETTINGS,
+  type MenuSettings
+} from './remoteConfigTypes'
 
 const REMOTE_CONFIG_DOCUMENT = doc(db, 'app_config', 'mobile')
+const MENU_SETTINGS_DOCUMENT = doc(db, 'app_config', 'settings')
 
 export async function fetchRemoteConfig(): Promise<RemoteConfig> {
   const snapshot = await getDoc(REMOTE_CONFIG_DOCUMENT)
@@ -51,8 +57,20 @@ export async function fetchRemoteConfig(): Promise<RemoteConfig> {
   }
 }
 
+export async function fetchMenuSettings(): Promise<MenuSettings> {
+  const snapshot = await getDoc(MENU_SETTINGS_DOCUMENT)
+  if (!snapshot.exists()) {
+    return DEFAULT_MENU_SETTINGS
+  }
+
+  const data = snapshot.data() as Partial<MenuSettings>
+  return {
+    ...DEFAULT_MENU_SETTINGS,
+    ...data,
+  }
+}
+
 export async function saveRemoteConfig(config: RemoteConfig): Promise<RemoteConfig> {
-  // Enforce strict schema: only keep the allowed fields
   const payload: RemoteConfig = {
     versions: config.versions,
     messages: config.messages,
@@ -62,7 +80,17 @@ export async function saveRemoteConfig(config: RemoteConfig): Promise<RemoteConf
     updatedBy: auth.currentUser?.email ?? 'unknown',
   }
 
-  // Use setDoc without merge: true to fully replace the document
   await setDoc(REMOTE_CONFIG_DOCUMENT, payload)
+  return payload
+}
+
+export async function saveMenuSettings(settings: MenuSettings): Promise<MenuSettings> {
+  const payload: MenuSettings = {
+    enabledItems: settings.enabledItems,
+    updatedAt: serverTimestamp(),
+    updatedBy: auth.currentUser?.email ?? 'unknown',
+  }
+
+  await setDoc(MENU_SETTINGS_DOCUMENT, payload)
   return payload
 }

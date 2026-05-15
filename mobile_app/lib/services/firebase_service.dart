@@ -46,34 +46,24 @@ class FirebaseAppInfoService implements AppInfoService {
   }
 
   @override
-  Future<FeatureFlags?> fetchFeatureFlags() async {
+  Future<Menu?> fetchMenuSettings() async {
     try {
       final doc = await firestore
-          .collection('feature_flags')
-          .doc('mobile')
+          .collection('app_config')
+          .doc('settings')
           .get();
 
       if (doc.data() != null) {
-        final data = doc.data()!;
-        appLogs(
-          'Fetched Firestore feature flags: feature_flags/mobile',
-          data: data,
-          tag: 'FIRESTORE',
-        );
-        return FeatureFlags.fromMap(data);
+        return Menu.fromMap(doc.data()!);
       }
-      appLogs(
-        'No feature flags found in Firestore: feature_flags/mobile',
-        tag: 'FIRESTORE',
-      );
     } catch (e) {
-      appLogs(
-        'Failed to fetch feature flags from Firestore',
-        data: {'error': e.toString()},
-        tag: 'FIRESTORE',
-      );
-      log(e.toString());
+      log('Error fetching menu settings: $e');
     }
     return null;
+  }
+
+  @override
+  Future<FeatureFlags?> fetchFeatureFlags() {
+    throw UnimplementedError();
   }
 }

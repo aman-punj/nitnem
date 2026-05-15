@@ -18,6 +18,7 @@
 
 body {
   margin: 0;
+  padding: 40px 20px; /* Added padding to body */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg);
   color: var(--fg);
@@ -26,8 +27,10 @@ body {
 
 .admin-layout {
   display: flex;
-  gap: 20px;
+  gap: 40px; /* Increased gap */
   align-items: flex-start;
+  max-width: 1400px; /* Added max-width */
+  margin: 0 auto; /* Centered layout */
 }
 
 .admin-sidebar {

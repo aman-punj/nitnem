@@ -114,3 +114,15 @@ class StoreUrl {
     );
   }
 }
+
+class Menu {
+  final List<String> enabledItems;
+
+  const Menu({required this.enabledItems});
+
+  factory Menu.fromMap(Map<String, dynamic> map) {
+    return Menu(
+      enabledItems: (map['enabledItems'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+    );
+  }
+}

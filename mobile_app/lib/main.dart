@@ -2,6 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show DeviceOrientation, SystemChrome;
 import 'package:get/get.dart';
+import 'package:nitnem/controllers/font_size_controller.dart';
+import 'package:nitnem/controllers/theme_controller.dart';
 import 'package:nitnem/screens/splash_screen.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
 import 'package:nitnem/core/design_system/models/theme_config.dart';
@@ -31,10 +33,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.resolve(const ThemeConfig(amoled: true)),
-      home: const SplashScreen(),
-    );
+    final themeController = Get.find<ThemeController>();
+    final fontSizeController = Get.find<FontSizeController>();
+
+    return Obx(() {
+      fontSizeController.fontSizeScale; // Observe scale changes
+      return GetMaterialApp(
+        debugShowCheckedModeBanner: false,
+        themeMode: themeController.themeMode.value,
+        theme: AppTheme.resolve(const ThemeConfig(amoled: true)),
+        darkTheme: AppTheme.resolve(const ThemeConfig(amoled: true)),
+        home: const SplashScreen(),
+      );
+    });
   }
 }

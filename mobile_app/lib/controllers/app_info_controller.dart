@@ -8,7 +8,8 @@ class AppInfoController extends GetxController {
   final AppInfoService service;
 
   final Rxn<AppConfig> appConfig = Rxn<AppConfig>();
-  final Rxn<FeatureFlags> featureFlags = Rxn<FeatureFlags>();
+  final Rxn<Menu> menuConfig = Rxn<Menu>();
+  // final Rxn<FeatureFlags> featureFlags = Rxn<FeatureFlags>();
   final RxBool isLoading = false.obs;
 
   AppInfoController({required this.service});
@@ -17,9 +18,11 @@ class AppInfoController extends GetxController {
     isLoading.value = true;
     try {
       final config = await service.fetchAppInfo();
-      final flags = await service.fetchFeatureFlags();
+      // final flags = await service.fetchFeatureFlags();
+      final menu = await service.fetchMenuSettings();
       appConfig.value = config;
-      featureFlags.value = flags;
+      // featureFlags.value = flags;
+      menuConfig.value = menu;
     } finally {
       isLoading.value = false;
     }

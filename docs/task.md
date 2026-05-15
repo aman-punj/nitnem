@@ -1,157 +1,332 @@
-Cleanup and correct the app configuration implementation.
+Implement the remaining core Settings functionalities for the Nitnem app using scalable architecture and production-ready Flutter practices.
+
+Current Context:
+
+* Settings UI redesign already completed
+* Frontend groups settings by sections
+* Firestore controls enabledItems visibility only
+* Flutter app uses GetX
+* Existing language switching already exists
+* Existing audio playback implementation already exists
+* Existing feedback screen already exists
+* Existing settings architecture:
+
+  * DrawerMenuItem enum
+  * SettingsSection
+  * SettingsItemType
+  * FrostedSettingsCard
+  * SettingsTile
+
+Goal:
+Implement the actual settings functionalities cleanly with scalable local persistence and service architecture.
 
 IMPORTANT:
-The current Firestore document still contains OLD deprecated keys mixed with the new structure.
+Do NOT overengineer.
+Focus only on practical production-ready functionality needed right now.
 
-Before saving/updating config:
-the system MUST sanitize/remove deprecated fields automatically.
+---
 
-==================================================
-PROBLEM
-=======
+## ARCHITECTURE REQUIREMENTS
 
-The current document still contains:
+Create clean separation between:
 
-```txt id="0t8mjy"
-features
-forceUpdate (root level)
-latestBuild
-latestVersionName
-minimumSupportedBuild
-updateMessage
-updatedAt
-updatedBy
-maintenanceMessage
-maintenanceMode
-```
+* UI
+* state management
+* persistence
+* services
 
-These are deprecated and MUST NOT exist anymore.
+Create:
 
-==================================================
-REQUIRED FIX
-============
+* SettingsController
+* SettingsRepository
+* ThemeService
+* NotificationService
+* CacheService
 
-When saving config from admin panel:
+Use GetX properly.
 
-1. overwrite ONLY the new structure
-2. remove all deprecated keys
-3. do NOT merge old + new structures
-4. do NOT preserve unknown fields
+Avoid business logic inside UI widgets.
 
-==================================================
-FINAL ALLOWED STRUCTURE ONLY
-============================
+---
 
-```json id="0dpkpb"
-{
-  "versions": {
-    "latest": 5,
-    "minorUpdate": 4,
-    "forceUpdate": 3
-  },
+## LOCAL STORAGE
 
-  "messages": {
-    "minorUpdate": {
-      "title": "Update Available",
-      "body": "New improvements available.",
-      "primaryButton": "Update",
-      "secondaryButton": "Skip for now"
-    },
+Use local persistence for settings.
 
-    "forceUpdate": {
-      "title": "Update Required",
-      "body": "Please update the app to continue.",
-      "primaryButton": "Update App"
-    },
+Acceptable:
 
-    "maintenance": {
-      "title": "Maintenance Mode",
-      "body": "Bani Sagar is temporarily unavailable.",
-      "primaryButton": "Close App"
-    }
-  },
+* SharedPreferences for now
+  OR
+* Hive if already available
 
-  "maintenance": {
-    "enabled": false
-  },
+Persist:
 
-  "storeUrl": "https://play.google.com/store/apps/details?id=com.banisagar"
-}
-```
+* theme mode
+* font scale
+* keep screen awake
+* notification preferences
 
-==================================================
-IMPORTANT
-=========
+Structure code so storage can later migrate easily.
 
-Feature flags MUST be moved to:
+---
 
-```txt id="mjlwm7"
-feature_flags/mobile
-```
+## THEME FUNCTIONALITY
 
-NOT:
+Implement:
 
-```txt id="ng7f9u"
-app_config/mobile
-```
+* Dark
+* Light
+* System
 
-==================================================
-SAVE BEHAVIOR
-=============
+Requirements:
 
-The admin save logic should:
+* app-wide theme switching
+* reactive updates
+* persistent across app restarts
+* integrated with GetX
 
-* fully replace config document
-* not merge deprecated fields
-* sanitize payload before upload
+Use:
+Get.changeThemeMode(...)
 
-==================================================
-ALSO FIX UPDATE FLOW
-====================
+Theme selector should feel premium and polished.
 
-The update banner/sheet is currently NOT showing.
+---
 
-Investigate and fix:
+## TYPOGRAPHY SIZE FUNCTIONALITY
 
-* version comparison logic
-* build number parsing
-* splash screen flow
-* update trigger conditions
-* config parsing
-* null safety
-* async loading timing
+Implement:
 
-==================================================
-EXPECTED BEHAVIOR
-=================
+* global font scaling
+* persistent storage
+* reactive updates
 
-If:
+Requirements:
 
-```txt id="zsdcr4"
-currentBuild < versions.forceUpdate
-```
+* typography affects entire app
+* restore on app launch
+* use existing FontSizeController
 
-→ force update sheet MUST appear.
+Slider should:
 
-If:
+* update live
+* persist automatically
+* show smooth behavior
 
-```txt id="rtg3uv"
-currentBuild < versions.minorUpdate
-```
+Preview Gurbani text should scale correctly.
 
-→ optional update sheet MUST appear.
+---
 
-==================================================
-IMPORTANT DEBUGGING
-===================
+## LANGUAGE FUNCTIONALITY
 
-Add temporary debug logs for:
+Connect existing language switching logic.
 
-* current local build
-* fetched firestore versions
-* parsed config
-* update decision result
+Requirements:
 
-to verify the logic path.
+* navigation works correctly
+* maintain existing implementation
+* avoid duplicate language systems
 
-Remove noisy logs afterward.
+---
+
+## NOTIFICATIONS FUNCTIONALITY
+
+Create proper NotificationSettingsScreen.
+
+Implement:
+
+1. Morning Nitnem Reminder
+2. Evening Nitnem Reminder
+3. Daily Hukamnama Push toggle
+
+Requirements:
+
+* local settings persistence
+* clean UI
+* scalable architecture
+* toggles reactive
+
+Morning/Evening reminders:
+
+* local notifications only
+* configurable time picker
+* scheduled notifications
+
+Hukamnama:
+
+* prepare toggle only
+* FCM integration can be placeholder for now
+
+Use:
+flutter_local_notifications
+
+Structure:
+NotificationService handles scheduling logic.
+
+---
+
+## KEEP SCREEN AWAKE
+
+Implement using:
+wakelock_plus
+
+Requirements:
+
+* enable during paath
+* persistent preference
+* toggle from settings
+* integrated with GetX
+
+Use:
+WakelockPlus.enable()
+WakelockPlus.disable()
+
+---
+
+## CLEAR CACHE FUNCTIONALITY
+
+Implement proper cache clearing.
+
+Requirements:
+
+* clear downloaded bani/audio/media only
+* DO NOT clear:
+
+  * settings
+  * bookmarks
+  * preferences
+  * reading state
+
+Create:
+CacheService
+
+Behavior:
+
+* show confirmation dialog
+* show loading state
+* show success snackbar
+
+Downloaded content should automatically redownload later when needed.
+
+---
+
+## SHARE APP
+
+Connect existing ShareService properly.
+
+Requirements:
+
+* native share sheet
+* production-safe behavior
+
+---
+
+## FEEDBACK / REPORT ISSUE
+
+Reuse existing FeedbackScreen.
+
+Requirements:
+
+* pass feedback type dynamically
+* support:
+
+  * Send Feedback
+  * Report Issue
+
+Firestore save logic can remain TODO.
+
+---
+
+## FAQ / PRIVACY POLICY
+
+Implement placeholder navigation/pages.
+
+Requirements:
+
+* clean scaffold pages
+* architecture ready
+* dummy content acceptable
+
+---
+
+## SETTINGS CONTROLLER
+
+Create centralized SettingsController.
+
+Should manage:
+
+* theme mode
+* keep awake
+* notification states
+* font scale
+* local persistence triggers
+
+Reactive and scalable.
+
+---
+
+## UX REQUIREMENTS
+
+Settings should feel:
+
+* responsive
+* smooth
+* premium
+* calm
+* reliable
+
+Requirements:
+
+* proper loading states
+* smooth reactive updates
+* no UI flicker
+* graceful error handling
+* snackbars/dialogs where needed
+
+---
+
+## IMPORTANT AUDIO UX RULE
+
+Audio playback:
+
+* may continue in device background
+* may continue on lock screen
+
+BUT:
+
+* no global in-app mini player
+* no persistent controls outside prayer page
+
+Playback controls remain contextual.
+
+---
+
+## CODE QUALITY
+
+Requirements:
+
+* clean architecture friendly
+* modular
+* reusable
+* scalable
+* production-ready
+* avoid duplicated logic
+* avoid giant controllers
+* avoid UI business logic
+* proper service abstraction
+* maintainable long-term
+
+---
+
+## DO NOT IMPLEMENT YET
+
+Avoid:
+
+* backend-driven UI rendering
+* remote settings sync
+* advanced analytics
+* multi-device sync
+* download management system
+* realtime config sync
+* premium feature gating
+
+Keep implementation practical and focused for current app scale.

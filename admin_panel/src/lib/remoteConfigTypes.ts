@@ -27,6 +27,12 @@ export type RemoteConfig = {
   updatedBy?: string
 }
 
+export type MenuSettings = {
+  enabledItems: string[]
+  updatedAt?: unknown
+  updatedBy?: string
+}
+
 export const DEFAULT_REMOTE_CONFIG: RemoteConfig = {
   versions: {
     latest: 5,
@@ -58,4 +64,8 @@ export const DEFAULT_REMOTE_CONFIG: RemoteConfig = {
     android: '',
     ios: '',
   },
+}
+
+export const DEFAULT_MENU_SETTINGS: MenuSettings = {
+  enabledItems: ['notifications', 'settings', 'language', 'share', 'feedback', 'rate', 'exit'],
 }

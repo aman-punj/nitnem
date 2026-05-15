@@ -19,13 +19,24 @@ import { CSS } from '@dnd-kit/utilities'
 
 import { fetchContentList, upsertContentItem } from '../lib/contentService'
 import { ContentItem } from '../lib/contentTypes'
-import { fetchRemoteConfig, saveRemoteConfig } from '../lib/remoteConfigService'
-import { DEFAULT_REMOTE_CONFIG, type RemoteConfig } from '../lib/remoteConfigTypes'
+import { 
+  fetchRemoteConfig, 
+  saveRemoteConfig,
+  fetchMenuSettings,
+  saveMenuSettings 
+} from '../lib/remoteConfigService'
+import { 
+  DEFAULT_REMOTE_CONFIG, 
+  type RemoteConfig,
+  DEFAULT_MENU_SETTINGS,
+  type MenuSettings
+} from '../lib/remoteConfigTypes'
 import { PrayerCard } from '../components/admin/PrayerCard'
 import { ContentEditor } from '../components/admin/ContentEditor'
 import { RemoteConfigEditor } from '../components/admin/RemoteConfigEditor'
+import { MenuSettingsEditor } from '../components/admin/MenuSettingsEditor'
 
-type AdminSection = 'config' | 'content'
+type AdminSection = 'config' | 'content' | 'menu'
 
 function SortableItem({ item, onEdit }: { item: ContentItem; onEdit: () => void }) {
   const {
@@ -70,6 +81,12 @@ export function AdminApp() {
   const [remoteConfigLoading, setRemoteConfigLoading] = useState(false)
   const [remoteConfigError, setRemoteConfigError] = useState('')
   const [dirtyRemoteConfig, setDirtyRemoteConfig] = useState(false)
+
+  const [menuSettings, setMenuSettings] = useState<MenuSettings>(DEFAULT_MENU_SETTINGS)
+  const [menuLoading, setMenuLoading] = useState(false)
+  const [menuError, setMenuError] = useState('')
+  const [dirtyMenu, setDirtyMenu] = useState(false)
+
   const [publishing, setPublishing] = useState(false)
 
   const sensors = useSensors(
@@ -105,6 +122,7 @@ export function AdminApp() {
   useEffect(() => {
     void loadContentList()
     void loadRemoteConfig()
+    void loadMenuSettings()
   }, [])
 
   async function loadContentList(): Promise<void> {
@@ -134,14 +152,36 @@ export function AdminApp() {
     }
   }
 
-  async function publishRemoteConfig(): Promise<void> {
+  async function loadMenuSettings(): Promise<void> {
+    setMenuLoading(true)
+    setMenuError('')
+    try {
+      const data = await fetchMenuSettings()
+      setMenuSettings(data)
+      setDirtyMenu(false)
+    } catch (error) {
+      setMenuError(error instanceof Error ? error.message : 'Failed to load menu settings.')
+    } finally {
+      setMenuLoading(false)
+    }
+  }
+
+  async function publishChanges(): Promise<void> {
     setPublishing(true)
     try {
-      const saved = await saveRemoteConfig(remoteConfig)
-      setRemoteConfig(saved)
-      setDirtyRemoteConfig(false)
+      if (dirtyRemoteConfig) {
+        const saved = await saveRemoteConfig(remoteConfig)
+        setRemoteConfig(saved)
+        setDirtyRemoteConfig(false)
+      }
+      if (dirtyMenu) {
+        const saved = await saveMenuSettings(menuSettings)
+        setMenuSettings(saved)
+        setDirtyMenu(false)
+      }
     } catch (error) {
-      setRemoteConfigError(error instanceof Error ? error.message : 'Failed to publish config.')
+      console.error('Failed to publish changes:', error)
+      setRemoteConfigError(error instanceof Error ? error.message : 'Failed to publish changes.')
     } finally {
       setPublishing(false)
     }
@@ -150,6 +190,11 @@ export function AdminApp() {
   function handleRemoteConfigChange(nextConfig: RemoteConfig) {
     setRemoteConfig(nextConfig)
     setDirtyRemoteConfig(true)
+  }
+
+  function handleMenuSettingsChange(nextSettings: MenuSettings) {
+    setMenuSettings(nextSettings)
+    setDirtyMenu(true)
   }
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -221,6 +266,28 @@ export function AdminApp() {
         </div>
       </header>
 
+      {/* Shared Toolbar */}
+      <div className="row spread top-bar" style={{ marginBottom: '24px' }}>
+        <div className="stack" style={{ flex: 1, minWidth: 0 }}>
+          <span className="eyebrow">Controls</span>
+          <div className="row" style={{ gap: '12px', flexWrap: 'wrap' }}>
+            <span className="info-text">
+              Last Config Update: {formatTimestampLabel(remoteConfig.updatedAt)} | 
+              Last Menu Update: {formatTimestampLabel(menuSettings.updatedAt)}
+            </span>
+            {(dirtyRemoteConfig || dirtyMenu) && <span className="badge accent">Unsaved changes</span>}
+          </div>
+        </div>
+        <div className="row" style={{ gap: '12px', flexWrap: 'wrap' }}>
+          <button className="secondary" onClick={() => { void loadRemoteConfig(); void loadMenuSettings(); }} disabled={remoteConfigLoading || menuLoading || publishing}>
+            Refresh
+          </button>
+          <button onClick={() => void publishChanges()} disabled={(!dirtyRemoteConfig && !dirtyMenu) || publishing || remoteConfigLoading || menuLoading}>
+            {publishing ? 'Publishing...' : 'Publish Changes'}
+          </button>
+        </div>
+      </div>
+
       <div className="admin-layout">
         <aside className="admin-sidebar card">
           <button
@@ -237,28 +304,17 @@ export function AdminApp() {
           >
             Content Management
           </button>
+          <button
+            className={section === 'menu' ? '' : 'secondary'}
+            style={{ width: '100%', marginBottom: '8px' }}
+            onClick={() => setSection('menu')}
+          >
+            Menu Settings
+          </button>
         </aside>
         <main className="stack" style={{ flex: 1 }}>
           {section === 'config' && (
             <div className="stack">
-              <div className="row spread top-bar" style={{ marginBottom: '24px' }}>
-                <div className="stack" style={{ flex: 1, minWidth: 0 }}>
-                  <span className="eyebrow">Config controls</span>
-                  <div className="row" style={{ gap: '12px', flexWrap: 'wrap' }}>
-                    <span className="info-text">Last updated: {formatTimestampLabel(remoteConfig.updatedAt)}</span>
-                    {dirtyRemoteConfig && <span className="badge accent">Unsaved changes</span>}
-                  </div>
-                </div>
-                <div className="row" style={{ gap: '12px', flexWrap: 'wrap' }}>
-                  <button className="secondary" onClick={() => void loadRemoteConfig()} disabled={remoteConfigLoading || publishing}>
-                    Refresh
-                  </button>
-                  <button onClick={() => void publishRemoteConfig()} disabled={!dirtyRemoteConfig || publishing || remoteConfigLoading}>
-                    {publishing ? 'Publishing...' : 'Publish Changes'}
-                  </button>
-                </div>
-              </div>
-
               {remoteConfigError && <div className="card error-text">{remoteConfigError}</div>}
               {remoteConfigLoading ? (
                 <div className="card empty-state">Loading configuration...</div>
@@ -337,6 +393,19 @@ export function AdminApp() {
                   </DndContext>
                 </div>
               )}
+            </div>
+          )}
+          {section === 'menu' && (
+            <div className="stack">
+                {menuError && <div className="card error-text">{menuError}</div>}
+                {menuLoading ? (
+                  <div className="card empty-state">Loading menu settings...</div>
+                ) : (
+                  <MenuSettingsEditor
+                    settings={menuSettings}
+                    onChange={handleMenuSettingsChange}
+                  />
+                )}
             </div>
           )}
         </main>

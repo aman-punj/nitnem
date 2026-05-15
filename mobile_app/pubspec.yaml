@@ -2,7 +2,7 @@ name: nitnem
 description: "A new Flutter project." 
 publish_to: 'none'  
 
-version: 1.0.8+10
+version: 1.0.9+11
 
 environment:
   sdk: ^3.6.2
@@ -29,6 +29,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   audio_session: ^0.2.3
   audio_service: ^0.18.18
+  wakelock_plus: ^1.4.0
 
 dev_dependencies:
   flutter_test:

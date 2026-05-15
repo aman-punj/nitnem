@@ -31,35 +31,39 @@ class SacredSegmentedControl<T> extends StatelessWidget {
         ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.max, // Changed to max
         children: segments.entries.map((entry) {
           final isSelected = entry.key == selected;
-          return GestureDetector(
-            onTap: () => onSelected(entry.key),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: SacredMotion.normal),
-              padding: EdgeInsets.symmetric(
-                horizontal: isSecondary ? 16 : 24,
-                vertical: isSecondary ? 6 : 8,
-              ),
-              decoration: BoxDecoration(
-                color: isSelected ? SacredColors.primaryAccent : Colors.transparent,
-                borderRadius: BorderRadius.circular(SacredRadius.full),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: SacredColors.primaryAccent.withValues(alpha: 0.2),
-                          blurRadius: 12,
-                          spreadRadius: 2,
-                        )
-                      ]
-                    : null,
-              ),
-              child: Text(
-                entry.value,
-                style: (isSecondary ? SacredTypography.labelSm : SacredTypography.bodyMd).copyWith(
-                  color: isSelected ? Colors.black : SacredColors.textSecondary,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          return Expanded( // Added Expanded
+            child: GestureDetector(
+              onTap: () => onSelected(entry.key),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: SacredMotion.normal),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSecondary ? 16 : 24,
+                  vertical: isSecondary ? 6 : 8,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected ? SacredColors.primaryAccent : Colors.transparent,
+                  borderRadius: BorderRadius.circular(SacredRadius.full),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: SacredColors.primaryAccent.withValues(alpha: 0.2),
+                            blurRadius: 12,
+                            spreadRadius: 2,
+                          )
+                        ]
+                      : null,
+                ),
+                child: Center( // Added Center
+                  child: Text(
+                    entry.value,
+                    style: (isSecondary ? SacredTypography.labelSm : SacredTypography.bodyMd).copyWith(
+                      color: isSelected ? Colors.black : SacredColors.textSecondary,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
             ),

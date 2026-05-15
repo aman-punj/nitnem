@@ -3,6 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
+import 'package:nitnem/controllers/font_size_controller.dart';
+import 'package:nitnem/controllers/preference_controller.dart';
+import 'package:nitnem/controllers/language_controller.dart';
+import 'package:nitnem/controllers/theme_controller.dart';
+import 'package:nitnem/controllers/settings_controller.dart';
+import 'package:nitnem/services/cache_service.dart';
 import 'package:nitnem/services/firebase_content_service.dart';
 import 'package:nitnem/services/firebase_category_service.dart';
 import 'package:nitnem/services/local_content_service.dart';
@@ -24,6 +30,12 @@ class DependencyInjection {
   static Future<void> init() async {
     // Data layer
     Get.put(PreferenceService());
+    Get.put(FontSizeController());
+    Get.put(PreferenceController());
+    Get.put(LanguageController());
+    Get.put(ThemeController());
+    Get.put(SettingsController());
+    Get.put(CacheService());
     await Get.putAsync(() => NotificationService().init());
     try {
       final audioHandler = await AudioService.init(

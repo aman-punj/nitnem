@@ -5,11 +5,12 @@ import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/screens/listing_screen.dart';
 import 'package:nitnem/screens/feedback_screen.dart';
 import 'package:nitnem/screens/manage_notifications_screen.dart';
-import 'package:nitnem/screens/drawer.dart';
+import 'package:nitnem/screens/settings_screen.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
 import 'package:nitnem/utils/gradient_scaffold.dart';
 import 'package:nitnem/services/notification_service.dart';
 import 'package:nitnem/services/share_service.dart';
+import 'package:nitnem/models/drawer_item.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -61,30 +62,50 @@ class _HomeScreenState extends State<HomeScreen> {
         appBarStyle: const TextStyle(
           fontSize: 24,
           color: SacredColors.primary
-        )
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_rounded, color: SacredColors.primary),
+            onPressed: () => Get.to(() => const SettingsScreen()),
+          ),
+        ],
       ),
-      drawer: HomeDrawer(onItemSelected: (item) => _onDrawerItemSelect(item)),
       body: const ListingScreen(),
     );
   }
 
-  void _onDrawerItemSelect(dynamic item) {
+  void _onDrawerItemSelect(DrawerMenuItem item) {
     Get.back();
-    switch (item.id) {
-      case 'notifications':
+    switch (item) {
+      case DrawerMenuItem.notifications:
         Get.to(() => const ManageNotificationsScreen());
         break;
-      case 'language':
+      case DrawerMenuItem.language:
         break;
-      case 'share':
+      case DrawerMenuItem.share:
         onShareApp();
         break;
-      case 'feedback':
+      case DrawerMenuItem.feedback:
         Get.to(() => FeedbackScreen());
         break;
-      case 'exit':
-        SystemNavigator.pop();
-        break;
+      case DrawerMenuItem.theme:
+        // TODO: Handle this case.
+        throw UnimplementedError();
+      case DrawerMenuItem.typography:
+        // TODO: Handle this case.
+        throw UnimplementedError();
+      case DrawerMenuItem.clear_cache:
+        // TODO: Handle this case.
+        throw UnimplementedError();
+      case DrawerMenuItem.keep_awake:
+        // TODO: Handle this case.
+        throw UnimplementedError();
+      case DrawerMenuItem.faq:
+        // TODO: Handle this case.
+        throw UnimplementedError();
+      case DrawerMenuItem.privacy_policy:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
   }
 
