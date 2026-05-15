@@ -3,14 +3,14 @@ import 'package:get/get.dart';
 
 class NotificationService extends GetxService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
 
   Future<NotificationService> init() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('ic_notification');
+    AndroidInitializationSettings('ic_notification');
 
     const DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings();
+    DarwinInitializationSettings();
 
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
@@ -23,29 +23,29 @@ class NotificationService extends GetxService {
         if (details.payload == 'audio_playback') {
           // Handle notification tap if needed
         }
-        
+
         // Handle actions
         if (details.actionId == 'pause_action') {
           // We need a way to communicate back to the controller
           // Since we are using GetX, we can find the controller if it's active
           try {
-             // This is a bit tricky since PrayerController uses tags. 
-             // For now, let's assume we might need a global event or similar if we want to support multiple tags.
-             // But usually only one prayer is playing.
+            // This is a bit tricky since PrayerController uses tags.
+            // For now, let's assume we might need a global event or similar if we want to support multiple tags.
+            // But usually only one prayer is playing.
           } catch (e) {
             // Error handling notification action
           }
         }
       },
     );
-    
+
     return this;
   }
 
   Future<void> requestPermissions() async {
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    _notificationsPlugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
 
     await androidImplementation?.requestNotificationsPermission();
   }
@@ -58,7 +58,7 @@ class NotificationService extends GetxService {
     String? channelId,
   }) async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
+    AndroidNotificationDetails(
       'your_channel_id',
       'your_channel_name',
       importance: Importance.max,
@@ -66,7 +66,7 @@ class NotificationService extends GetxService {
     );
 
     const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    NotificationDetails(android: androidPlatformChannelSpecifics);
 
     await _notificationsPlugin.show(
       id,
@@ -76,5 +76,37 @@ class NotificationService extends GetxService {
     );
   }
 
-  // Note: Standard push notifications are used for non-media events.
+  // Media playback notification
+  Future<void> showMediaNotification({
+    required String title,
+    required bool isPlaying,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    AndroidNotificationDetails(
+      'media_channel_id',
+      'Media Playback',
+      channelDescription: 'Media playback notifications',
+      importance: Importance.low,
+      priority: Priority.low,
+      showWhen: false,
+      ongoing: true,
+      // Keep it pinned if it's playing
+      onlyAlertOnce: true,
+      icon: 'ic_notification', // Ensure this matches what we added
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+    NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await _notificationsPlugin.show(
+      100, // Fixed ID for the media notification
+      title,
+      isPlaying ? 'Playing' : 'Paused',
+      platformChannelSpecifics,
+    );
+  }
+
+  Future<void> cancelMediaNotification() async {
+    await _notificationsPlugin.cancel(100);
+  }
 }

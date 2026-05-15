@@ -10,6 +10,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../models/content_item.dart';
 import '../models/transcript_segment.dart';
 import '../services/local_content_service.dart';
+import '../services/notification_service.dart';
 import '../services/transcript_parser.dart';
 import '../services/transcript_sync_engine.dart';
 import '../services/transcript_sync_service.dart';
@@ -82,6 +83,10 @@ class PrayerController extends GetxController {
       } else {
         showHeader();
       }
+      
+      // Update notification
+      final notificationService = Get.find<NotificationService>();
+      notificationService.showMediaNotification(title: prayerTitle.value, isPlaying: playing);
     });
 
     itemPositionsListener.itemPositions.addListener(_onScroll);
@@ -368,6 +373,7 @@ class PrayerController extends GetxController {
   void onClose() {
     _seekDebounce?.cancel();
     _player.dispose();
+    Get.find<NotificationService>().cancelMediaNotification();
     super.onClose();
   }
 }
