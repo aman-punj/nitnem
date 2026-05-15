@@ -10,11 +10,54 @@ import 'package:nitnem/screens/manage_notifications_screen.dart';
 import 'package:nitnem/screens/drawer.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
 import 'package:nitnem/utils/gradient_scaffold.dart';
+import 'package:nitnem/services/notification_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestNotificationPermission();
+    });
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    final notificationService = Get.put(NotificationService());
+    await notificationService.init();
+    
+    // In a real app, use a proper permissions plugin like `permission_handler`
+    // to check for 'denied' status specifically.
+    // Here, we just request and handle potential failure.
+    try {
+      await notificationService.requestPermissions();
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Notifications Disabled'),
+            content: const Text(
+                'To get updates and background controls, please enable notifications in your device settings.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +65,7 @@ class HomeScreen extends StatelessWidget {
       showKhandaSymbol: false,
       appBar: SacredDsAppBar(
         title: 'Bani Sagar',
-        appBarStyle: TextStyle(
+        appBarStyle: const TextStyle(
           fontSize: 24,
           color: SacredColors.primary
         )
@@ -72,7 +115,7 @@ class HomeScreen extends StatelessWidget {
         subject: 'Bani Sagar - Daily Nitnem & Bani App',
       );
     } catch (e) {
-      print('Sharing failed: $e');
+      debugPrint('Sharing failed: $e');
     }
   }
 }

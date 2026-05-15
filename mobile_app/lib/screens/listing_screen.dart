@@ -5,6 +5,7 @@ import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/core/design_system/widgets/bani_tiles.dart';
 import 'package:nitnem/models/content_category.dart';
+import 'package:nitnem/models/content_item.dart';
 
 class ListingScreen extends StatelessWidget {
   const ListingScreen({super.key});
@@ -27,15 +28,18 @@ class ListingScreen extends StatelessWidget {
       final categoryMap = {
         for (final category in controller.categories) category.id: category
       };
-      final orderedCategoryIds = [
-        ...controller.categories
-            .where((cat) => cat.enabled)
-            .map((cat) => cat.id),
-        ...groupedContent.keys
-            .where((id) => !categoryMap.containsKey(id))
-            .toList()
-          ..sort(),
-      ].toSet().toList();
+
+      // Get all unique category IDs from grouped content
+      final allCategoryIds = groupedContent.keys.toList();
+
+      // Sort items within each category
+      final sortedCategoryIds = allCategoryIds..sort((a, b) {
+        final catA = categoryMap[a];
+        final catB = categoryMap[b];
+        final orderA = catA?.displayOrder ?? 100;
+        final orderB = catB?.displayOrder ?? 100;
+        return orderA.compareTo(orderB);
+      });
 
       return CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -84,7 +88,7 @@ class ListingScreen extends StatelessWidget {
 
           // ─── Content Sections ───────────────────────────────────────────
           ..._buildCategorySections(
-              orderedCategoryIds, categoryMap, groupedContent, controller),
+              sortedCategoryIds, categoryMap, groupedContent, controller),
 
           // ─── Bottom Spacer ──────────────────────────────────────────────
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
@@ -116,10 +120,10 @@ class ListingScreen extends StatelessWidget {
     }
 
     for (final categoryId in orderedCategoryIds) {
-      final category = categoryMap[categoryId];
       final items = groupedContent[categoryId] ?? [];
-      if (items.isEmpty) continue;
+      if (items.isEmpty) continue; // Skip category if it has no items
 
+      final category = categoryMap[categoryId];
       final title = category?.title ?? _friendlyCategoryTitle(categoryId);
       final iconKey = category?.iconKey;
 
@@ -144,10 +148,19 @@ class ListingScreen extends StatelessWidget {
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final item = items[index];
-                final isFirstInCategory = index == 0;
                 final isPinned = item.pinToTop;
 
-                if (isFirstInCategory && categoryId == 'nitnem' || isPinned) {
+                // Handle YouTube Live tiles separately
+                if (item.type == ContentType.youtube_live) {
+                  return BaniListTile(
+                    gurmukhiTitle: item.titles.pa,
+                    englishTitle: item.titles.en,
+                    icon: Icons.live_tv_rounded, // Specific icon for Live
+                    onTap: () => controller.onContentTap(item),
+                  );
+                }
+
+                if (isPinned) {
                   return SpecialBaniTile(
                     englishTitle: item.titles.en,
                     gurmukhiTitle: item.titles.pa,

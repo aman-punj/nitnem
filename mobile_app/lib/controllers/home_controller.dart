@@ -173,8 +173,14 @@ class HomeController extends GetxController {
   void _openYoutube(ContentItem item) async {
     if (item.youtubeUrl == null) return;
     final url = Uri.parse(item.youtubeUrl!);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+
+    // Attempt to open in YouTube app, fallback to external browser
+    if (!await launchUrl(
+      url,
+      mode: LaunchMode.externalApplication,
+    )) {
+      // Fallback: If external app launch fails, try opening in browser
+      await launchUrl(url, mode: LaunchMode.externalNonBrowserApplication);
     }
   }
 }

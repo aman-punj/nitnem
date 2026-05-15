@@ -118,7 +118,6 @@ class ContentItem {
   // Phase 2 Fields
   final int displayOrder;
   final bool pinToTop;
-  final String contentPriorityType; // e.g., 'high', 'normal', 'low'
 
   const ContentItem({
     required this.id,
@@ -132,7 +131,6 @@ class ContentItem {
     this.categoryId = 'uncategorized',
     this.displayOrder = 100,
     this.pinToTop = false,
-    this.contentPriorityType = 'normal',
   });
 
   factory ContentItem.fromMap(Map<String, dynamic> map) {
@@ -158,7 +156,6 @@ class ContentItem {
       categoryId: map['categoryId'] ?? 'uncategorized',
       displayOrder: map['displayOrder'] ?? 100,
       pinToTop: map['pinToTop'] ?? false,
-      contentPriorityType: map['contentPriorityType'] ?? 'normal',
     );
   }
 
@@ -175,7 +172,6 @@ class ContentItem {
       'categoryId': categoryId,
       'displayOrder': displayOrder,
       'pinToTop': pinToTop,
-      'contentPriorityType': contentPriorityType,
     };
   }
 }

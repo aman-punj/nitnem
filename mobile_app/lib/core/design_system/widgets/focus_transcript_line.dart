@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../tokens/colors.dart';
 import '../tokens/motion.dart';
-import '../tokens/radius.dart';
 import '../tokens/typography.dart';
 
 class FocusTranscriptLine extends StatelessWidget {

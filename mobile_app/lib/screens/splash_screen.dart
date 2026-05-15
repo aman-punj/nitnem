@@ -54,7 +54,6 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _initApp() async {
     // 1. Run initialization tasks in parallel
     final initializationTasks = Future.wait([
-      _ensureNotificationService(),
       getAppInfo(),
       Future.delayed(const Duration(seconds: 4)), // Minimum splash duration
     ]);

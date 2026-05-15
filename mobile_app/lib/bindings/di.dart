@@ -1,4 +1,6 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
 import 'package:nitnem/services/firebase_content_service.dart';
@@ -10,6 +12,7 @@ import 'package:nitnem/services/shared_prefs_service.dart';
 import 'package:nitnem/services/preference_service.dart';
 import 'package:nitnem/services/transcript_sync_service.dart';
 import 'package:nitnem/services/notification_service.dart';
+import 'package:nitnem/services/audio_handler.dart';
 
 import '../controllers/home_controller.dart';
 import '../services/firebase_service.dart';
@@ -21,6 +24,24 @@ class DependencyInjection {
     // Data layer
     Get.put(PreferenceService());
     await Get.putAsync(() => NotificationService().init());
+    
+    // Initialize Audio Service
+    try {
+      final audioHandler = await AudioService.init(
+        builder: () => MyAudioHandler(),
+        config: const AudioServiceConfig(
+          androidNotificationChannelId: 'com.example.nitnem.channel.audio',
+          androidNotificationChannelName: 'Audio Playback',
+          androidNotificationOngoing: true,
+        ),
+      );
+      Get.put<MyAudioHandler>(audioHandler);
+    } catch (e, stackTrace) {
+      print('Error initializing AudioService: $e');
+      debugPrintStack(stackTrace: stackTrace);
+      // We don't crash the app; media features might be limited.
+    }
+
     Get.put(PrayerStorageService());
     Get.put(PrayerAssetService());
     Get.put(FirebaseContentService());
