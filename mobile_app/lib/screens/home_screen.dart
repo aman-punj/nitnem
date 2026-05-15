@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -11,8 +9,7 @@ import 'package:nitnem/screens/drawer.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
 import 'package:nitnem/utils/gradient_scaffold.dart';
 import 'package:nitnem/services/notification_service.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:nitnem/services/share_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,9 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _requestNotificationPermission() async {
     final notificationService = Get.find<NotificationService>();
     
-    // In a real app, use a proper permissions plugin like `permission_handler`
-    // to check for 'denied' status specifically.
-    // Here, we just request and handle potential failure.
     try {
       await notificationService.requestPermissions();
     } catch (e) {
@@ -74,10 +68,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _onDrawerItemSelect(item) {
+  void _onDrawerItemSelect(dynamic item) {
     Get.back();
     switch (item.id) {
-    case 'notifications':
+      case 'notifications':
         Get.to(() => const ManageNotificationsScreen());
         break;
       case 'language':
@@ -94,27 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void onShareApp() async {
-    try {
-      const imageAssetPath = 'assets/images/bani_sagar_logo.png';
-      const fallbackApkUrl =
-          'https://drive.google.com/file/d/your_apk_id/view?usp=sharing';
-
-      final byteData = await rootBundle.load(imageAssetPath);
-      final buffer = byteData.buffer;
-
-      final tempDir = await getTemporaryDirectory();
-      final tempImageFile = File('${tempDir.path}/bani_sagar_logo.png');
-      await tempImageFile.writeAsBytes(buffer.asUint8List());
-
-      await Share.shareXFiles(
-        [XFile(tempImageFile.path)],
-        text:
-            '🌟 Check out the Bani Sagar app!\n\n🔗 $fallbackApkUrl\n\nFeel the divine connection daily 🙏',
-        subject: 'Bani Sagar - Daily Nitnem & Bani App',
-      );
-    } catch (e) {
-      debugPrint('Sharing failed: $e');
-    }
+  void onShareApp() {
+    Get.find<ShareService>().shareApp(context);
   }
 }

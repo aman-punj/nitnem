@@ -14,22 +14,19 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
     });
   }
 
-  // Update media item when playing a new track
   Future<void> updateCurrentMediaItem(MediaItem item) async {
     mediaItem.add(item);
   }
 
-  // Playback control methods
   @override
   Future<void> play() => _player.play();
-  
+
   @override
   Future<void> pause() => _player.pause();
-  
+
   @override
   Future<void> seek(Duration position) => _player.seek(position);
 
-  // Expose player to controller if needed for custom logic
   AudioPlayer get player => _player;
 
   void _broadcastState(PlaybackEvent event) {

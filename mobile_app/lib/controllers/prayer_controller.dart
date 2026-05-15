@@ -29,15 +29,12 @@ class PrayerController extends GetxController {
   final TranscriptSyncEngine transcriptSyncEngine;
   final TranscriptSyncService? _syncService;
   final LocalContentService? _localContentService;
-
   MyAudioHandler? _audioHandler;
-  
-  // Use a local player as fallback if AudioHandler failed to initialize
   final AudioPlayer _localPlayer = AudioPlayer();
-  
+
   AudioPlayer get _player {
-    _audioHandler ??= Get.isRegistered<MyAudioHandler>() 
-        ? Get.find<MyAudioHandler>() 
+    _audioHandler ??= Get.isRegistered<MyAudioHandler>()
+        ? Get.find<MyAudioHandler>()
         : null;
     return _audioHandler?.player ?? _localPlayer;
   }
@@ -212,9 +209,6 @@ class PrayerController extends GetxController {
   }) async {
     isLoading.value = true;
     loadingMessage.value = 'Preparing prayer...';
-    _audioHandler ??= Get.isRegistered<MyAudioHandler>()
-        ? Get.find<MyAudioHandler>()
-        : null;
     
     try {
       String finalAudioPath = audioPath;
@@ -255,8 +249,6 @@ class PrayerController extends GetxController {
           final audioSource = finalAudioIsLocal
               ? AudioSource.file(finalAudioPath)
               : AudioSource.uri(Uri.parse('asset:///$finalAudioPath'));
-
-          // Set MediaItem if AudioService is available
           if (_audioHandler != null) {
             final mediaItem = MediaItem(
               id: 'prayer_${item?.id ?? audioPath}',
@@ -264,11 +256,9 @@ class PrayerController extends GetxController {
               artist: 'Nitnem',
               duration: _audioHandler!.player.duration,
             );
-            
             await _audioHandler!.updateCurrentMediaItem(mediaItem);
             await _audioHandler!.player.setAudioSource(audioSource);
           } else {
-            // Fallback player
             await _localPlayer.setAudioSource(audioSource);
           }
           audioLoaded = true;

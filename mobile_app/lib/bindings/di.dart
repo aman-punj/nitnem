@@ -11,6 +11,7 @@ import 'package:nitnem/services/prayer_storage_service.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
 import 'package:nitnem/services/preference_service.dart';
 import 'package:nitnem/services/transcript_sync_service.dart';
+import 'package:nitnem/services/share_service.dart';
 import 'package:nitnem/services/notification_service.dart';
 import 'package:nitnem/services/audio_handler.dart';
 
@@ -24,8 +25,6 @@ class DependencyInjection {
     // Data layer
     Get.put(PreferenceService());
     await Get.putAsync(() => NotificationService().init());
-    
-    // Initialize Audio Service
     try {
       final audioHandler = await AudioService.init(
         builder: () => MyAudioHandler(),
@@ -37,9 +36,8 @@ class DependencyInjection {
       );
       Get.put<MyAudioHandler>(audioHandler);
     } catch (e, stackTrace) {
-      print('Error initializing AudioService: $e');
+      debugPrint('AudioService init failed: $e');
       debugPrintStack(stackTrace: stackTrace);
-      // We don't crash the app; media features might be limited.
     }
 
     Get.put(PrayerStorageService());
@@ -47,6 +45,7 @@ class DependencyInjection {
     Get.put(FirebaseContentService());
     Get.put(FirebaseCategoryService());
     Get.put(LocalContentService(SharedPrefsService.instance));
+    Get.put(ShareService());
 
     // Domain layer
     Get.put(TranscriptPathService(storageService: Get.find()));
