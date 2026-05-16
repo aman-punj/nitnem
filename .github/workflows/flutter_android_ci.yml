@@ -1,77 +1,92 @@
 name: Firebase App Distribution
 
 on:
-  push:
-    branches:
-      - main
+push:
+branches:
+- main
 
-  workflow_dispatch:
-    inputs:
-      testers:
-        description: "Dev (comma separated)"
-        required: false
-        default: "dev"
+workflow_dispatch:
+inputs:
+testers:
+description: "Tester groups (comma separated)"
+required: false
+default: "dev"
 
-      release_notes:
-        description: "Release notes"
-        required: false
-        default: "Manual build from GitHub Actions"
+```
+  release_notes:
+    description: "Release notes"
+    required: false
+    default: "Manual build from GitHub Actions"
+```
 
 jobs:
-  build-android:
-    name: Build & Distribute Android
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: mobile_app
+build-android:
+name: Build & Distribute Android
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+```
+defaults:
+  run:
+    working-directory: mobile_app
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
+steps:
+  - name: Checkout code
+    uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: 3.35.7
-          channel: stable
-          cache: true
+  - name: Setup Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: 17
 
-      - name: Cache pub packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('mobile_app/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
+  - name: Setup Flutter
+    uses: subosito/flutter-action@v2
+    with:
+      flutter-version: 3.35.7
+      channel: stable
+      cache: true
 
-      - name: Get dependencies
-        run: flutter pub get
+  - name: Cache pub packages
+    uses: actions/cache@v4
+    with:
+      path: ~/.pub-cache
+      key: ${{ runner.os }}-pub-${{ hashFiles('mobile_app/pubspec.lock') }}
+      restore-keys: |
+        ${{ runner.os }}-pub-
 
-      # - name: Run analyzer
-      #   run: flutter analyze
+  - name: Decode Android Keystore
+    run: |
+      echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
 
-      # # Optional - remove if tests aren't ready yet
-      # - name: Run tests
-      #   run: flutter test
+  - name: Create key.properties
+    run: |
+      echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
+      echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+      echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+      echo "storeFile=app/upload-keystore.jks" >> android/key.properties
 
-      - name: Build Android APK
-        run: flutter build apk --release
+  - name: Get dependencies
+    run: flutter pub get
 
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+  # Optional
+  # - name: Run analyzer
+  #   run: flutter analyze
 
-      - name: Upload to Firebase App Distribution
-        run: |
-          firebase appdistribution:distribute \
-          build/app/outputs/flutter-apk/app-release.apk \
-          --app "${{ secrets.FIREBASE_APP_ID_ANDROID }}" \
-          --groups "${{ github.event.inputs.testers || 'dev' }}" \
-          --release-notes "${{ github.event.inputs.release_notes || 'Automated build from GitHub Actions' }}"
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+  # - name: Run tests
+  #   run: flutter test
+
+  - name: Build Android APK
+    run: flutter build apk --release
+
+  - name: Install Firebase CLI
+    run: npm install -g firebase-tools
+
+  - name: Upload to Firebase App Distribution
+    run: |
+      firebase appdistribution:distribute \
+      build/app/outputs/flutter-apk/app-release.apk \
+      --app "${{ secrets.FIREBASE_APP_ID_ANDROID }}" \
+      --groups "${{ github.event.inputs.testers || 'dev' }}" \
+      --release-notes "${{ github.event.inputs.release_notes || 'Automated build from GitHub Actions' }}"
+    env:
+      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
