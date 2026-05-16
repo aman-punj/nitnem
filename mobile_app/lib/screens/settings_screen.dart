@@ -123,17 +123,15 @@ class SettingsScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Center(
-                                child: Text('ੴ ਸਤਿਨਾਮੁ ਕਰਤਾ ਪੁਰਖੁ', style: SacredTypography.transcript),
+                                child: Obx(() => Text('ੴ ਸਤਿਨਾਮੁ ਕਰਤਾ ਪੁਰਖੁ', style: SacredTypography.transcript)),
                               ),
                             ),
                             const SizedBox(height: 10),
-                            Slider(
-                              value: fontSizeController.currentStep.toDouble(),
-                              min: 0,
-                              max: 2,
-                              divisions: 2,
-                              onChanged: (val) => fontSizeController.setFontSizeStep(val.toInt()),
-                            ),
+                            Obx(() => SacredSegmentedControl<int>(
+                              segments: const {0: 'Small', 1: 'Medium', 2: 'Large'},
+                              selected: fontSizeController.currentStep,
+                              onSelected: fontSizeController.setFontSizeStep,
+                            )),
                           ],
                         ),
                       );

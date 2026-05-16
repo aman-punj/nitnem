@@ -67,7 +67,6 @@ class PrayerPage extends StatelessWidget {
         title: title,
         appBarStyle: SacredTypography.headlineMd.copyWith(
           color: SacredColors.primaryAccent,
-          fontSize: 24,
           fontWeight: FontWeight.w700,
         ),
         actions: [

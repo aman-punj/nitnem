@@ -34,8 +34,8 @@ class DependencyInjection {
     Get.put(PreferenceController());
     Get.put(LanguageController());
     Get.put(ThemeController());
-    Get.put(SettingsController());
     Get.put(CacheService());
+    Get.put(SettingsController());
     await Get.putAsync(() => NotificationService().init());
     try {
       final audioHandler = await AudioService.init(

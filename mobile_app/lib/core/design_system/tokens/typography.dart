@@ -12,7 +12,7 @@ class SacredTypography {
 
   // ─── Heading roles — Playfair Display ────────────────────────────────────
 
-  static TextStyle displayLg = GoogleFonts.playfairDisplay(
+  static TextStyle get displayLg => GoogleFonts.playfairDisplay(
     fontSize: 40 * _scale,
     fontWeight: FontWeight.w700,
     height: 1.2,
@@ -20,7 +20,7 @@ class SacredTypography {
     color: SacredColors.textPrimary,
   );
 
-  static TextStyle headlineLg = GoogleFonts.playfairDisplay(
+  static TextStyle get headlineLg => GoogleFonts.playfairDisplay(
     fontSize: 32 * _scale,
     fontWeight: FontWeight.w600,
     height: 1.25,
@@ -28,14 +28,14 @@ class SacredTypography {
   );
 
   /// Mobile-first headline — used in app bars and section titles.
-  static TextStyle headlineLgMobile = GoogleFonts.playfairDisplay(
+  static TextStyle get headlineLgMobile => GoogleFonts.playfairDisplay(
     fontSize: 22 * _scale,
     fontWeight: FontWeight.w600,
     height: 1.3,
     color: SacredColors.textPrimary,
   );
 
-  static TextStyle headlineMd = GoogleFonts.playfairDisplay(
+  static TextStyle get headlineMd => GoogleFonts.playfairDisplay(
     fontSize: 24 * _scale,
     fontWeight: FontWeight.w500,
     height: 1.33,
@@ -44,21 +44,21 @@ class SacredTypography {
 
   // ─── Body roles — Inter ──────────────────────────────────────────────────
 
-  static TextStyle bodyLg = GoogleFonts.inter(
+  static TextStyle get bodyLg => GoogleFonts.inter(
     fontSize: 18 * _scale,
     fontWeight: FontWeight.w400,
     height: 1.7,
     color: SacredColors.textPrimary,
   );
 
-  static TextStyle bodyMd = GoogleFonts.inter(
+  static TextStyle get bodyMd => GoogleFonts.inter(
     fontSize: 16 * _scale,
     fontWeight: FontWeight.w400,
     height: 1.6,
     color: SacredColors.textPrimary,
   );
 
-  static TextStyle bodySm = GoogleFonts.inter(
+  static TextStyle get bodySm => GoogleFonts.inter(
     fontSize: 14 * _scale,
     fontWeight: FontWeight.w400,
     height: 1.5,
@@ -66,14 +66,14 @@ class SacredTypography {
   );
 
   /// Small uppercase label — navigation metadata, chips.
-  static TextStyle labelSm = GoogleFonts.inter(
+  static TextStyle get labelSm => GoogleFonts.inter(
     fontSize: 12 * _scale,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.6,
     color: SacredColors.textSecondary,
   );
 
-  static TextStyle meta = GoogleFonts.inter(
+  static TextStyle get meta => GoogleFonts.inter(
     fontSize: 13 * _scale,
     fontWeight: FontWeight.w500,
     color: SacredColors.textSecondary,
@@ -84,7 +84,7 @@ class SacredTypography {
   static const String _gurmukhiFamily = 'Mukta';
 
   /// Primary Gurbani reading text. Large, airy line-height for immersive reading.
-  static TextStyle transcript = TextStyle(
+  static TextStyle get transcript => TextStyle(
     fontFamily: _gurmukhiFamily,
     fontSize: 22 * _scale,
     fontWeight: FontWeight.w500,
@@ -93,7 +93,7 @@ class SacredTypography {
   );
 
   /// Compact Gurmukhi — sub-lines, transliterations.
-  static TextStyle transcriptSm = TextStyle(
+  static TextStyle get transcriptSm => TextStyle(
     fontFamily: _gurmukhiFamily,
     fontSize: 18 * _scale,
     fontWeight: FontWeight.w400,
@@ -102,6 +102,6 @@ class SacredTypography {
   );
 
   // ─── Legacy aliases — keep widgets compiling without change ──────────────
-  static TextStyle title = headlineLgMobile;
-  static TextStyle body  = bodyMd;
+  static TextStyle get title => headlineLgMobile;
+  static TextStyle get body  => bodyMd;
 }

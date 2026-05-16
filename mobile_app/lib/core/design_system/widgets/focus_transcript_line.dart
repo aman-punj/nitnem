@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../tokens/colors.dart';
 import '../tokens/motion.dart';
@@ -43,10 +44,11 @@ class FocusTranscriptLine extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Column(
             children: [
-              Text(
+              Obx(() => Text(
                 text,
                 textAlign: TextAlign.center,
                 style: SacredTypography.transcript.copyWith(
+
                   color: isHighlighted ? SacredColors.primaryAccent : SacredColors.textPrimary,
                   fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.w500,
                   shadows: isHighlighted ? [
@@ -56,7 +58,7 @@ class FocusTranscriptLine extends StatelessWidget {
                     ),
                   ] : null,
                 ),
-              ),
+              )),
               if (isHighlighted)
                 AnimatedContainer(
                   duration: const Duration(milliseconds: SacredMotion.normal),
