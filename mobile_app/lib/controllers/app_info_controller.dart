@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import 'package:nitnem/models/app_config_model.dart';
-import 'package:nitnem/models/feature_flags_model.dart';
 import 'package:nitnem/services/app_info_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 

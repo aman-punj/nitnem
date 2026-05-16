@@ -98,14 +98,15 @@ class SettingsScreen extends StatelessWidget {
                        ));
                     }
                     if (item.id == 'clear_cache') {
-                      return SettingsTile(
-                        title: item.title,
+                      return Obx(() => SettingsTile(
+                        title: '${item.title} (${settingsController.storageUsage})',
                         icon: item.icon,
                         onTap: () async {
-                           await cacheService.clearDownloadedContent();
+                           await cacheService.clearAllCache();
+                           await settingsController.refreshStorageUsage();
                            Get.snackbar('Success', 'Cache cleared');
                         },
-                      );
+                      ));
                     }
                     if (item.itemType == SettingsItemType.slider) {
                       return Padding(

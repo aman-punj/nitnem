@@ -260,6 +260,16 @@ class PrayerController extends GetxController {
       String finalTranscriptPath = transcriptPath;
       bool finalAudioIsLocal = audioIsLocalFile;
       bool finalTranscriptIsLocal = transcriptIsLocalFile;
+      
+      // Verify file existence
+      if (finalAudioIsLocal && !(await File(finalAudioPath).exists())) {
+        finalAudioPath = '';
+        finalAudioIsLocal = false;
+      }
+      if (finalTranscriptIsLocal && !(await File(finalTranscriptPath).exists())) {
+        finalTranscriptPath = '';
+        finalTranscriptIsLocal = false;
+      }
 
       // 1. Check if we need to sync first
       if (item != null && _syncService != null && _localContentService != null) {
