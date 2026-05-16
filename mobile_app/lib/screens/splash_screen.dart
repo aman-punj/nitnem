@@ -10,7 +10,6 @@ import 'package:nitnem/core/design_system/widgets/sacred_maintenance_sheet.dart'
 import 'package:nitnem/services/firebase_content_service.dart';
 import 'package:nitnem/services/transcript_sync_service.dart';
 import 'package:nitnem/models/content_item.dart';
-import 'package:nitnem/utils/gradient_scaffold.dart';
 
 import 'package:nitnem/services/notification_service.dart';
 import 'home_screen.dart';
@@ -95,8 +94,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return GradientScaffold(
-      showKhandaSymbol: false,
+    return Scaffold(
+      backgroundColor: SacredColors.backgroundPrimary,
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: Stack(

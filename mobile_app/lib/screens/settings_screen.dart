@@ -10,7 +10,6 @@ import 'package:nitnem/core/design_system/widgets/frosted_settings_card.dart';
 import 'package:nitnem/core/design_system/widgets/settings_tile.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_segmented_control.dart';
 import 'package:nitnem/models/drawer_item.dart';
-import 'package:nitnem/utils/gradient_scaffold.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -37,8 +36,8 @@ class SettingsScreen extends StatelessWidget {
       }
     }
 
-    return GradientScaffold(
-      showKhandaSymbol: false,
+    return Scaffold(
+      backgroundColor: SacredColors.backgroundPrimary,
       appBar: AppBar(
         title: const Text('Settings', style: TextStyle(color: SacredColors.textPrimary, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
         backgroundColor: Colors.transparent,

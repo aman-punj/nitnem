@@ -14,7 +14,6 @@ import '../models/content_item.dart';
 import '../services/local_content_service.dart';
 import '../services/transcript_sync_engine.dart';
 import '../services/transcript_sync_service.dart';
-import '../utils/gradient_scaffold.dart';
 
 class PrayerPage extends StatelessWidget {
   final String title;
@@ -61,8 +60,8 @@ class PrayerPage extends StatelessWidget {
       );
     });
 
-    return GradientScaffold(
-      showKhandaSymbol: false,
+    return Scaffold(
+      backgroundColor: SacredColors.backgroundPrimary,
       appBar: SacredDsAppBar(
         title: title,
         appBarStyle: SacredTypography.headlineMd.copyWith(
@@ -90,28 +89,28 @@ class PrayerPage extends StatelessWidget {
           return SacredLoader(text: controller.loadingMessage.value);
         }
 
-        return LayoutBuilder(
+        return SafeArea(child: LayoutBuilder(
           builder: (context, constraints) {
             final hasTimings = controller.hasTimings.value;
             final isAudioMode = controller.primaryMode.value == PrimaryMode.audio;
-            
+
             // Calculate padding: 
             // - Large padding (45%) for Focus mode OR Audio mode WITH sync
             // - Normal padding (24) for Audio mode WITHOUT sync
-            final double verticalPadding = (hasTimings || !isAudioMode) 
-                ? constraints.maxHeight * 0.45 
+            final double verticalPadding = (hasTimings || !isAudioMode)
+                ? constraints.maxHeight * 0.45
                 : 24.0;
 
             return Column(
               children: [
                 // Transcript Section
-                Expanded(
+                Flexible(
                   child: ScrollablePositionedList.builder(
                     itemScrollController: controller.itemScrollController,
                     itemPositionsListener: controller.itemPositionsListener,
                     itemCount: controller.segments.length + (hasTimings ? 1 : 0),
                     padding: EdgeInsets.symmetric(
-                      horizontal: 24, 
+                      horizontal: 24,
                       vertical: verticalPadding,
                     ),
                     itemBuilder: (context, index) {
@@ -131,16 +130,16 @@ class PrayerPage extends StatelessWidget {
 
                       final segmentIndex = hasTimings ? index - 1 : index;
                       final segment = controller.segments[segmentIndex];
-                      
+
                       return Obx(() {
                         final isPlaybackHighlighted =
                             controller.primaryMode.value == PrimaryMode.audio &&
-                            segmentIndex == controller.currentSegmentIndex.value;
-                        
-                        final isFocusHighlighted = 
+                                segmentIndex == controller.currentSegmentIndex.value;
+
+                        final isFocusHighlighted =
                             controller.primaryMode.value == PrimaryMode.focus &&
-                            segmentIndex == controller.centerFocusIndex.value;
-                        
+                                segmentIndex == controller.centerFocusIndex.value;
+
                         return GestureDetector(
                           onTap: () {
                             controller.showHeader();
@@ -183,152 +182,152 @@ class PrayerPage extends StatelessWidget {
                   },
                   child: controller.primaryMode.value == PrimaryMode.audio
                       ? ClipRRect(
-                          key: const ValueKey('audio_player'),
+                    key: const ValueKey('audio_player'),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+                        decoration: BoxDecoration(
+                          color: SacredColors.surfaceContainerLowest.withValues(alpha: 0.7),
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                            child: Container(
-                              padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
-                              decoration: BoxDecoration(
-                                color: SacredColors.surfaceContainerLowest.withValues(alpha: 0.7),
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-                                border: Border.all(
-                                  color: SacredColors.borderGold.withValues(alpha: 0.15),
-                                  width: 0.5,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: SacredColors.primaryAccent.withValues(alpha: 0.05),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, -4),
-                                  ),
-                                ],
+                          border: Border.all(
+                            color: SacredColors.borderGold.withValues(alpha: 0.15),
+                            width: 0.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: SacredColors.primaryAccent.withValues(alpha: 0.05),
+                              blurRadius: 20,
+                              offset: const Offset(0, -4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Progress Bar
+                            SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                trackHeight: 2,
+                                activeTrackColor: SacredColors.primaryAccent,
+                                inactiveTrackColor: SacredColors.primaryAccent.withValues(alpha: 0.1),
+                                thumbColor: SacredColors.primaryAccent,
+                                overlayColor: SacredColors.primaryAccent.withValues(alpha: 0.1),
+                                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                                trackShape: const RectangularSliderTrackShape(),
                               ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
+                              child: Slider(
+                                min: 0,
+                                max: controller.totalDuration.value.inMilliseconds.toDouble(),
+                                value: controller.currentPosition.value.inMilliseconds
+                                    .clamp(0, controller.totalDuration.value.inMilliseconds)
+                                    .toDouble(),
+                                onChanged: (value) => controller.seekToWithDebounce(
+                                    Duration(milliseconds: value.toInt())),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  // Progress Bar
-                                  SliderTheme(
-                                    data: SliderTheme.of(context).copyWith(
-                                      trackHeight: 2,
-                                      activeTrackColor: SacredColors.primaryAccent,
-                                      inactiveTrackColor: SacredColors.primaryAccent.withValues(alpha: 0.1),
-                                      thumbColor: SacredColors.primaryAccent,
-                                      overlayColor: SacredColors.primaryAccent.withValues(alpha: 0.1),
-                                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                                      trackShape: const RectangularSliderTrackShape(),
-                                    ),
-                                    child: Slider(
-                                      min: 0,
-                                      max: controller.totalDuration.value.inMilliseconds.toDouble(),
-                                      value: controller.currentPosition.value.inMilliseconds
-                                          .clamp(0, controller.totalDuration.value.inMilliseconds)
-                                          .toDouble(),
-                                      onChanged: (value) => controller.seekToWithDebounce(
-                                          Duration(milliseconds: value.toInt())),
-                                    ),
+                                  Text(
+                                    controller.formatDuration(controller.currentPosition.value),
+                                    style: SacredTypography.labelSm.copyWith(color: SacredColors.textSecondary),
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          controller.formatDuration(controller.currentPosition.value),
-                                          style: SacredTypography.labelSm.copyWith(color: SacredColors.textSecondary),
-                                        ),
-                                        Text(
-                                          controller.formatDuration(controller.totalDuration.value),
-                                          style: SacredTypography.labelSm.copyWith(color: SacredColors.textSecondary),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  // Main Controls
-                                  Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.replay_10_rounded, color: SacredColors.textPrimary, size: 28),
-                                            onPressed: controller.skipBackward,
-                                          ),
-                                          const SizedBox(width: 32),
-                                          GestureDetector(
-                                            onTap: controller.togglePlayback,
-                                            child: Container(
-                                              width: 64,
-                                              height: 64,
-                                              decoration: BoxDecoration(
-                                                color: SacredColors.primaryAccent,
-                                                shape: BoxShape.circle,
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: SacredColors.primaryAccent.withValues(alpha: 0.3),
-                                                    blurRadius: 20,
-                                                    spreadRadius: 2,
-                                                  ),
-                                                ],
-                                              ),
-                                              child: Icon(
-                                                controller.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                                                color: Colors.black,
-                                                size: 40,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 32),
-                                          IconButton(
-                                            icon: const Icon(Icons.forward_10_rounded, color: SacredColors.textPrimary, size: 28),
-                                            onPressed: controller.skipForward,
-                                          ),
-                                        ],
-                                      ),
-                                      // Speed Controller on the right
-                                      Positioned(
-                                        right: 0,
-                                        child: PopupMenuButton<double>(
-                                          icon: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              border: Border.all(color: SacredColors.primaryAccent.withValues(alpha: 0.3)),
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: Text(
-                                              '${controller.playbackSpeed.value}x',
-                                              style: SacredTypography.labelSm.copyWith(
-                                                color: SacredColors.primaryAccent,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                          color: SacredColors.surfaceContainer,
-                                          onSelected: controller.changePlaybackSpeed,
-                                          itemBuilder: (context) => const [
-                                            PopupMenuItem(value: 0.5, child: Text('0.5x', style: TextStyle(color: SacredColors.textPrimary))),
-                                            PopupMenuItem(value: 0.75, child: Text('0.75x', style: TextStyle(color: SacredColors.textPrimary))),
-                                            PopupMenuItem(value: 1.0, child: Text('1x', style: TextStyle(color: SacredColors.textPrimary))),
-                                            PopupMenuItem(value: 1.25, child: Text('1.25x', style: TextStyle(color: SacredColors.textPrimary))),
-                                            PopupMenuItem(value: 1.5, child: Text('1.5x', style: TextStyle(color: SacredColors.textPrimary))),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                  Text(
+                                    controller.formatDuration(controller.totalDuration.value),
+                                    style: SacredTypography.labelSm.copyWith(color: SacredColors.textSecondary),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                        )
+                            const SizedBox(height: 16),
+                            // Main Controls
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.replay_10_rounded, color: SacredColors.textPrimary, size: 28),
+                                      onPressed: controller.skipBackward,
+                                    ),
+                                    const SizedBox(width: 32),
+                                    GestureDetector(
+                                      onTap: controller.togglePlayback,
+                                      child: Container(
+                                        width: 64,
+                                        height: 64,
+                                        decoration: BoxDecoration(
+                                          color: SacredColors.primaryAccent,
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: SacredColors.primaryAccent.withValues(alpha: 0.3),
+                                              blurRadius: 20,
+                                              spreadRadius: 2,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Icon(
+                                          controller.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                          color: Colors.black,
+                                          size: 40,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 32),
+                                    IconButton(
+                                      icon: const Icon(Icons.forward_10_rounded, color: SacredColors.textPrimary, size: 28),
+                                      onPressed: controller.skipForward,
+                                    ),
+                                  ],
+                                ),
+                                // Speed Controller on the right
+                                Positioned(
+                                  right: 0,
+                                  child: PopupMenuButton<double>(
+                                    icon: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: SacredColors.primaryAccent.withValues(alpha: 0.3)),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${controller.playbackSpeed.value}x',
+                                        style: SacredTypography.labelSm.copyWith(
+                                          color: SacredColors.primaryAccent,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    color: SacredColors.surfaceContainer,
+                                    onSelected: controller.changePlaybackSpeed,
+                                    itemBuilder: (context) => const [
+                                      PopupMenuItem(value: 0.5, child: Text('0.5x', style: TextStyle(color: SacredColors.textPrimary))),
+                                      PopupMenuItem(value: 0.75, child: Text('0.75x', style: TextStyle(color: SacredColors.textPrimary))),
+                                      PopupMenuItem(value: 1.0, child: Text('1x', style: TextStyle(color: SacredColors.textPrimary))),
+                                      PopupMenuItem(value: 1.25, child: Text('1.25x', style: TextStyle(color: SacredColors.textPrimary))),
+                                      PopupMenuItem(value: 1.5, child: Text('1.5x', style: TextStyle(color: SacredColors.textPrimary))),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
                       : const SizedBox.shrink(key: ValueKey('focus_spacer')),
                 )),
               ],
             );
           },
-        );
+        ));
       }),
     );
   }

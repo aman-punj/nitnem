@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:nitnem/utils/gradient_scaffold.dart';
 import '../core/design_system/tokens/colors.dart';
+import '../core/design_system/widgets/sacred_app_bar.dart';
 
 import '../controllers/feedback_controller.dart';
 
@@ -12,8 +12,9 @@ class FeedbackScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GradientScaffold(
-      appBar: const SacredAppBar(title: "Feedback"),
+    return Scaffold(
+      backgroundColor: SacredColors.backgroundPrimary,
+      appBar: const SacredDsAppBar(title: "Feedback"),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: Column(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
-import 'package:nitnem/utils/gradient_scaffold.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
 
 class NotificationsSettingsScreen extends StatefulWidget {
@@ -18,8 +17,8 @@ class _NotificationsSettingsScreenState extends State<NotificationsSettingsScree
 
   @override
   Widget build(BuildContext context) {
-    return GradientScaffold(
-      showKhandaSymbol: false,
+    return Scaffold(
+      backgroundColor: SacredColors.backgroundPrimary,
       appBar: const SacredDsAppBar(title: 'Notifications'),
       body: ListView(
         padding: const EdgeInsets.all(24),

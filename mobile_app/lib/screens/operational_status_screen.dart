@@ -4,7 +4,6 @@ import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/core/design_system/tokens/spacing.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_button.dart';
-import 'package:nitnem/utils/gradient_scaffold.dart';
 
 enum OperationalStatus { maintenance, forceUpdate, minorUpdate }
 
@@ -30,8 +29,8 @@ class OperationalStatusScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GradientScaffold(
-      showKhandaSymbol: true,
+    return Scaffold(
+      backgroundColor: SacredColors.backgroundPrimary,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.xl),

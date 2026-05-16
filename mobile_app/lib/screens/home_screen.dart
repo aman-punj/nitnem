@@ -6,7 +6,6 @@ import 'package:nitnem/screens/feedback_screen.dart';
 import 'package:nitnem/screens/manage_notifications_screen.dart';
 import 'package:nitnem/screens/settings_screen.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
-import 'package:nitnem/utils/gradient_scaffold.dart';
 import 'package:nitnem/services/notification_service.dart';
 import 'package:nitnem/services/share_service.dart';
 import 'package:nitnem/models/drawer_item.dart';
@@ -54,8 +53,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GradientScaffold(
-      showKhandaSymbol: false,
+    return Scaffold(
+      backgroundColor: SacredColors.backgroundPrimary,
       appBar: SacredDsAppBar(
         title: 'Bani Sagar',
         appBarStyle: const TextStyle(

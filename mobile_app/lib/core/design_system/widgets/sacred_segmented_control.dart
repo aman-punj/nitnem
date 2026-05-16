@@ -31,10 +31,10 @@ class SacredSegmentedControl<T> extends StatelessWidget {
         ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.max, // Changed to max
+        mainAxisSize: MainAxisSize.min, // Changed to min
         children: segments.entries.map((entry) {
           final isSelected = entry.key == selected;
-          return Expanded( // Added Expanded
+          return Flexible( // Changed Expanded to Flexible
             child: GestureDetector(
               onTap: () => onSelected(entry.key),
               child: AnimatedContainer(
@@ -56,7 +56,7 @@ class SacredSegmentedControl<T> extends StatelessWidget {
                         ]
                       : null,
                 ),
-                child: Center( // Added Center
+                child: Center(
                   child: Text(
                     entry.value,
                     style: (isSecondary ? SacredTypography.labelSm : SacredTypography.bodyMd).copyWith(
