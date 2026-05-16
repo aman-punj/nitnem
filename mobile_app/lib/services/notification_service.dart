@@ -1,12 +1,16 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:audio_session/audio_session.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService extends GetxService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
   Future<NotificationService> init() async {
+    tz.initializeTimeZones();
+    
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('ic_notification');
 
@@ -26,7 +30,61 @@ class NotificationService extends GetxService {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
     
+    await _scheduleDailyNotifications();
+
     return this;
+  }
+
+  Future<void> _scheduleDailyNotifications() async {
+    // Japji Sahib - 6:00 AM
+    await _notificationsPlugin.zonedSchedule(
+      0,
+      'Time for Japji Sahib',
+      'It is time for your daily Japji Sahib.',
+      _nextInstanceOfTime(6, 0),
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'daily_notifications',
+          'Daily Notifications',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
+    );
+
+    // Rehras Sahib - 6:30 PM
+    await _notificationsPlugin.zonedSchedule(
+      1,
+      'Time for Rehras Sahib',
+      'It is time for your daily Rehras Sahib.',
+      _nextInstanceOfTime(18, 30),
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'daily_notifications',
+          'Daily Notifications',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
+    );
+  }
+
+  tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
+    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    tz.TZDateTime scheduledDate =
+        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+    return scheduledDate;
   }
 
   Future<void> requestPermissions() async {
