@@ -330,10 +330,10 @@ class PrayerController extends GetxController {
       hasTimings.value = segments.any((s) => s.start > 0 || s.end > 0);
       
       // 5. Default Mode
-      if (!hasAudio.value || !hasTimings.value) {
-        primaryMode.value = PrimaryMode.focus;
-      } else {
+      if (hasAudio.value) {
         primaryMode.value = PrimaryMode.audio;
+      } else {
+        primaryMode.value = PrimaryMode.focus;
       }
 
     } catch (e) {
