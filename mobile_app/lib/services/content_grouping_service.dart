@@ -1,3 +1,5 @@
+import 'package:get/get.dart';
+
 import '../models/content_category.dart';
 import '../models/content_item.dart';
 
@@ -67,20 +69,21 @@ class ContentGroupingService {
     }
 
     // Fallback friendly names
-    switch (categoryId.toLowerCase()) {
-      case 'nitnem':
-        return 'Nitnem';
-      case 'daily':
-        return 'Daily Banis';
-      case 'evening':
-        return 'Evening Banis';
-      case 'youtube_live':
-      case 'youtube live':
-        return 'YouTube Live';
-      case 'live':
-        return 'Live';
-      default:
-        return 'Other Banis';
-    }
+    return categoryId.capitalizeFirst?? '';
+    // switch (.toLowerCase()) {
+    //   case 'nitnem':
+    //     return 'Nitnem';
+    //   case 'daily':
+    //     return 'Daily Baniss';
+    //   case 'evening':
+    //     return 'Evening Banis';
+    //   case 'youtube_live':
+    //   case 'youtube live':
+    //     return 'YouTube Live';
+    //   case 'live':
+    //     return 'Live';
+    //   default:
+    //     return 'Other Banis';
+    // }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -30,7 +31,11 @@ class NotificationService extends GetxService {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
     
-    await _scheduleDailyNotifications();
+    try {
+      await _scheduleDailyNotifications();
+    } catch (e) {
+      debugPrint('Failed to schedule daily notifications: $e');
+    }
 
     return this;
   }

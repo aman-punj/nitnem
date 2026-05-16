@@ -12,8 +12,13 @@ class SettingsController extends GetxController {
   void onInit() {
     super.onInit();
     isKeepAwakeEnabled.value = SharedPrefsService.getBool('keep_awake', defaultValue: false);
-    _applyKeepAwake(isKeepAwakeEnabled.value);
     refreshStorageUsage();
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    _applyKeepAwake(isKeepAwakeEnabled.value);
   }
 
   Future<void> refreshStorageUsage() async {

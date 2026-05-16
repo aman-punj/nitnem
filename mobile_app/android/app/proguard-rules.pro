@@ -1,25 +1,56 @@
-# Flutter
--keep class io.flutter.app.** { *; }
--keep class io.flutter.plugin.**  { *; }
--keep class io.flutter.util.**  { *; }
--keep class io.flutter.view.**  { *; }
--keep class io.flutter.**  { *; }
--keep class * extends io.flutter.app.FlutterApplication { *; }
--keep class * extends io.flutter.plugin.common.PluginRegistry$PluginRegistrantCallback { *; }
+# ---------------- Flutter ----------------
 
-# Firebase & Google Play Services
+-keep class io.flutter.** { *; }
+-keep class io.flutter.plugins.** { *; }
+-keep class io.flutter.embedding.** { *; }
+
+-keep class io.flutter.plugins.GeneratedPluginRegistrant { *; }
+
+-keep class * extends io.flutter.app.FlutterApplication { *; }
+
+-keep class * implements io.flutter.plugin.common.PluginRegistry$PluginRegistrantCallback {
+    *;
+}
+
+-keep class * implements io.flutter.embedding.engine.plugins.FlutterPlugin {
+    *;
+}
+
+# ---------------- Firebase / GMS ----------------
+
 -keep class com.google.firebase.** { *; }
--keep class com.google.android.gms.** { *; }
 -dontwarn com.google.firebase.**
+
+-keep class com.google.android.gms.** { *; }
 -dontwarn com.google.android.gms.**
 
-# Audio & Notification Plugins (just_audio, audio_service)
+# ---------------- Notifications ----------------
+
+-keep class com.dexterous.flutterlocalnotifications.** { *; }
+
+# ---------------- Audio ----------------
+
 -keep class com.ryanheise.** { *; }
 -dontwarn com.ryanheise.**
+
 -keep class com.google.android.exoplayer2.** { *; }
 -dontwarn com.google.android.exoplayer2.**
 
-# General
--dontwarn io.flutter.plugins.**
--keep class * implements io.flutter.plugin.common.Plugin { *; }
--keep class * implements io.flutter.embedding.engine.plugins.FlutterPlugin { *; }
+# ---------------- Kotlin ----------------
+
+-keep class kotlin.Metadata { *; }
+
+# ---------------- Reflection / Serialization ----------------
+
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes Exceptions
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod
+
+# ---------------- Enum Safety ----------------
+
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}

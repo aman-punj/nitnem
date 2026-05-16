@@ -7,12 +7,20 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:528515022630:android:def1aef53b7de945a4cbe7",
+        "mobilesdk_app_id": "1:528515022630:android:0c4870812e3cc0dca4cbe7",
         "android_client_info": {
-          "package_name": "com.example.nitnem"
+          "package_name": "com.banisagar.app"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "528515022630-k842dd9vonk6aee48pb5i3r1dak43r2e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.banisagar.app",
+            "certificate_hash": "053ad07a60d7bbaf95d9b9ab10f0faace7d18f44"
+          }
+        },
         {
           "client_id": "528515022630-p4h43mvsk6kftcfs8ejjun92529hop2v.apps.googleusercontent.com",
           "client_type": 3

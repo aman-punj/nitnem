@@ -41,9 +41,9 @@ class DependencyInjection {
       final audioHandler = await AudioService.init(
         builder: () => MyAudioHandler(),
         config: const AudioServiceConfig(
-          androidNotificationChannelId: 'com.example.nitnem.channel.audio',
+          androidNotificationChannelId: 'com.banisagar.nitnem.channel.audio',
           androidNotificationChannelName: 'Audio Playback',
-          androidNotificationIcon: 'drawable/ic_notification',
+          androidNotificationIcon: 'ic_notification',
           androidNotificationOngoing: true,
         ),
       );

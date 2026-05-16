@@ -57,7 +57,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCVrY2zifJRQct83OaRCdgWx0KK2tgVChM',
-    appId: '1:528515022630:android:def1aef53b7de945a4cbe7',
+    appId: '1:528515022630:android:0c4870812e3cc0dca4cbe7',
     messagingSenderId: '528515022630',
     projectId: 'nitnem-39118',
     storageBucket: 'nitnem-39118.firebasestorage.app',
@@ -65,10 +65,13 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCc43ps9elnRkjHLbokHngRa2gjdPfxlFE',
-    appId: '1:528515022630:ios:bf7479f7d09f4cbea4cbe7',
+    appId: '1:528515022630:ios:b3d7ff1951dc0af2a4cbe7',
     messagingSenderId: '528515022630',
     projectId: 'nitnem-39118',
     storageBucket: 'nitnem-39118.firebasestorage.app',
-    iosBundleId: 'com.example.nitnem',
+    androidClientId: '528515022630-k842dd9vonk6aee48pb5i3r1dak43r2e.apps.googleusercontent.com',
+    iosClientId: '528515022630-t0qvmtpgfbedbkio56gig527q9cnvcrh.apps.googleusercontent.com',
+    iosBundleId: 'com.banisagar.app',
   );
+
 }

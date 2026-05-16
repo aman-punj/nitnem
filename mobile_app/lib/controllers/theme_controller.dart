@@ -14,7 +14,7 @@ class ThemeController extends GetxController {
 
   void setTheme(String themeString) {
     themeMode.value = _mapStringToThemeMode(themeString);
-    // Simplified persistence for example
+    // Simplified persistence for banisagar
     SharedPrefsService.setBool('theme_is_dark', themeString == 'dark');
     Get.changeThemeMode(themeMode.value);
   }
