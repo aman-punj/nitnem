@@ -10,13 +10,13 @@ inputs:
 testers:
 description: "Tester groups (comma separated)"
 required: false
-default: "dev, testers"
-
+default: "dev,testers"
+ 
 jobs:
 build-android:
 name: Build & Distribute Android
 runs-on: ubuntu-latest
- 
+
 defaults:
   run:
     working-directory: mobile_app
@@ -59,13 +59,6 @@ steps:
 
   - name: Get dependencies
     run: flutter pub get
-
-  # Optional
-  # - name: Run analyzer
-  #   run: flutter analyze
-
-  # - name: Run tests
-  #   run: flutter test
 
   - name: Build Android APK
     run: flutter build apk --release
