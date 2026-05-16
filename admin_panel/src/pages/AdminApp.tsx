@@ -17,7 +17,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-import { fetchContentList, upsertContentItem } from '../lib/contentService'
+import { fetchContentList, upsertContentItem, deleteContentItem } from '../lib/contentService'
 import { ContentItem } from '../lib/contentTypes'
 import { 
   fetchRemoteConfig, 
@@ -38,7 +38,7 @@ import { MenuSettingsEditor } from '../components/admin/MenuSettingsEditor'
 
 type AdminSection = 'config' | 'content' | 'menu'
 
-function SortableItem({ item, onEdit }: { item: ContentItem; onEdit: () => void }) {
+function SortableItem({ item, onEdit, onDelete }: { item: ContentItem; onEdit: () => void; onDelete: () => void }) {
   const {
     attributes,
     listeners,
@@ -60,6 +60,7 @@ function SortableItem({ item, onEdit }: { item: ContentItem; onEdit: () => void 
       <PrayerCard
         item={item}
         onEdit={onEdit}
+        onDelete={onDelete}
         dragHandleProps={{ ...attributes, ...listeners }}
       />
     </div>
@@ -96,13 +97,12 @@ export function AdminApp() {
     })
   )
 
-  const { pinnedItems, normalItems } = useMemo<{ pinnedItems: ContentItem[]; normalItems: ContentItem[] }>(() => {
+  const sortedItems = useMemo<ContentItem[]>(() => {
     const sorted = [...items].sort((a, b) => {
-      if (a.pinToTop !== b.pinToTop) return a.pinToTop ? -1 : 1
       return (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
     })
 
-    const filtered = search.trim().toLowerCase()
+    return search.trim().toLowerCase()
       ? sorted.filter((item: ContentItem) => {
           return (
             item.titles.en?.toLowerCase().includes(search.toLowerCase()) ||
@@ -112,11 +112,6 @@ export function AdminApp() {
           )
         })
       : sorted
-
-    return {
-      pinnedItems: filtered.filter((i: ContentItem) => i.pinToTop),
-      normalItems: filtered.filter((i: ContentItem) => !i.pinToTop),
-    }
   }, [items, search])
 
   useEffect(() => {
@@ -205,10 +200,7 @@ export function AdminApp() {
     const overItem = items.find((i: ContentItem) => i.id === over.id)
     if (!activeItem || !overItem) return
 
-    if (activeItem.pinToTop !== overItem.pinToTop) return
-
     const fullSectionItems = items
-      .filter((i: ContentItem) => i.pinToTop === activeItem.pinToTop)
       .sort((a: ContentItem, b: ContentItem) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
 
     const oldIndex = fullSectionItems.findIndex((i: ContentItem) => i.id === active.id)
@@ -240,6 +232,20 @@ export function AdminApp() {
     await loadContentList()
     setEditingItem(null)
     setIsAddingNew(false)
+  }
+
+  const handleDeleteItem = async (item: ContentItem) => {
+    if (!confirm(`Are you sure you want to permanently delete "${item.titles.en}"?`)) {
+      return
+    }
+
+    try {
+      await deleteContentItem(item.id)
+      await loadContentList()
+    } catch (error) {
+      console.error('Failed to delete item:', error)
+      setItemsError('Failed to delete item.')
+    }
   }
 
   function formatTimestampLabel(value: unknown) {
@@ -367,25 +373,12 @@ export function AdminApp() {
                     collisionDetection={closestCenter}
                     onDragEnd={handleDragEnd}
                   >
-                    {pinnedItems.length > 0 && (
-                      <div className="stack" style={{ marginTop: '20px' }}>
-                        <h2 style={{ fontSize: '1.2rem', color: 'var(--accent)' }}>Pinned Content</h2>
-                        <SortableContext items={pinnedItems.map((i: ContentItem) => i.id)} strategy={verticalListSortingStrategy}>
-                          <div className="grid">
-                            {pinnedItems.map((item: ContentItem) => (
-                              <SortableItem key={item.id} item={item} onEdit={() => setEditingItem(item)} />
-                            ))}
-                          </div>
-                        </SortableContext>
-                      </div>
-                    )}
-
                     <div className="stack" style={{ marginTop: '20px' }}>
                       <h2 style={{ fontSize: '1.2rem' }}>All Content</h2>
-                      <SortableContext items={normalItems.map((i: ContentItem) => i.id)} strategy={verticalListSortingStrategy}>
+                      <SortableContext items={sortedItems.map((i: ContentItem) => i.id)} strategy={verticalListSortingStrategy}>
                         <div className="grid">
-                          {normalItems.map((item: ContentItem) => (
-                            <SortableItem key={item.id} item={item} onEdit={() => setEditingItem(item)} />
+                          {sortedItems.map((item: ContentItem) => (
+                            <SortableItem key={item.id} item={item} onEdit={() => setEditingItem(item)} onDelete={() => handleDeleteItem(item)} />
                           ))}
                         </div>
                       </SortableContext>

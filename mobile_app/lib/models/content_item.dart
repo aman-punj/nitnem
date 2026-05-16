@@ -1,4 +1,3 @@
-
 enum ContentType { prayer, youtube_live }
 
 class LocalizedTitles {
@@ -100,7 +99,8 @@ class PrayerTrack {
       'id': id,
       'title': title,
       'audio': audio?.toMap(),
-      'transcripts': transcripts.map((key, value) => MapEntry(key, value.toMap())),
+      'transcripts':
+          transcripts.map((key, value) => MapEntry(key, value.toMap())),
     };
   }
 }
@@ -115,9 +115,7 @@ class ContentItem {
   final String? youtubeUrl;
   final String? thumbnail;
   final String categoryId;
-  // Phase 2 Fields
   final int displayOrder;
-  final bool pinToTop;
 
   const ContentItem({
     required this.id,
@@ -130,12 +128,13 @@ class ContentItem {
     this.thumbnail,
     this.categoryId = 'uncategorized',
     this.displayOrder = 100,
-    this.pinToTop = false,
   });
 
   factory ContentItem.fromMap(Map<String, dynamic> map) {
     final typeStr = map['type'] as String?;
-    final type = typeStr == 'youtube_live' ? ContentType.youtube_live : ContentType.prayer;
+    final type = typeStr == 'youtube_live'
+        ? ContentType.youtube_live
+        : ContentType.prayer;
 
     final trackMap = <String, PrayerTrack>{};
     if (map['tracks'] != null) {
@@ -155,7 +154,6 @@ class ContentItem {
       thumbnail: map['thumbnail'],
       categoryId: map['categoryId'] ?? 'uncategorized',
       displayOrder: map['displayOrder'] ?? 100,
-      pinToTop: map['pinToTop'] ?? false,
     );
   }
 
@@ -171,7 +169,6 @@ class ContentItem {
       'thumbnail': thumbnail,
       'categoryId': categoryId,
       'displayOrder': displayOrder,
-      'pinToTop': pinToTop,
     };
   }
 }

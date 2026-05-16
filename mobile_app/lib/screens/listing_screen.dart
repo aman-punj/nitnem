@@ -6,6 +6,7 @@ import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/core/design_system/widgets/bani_tiles.dart';
 import 'package:nitnem/models/content_category.dart';
 import 'package:nitnem/models/content_item.dart';
+import 'package:nitnem/services/content_grouping_service.dart';
 
 class ListingScreen extends StatelessWidget {
   const ListingScreen({super.key});
@@ -24,22 +25,18 @@ class ListingScreen extends StatelessWidget {
         );
       }
 
-      final groupedContent = _groupContentByCategories(controller);
+      final searchQuery = controller.searchQuery.value;
+      final groupedContent = ContentGroupingService.groupByCategory(
+          controller.contentItems,
+          searchQuery: searchQuery);
       final categoryMap = {
         for (final category in controller.categories) category.id: category
       };
 
-      // Get all unique category IDs from grouped content
+      // Get all unique category IDs from grouped content and sort them
       final allCategoryIds = groupedContent.keys.toList();
-
-      // Sort items within each category
-      final sortedCategoryIds = allCategoryIds..sort((a, b) {
-        final catA = categoryMap[a];
-        final catB = categoryMap[b];
-        final orderA = catA?.displayOrder ?? 100;
-        final orderB = catB?.displayOrder ?? 100;
-        return orderA.compareTo(orderB);
-      });
+      final sortedCategoryIds = ContentGroupingService.getSortedCategoryIds(
+          allCategoryIds, categoryMap);
 
       return CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -100,7 +97,7 @@ class ListingScreen extends StatelessWidget {
   List<Widget> _buildCategorySections(
     List<String> orderedCategoryIds,
     Map<String, ContentCategory> categoryMap,
-    Map<String, List<dynamic>> groupedContent,
+    Map<String, List<ContentItem>> groupedContent,
     HomeController controller,
   ) {
     final sections = <Widget>[];
@@ -120,61 +117,63 @@ class ListingScreen extends StatelessWidget {
     }
 
     for (final categoryId in orderedCategoryIds) {
-      final items = groupedContent[categoryId] ?? [];
-      if (items.isEmpty) continue; // Skip category if it has no items
+      final items = groupedContent[categoryId];
+      if (items == null || items.isEmpty) continue; // Skip empty categories
 
       final category = categoryMap[categoryId];
-      final title = category?.title ?? _friendlyCategoryTitle(categoryId);
+      final title =
+          ContentGroupingService.getCategoryDisplayTitle(categoryId, category);
       final iconKey = category?.iconKey;
 
+      // ─── Category Header ────────────────────────────────────────────────
       sections.add(
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-            child: Text(
-              title,
-              style: SacredTypography.headlineMd.copyWith(
-                color: SacredColors.textPrimary,
-              ),
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: SacredTypography.headlineMd.copyWith(
+                    color: SacredColors.textPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       );
 
+      // ─── Category Items ─────────────────────────────────────────────────
       sections.add(
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final item = items[index];
-                final isPinned = item.pinToTop;
 
-                // Handle YouTube Live tiles separately
+                // Different styling for YouTube Live items
                 if (item.type == ContentType.youtube_live) {
                   return BaniListTile(
                     gurmukhiTitle: item.titles.pa,
                     englishTitle: item.titles.en,
-                    icon: Icons.live_tv_rounded, // Specific icon for Live
+                    icon: Icons.live_tv_rounded,
                     onTap: () => controller.onContentTap(item),
                   );
                 }
 
-                if (isPinned) {
-                  return SpecialBaniTile(
-                    englishTitle: item.titles.en,
-                    gurmukhiTitle: item.titles.pa,
-                    icon: _getIconForCategory(iconKey),
-                    onTap: () => controller.onContentTap(item),
-                  );
-                } else {
-                  return BaniListTile(
-                    gurmukhiTitle: item.titles.pa,
-                    englishTitle: item.titles.en,
-                    icon: _getIconForCategory(iconKey),
-                    onTap: () => controller.onContentTap(item),
-                  );
-                }
+                // Standard Bani tile
+                return BaniListTile(
+                  gurmukhiTitle: item.titles.pa,
+                  englishTitle: item.titles.en,
+                  icon: _getIconForCategory(iconKey),
+                  onTap: () => controller.onContentTap(item),
+                );
               },
               childCount: items.length,
             ),
@@ -182,56 +181,11 @@ class ListingScreen extends StatelessWidget {
         ),
       );
 
-      sections.add(const SliverToBoxAdapter(child: SizedBox(height: 16)));
+      // ─── Space after category ───────────────────────────────────────────
+      sections.add(const SliverToBoxAdapter(child: SizedBox(height: 12)));
     }
 
     return sections;
-  }
-
-  Map<String, List<dynamic>> _groupContentByCategories(
-      HomeController controller) {
-    final grouped = <String, List<dynamic>>{};
-    final searchQuery = controller.searchQuery.value.toLowerCase();
-
-    for (final item in controller.contentItems) {
-      if (item.enabled) {
-        // Apply search filter
-        final matchesSearch = searchQuery.isEmpty ||
-            item.titles.en.toLowerCase().contains(searchQuery) ||
-            item.titles.pa.toLowerCase().contains(searchQuery) ||
-            item.titles.hi.toLowerCase().contains(searchQuery);
-
-        if (matchesSearch) {
-          grouped.putIfAbsent(item.categoryId, () => []).add(item);
-        }
-      }
-    }
-
-    // Sort items within each category
-    grouped.forEach((categoryId, items) {
-      items.sort((a, b) {
-        // Pinned items first, then by display order
-        if (a.pinToTop != b.pinToTop) return a.pinToTop ? -1 : 1;
-        return a.displayOrder.compareTo(b.displayOrder);
-      });
-    });
-
-    return grouped;
-  }
-
-  String _friendlyCategoryTitle(String categoryId) {
-    switch (categoryId.toLowerCase()) {
-      case 'nitnem':
-        return 'Nitnem';
-      case 'daily':
-        return 'Daily Banis';
-      case 'evening':
-        return 'Evening Banis';
-      case 'live':
-        return 'Live';
-      default:
-        return 'Other Banis';
-    }
   }
 
   IconData _getIconForCategory(String? iconKey) {

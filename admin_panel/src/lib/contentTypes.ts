@@ -31,11 +31,8 @@ export type PrayerContentData = {
   active_track: string
   tracks: Record<string, PrayerTrack>
   categoryId?: string
-  updated_at?: unknown
-  // Phase 2
   displayOrder: number
-  pinToTop: boolean
-  contentPriorityType: 'high' | 'normal' | 'low'
+  updated_at?: unknown
 }
 
 export type YoutubeLiveContentData = {
@@ -46,11 +43,8 @@ export type YoutubeLiveContentData = {
   enabled: boolean
   thumbnail?: string
   categoryId?: string
-  updated_at?: unknown
-  // Phase 2
   displayOrder: number
-  pinToTop: boolean
-  contentPriorityType: 'high' | 'normal' | 'low'
+  updated_at?: unknown
 }
 
 export type ContentItem = PrayerContentData | YoutubeLiveContentData

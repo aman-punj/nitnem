@@ -3,10 +3,11 @@ import { contentDisplayTitle, ContentItem } from '../../lib/contentTypes'
 type PrayerCardProps = {
   item: ContentItem
   onEdit: () => void
+  onDelete: () => void
   dragHandleProps?: any
 }
 
-export function PrayerCard({ item, onEdit, dragHandleProps }: PrayerCardProps) {
+export function PrayerCard({ item, onEdit, onDelete, dragHandleProps }: PrayerCardProps) {
   const isPrayer = item.type === 'prayer'
   const activeTrackId = isPrayer ? item.active_track : null
   const activeTrack = isPrayer ? item.tracks[activeTrackId || ''] : null
@@ -41,7 +42,6 @@ export function PrayerCard({ item, onEdit, dragHandleProps }: PrayerCardProps) {
                 </span>
                 <span className="badge type">{item.type}</span>
                 {isPrayer && <span className="badge track">{trackCount} Tracks</span>}
-                {item.pinToTop && <span className="badge pin" style={{ background: 'var(--accent)', color: 'white' }}>Pinned</span>}
               </div>
             </div>
             
@@ -52,7 +52,10 @@ export function PrayerCard({ item, onEdit, dragHandleProps }: PrayerCardProps) {
           </div>
         </div>
         
-        <button className="outline" onClick={onEdit}>Edit</button>
+        <div className="row" style={{ gap: '8px' }}>
+          <button className="outline" onClick={onEdit}>Edit</button>
+          <button className="outline danger" onClick={onDelete} style={{ color: 'red' }}>Delete</button>
+        </div>
       </div>
     </div>
   )

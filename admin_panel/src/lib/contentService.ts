@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -19,25 +20,9 @@ export async function fetchContentList(): Promise<ContentItem[]> {
     const snap = await getDocs(collection(db, CONTENT_COLLECTION))
     const items = snap.docs.map((item) => item.data() as ContentItem)
     
-    // Multi-criteria sort (matching mobile app logic)
+    // Sort by displayOrder only (ascending)
     items.sort((a, b) => {
-      // 1. pinToTop
-      if (a.pinToTop !== b.pinToTop) {
-        return a.pinToTop ? -1 : 1
-      }
-
-      // 2. displayOrder
-      if (a.displayOrder !== b.displayOrder) {
-        return a.displayOrder - b.displayOrder
-      }
-
-      // 3. Type priority (Prayer > YouTube)
-      if (a.type !== b.type) {
-        return a.type === 'prayer' ? -1 : 1
-      }
-
-      // 4. Alphabetical fallback
-      return (a.titles.en || '').localeCompare(b.titles.en || '')
+      return (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
     })
     
     return items
@@ -61,4 +46,8 @@ export async function upsertContentItem(item: ContentItem): Promise<void> {
     },
     { merge: true },
   )
+}
+
+export async function deleteContentItem(contentId: string): Promise<void> {
+  await deleteDoc(doc(db, CONTENT_COLLECTION, contentId))
 }

@@ -16,28 +16,12 @@ class FirebaseContentService {
 
       final List<ContentItem> items = snapshot.docs
           .map((doc) => ContentItem.fromMap(doc.data()))
-          .where((item) => item.titles.en.isNotEmpty) // Filter out items with empty English titles
+          .where((item) => item.titles.en
+              .isNotEmpty) // Filter out items with empty English titles
           .toList();
 
-      items.sort((a, b) {
-        // 1. Primary sort by displayOrder (ascending)
-        if (a.displayOrder != b.displayOrder) {
-          return a.displayOrder.compareTo(b.displayOrder);
-        }
-
-        // 2. Secondary sort by pinToTop (pinned items first)
-        if (a.pinToTop != b.pinToTop) {
-          return a.pinToTop ? -1 : 1;
-        }
-
-        // 3. Tertiary sort by Type priority (Prayer before YouTube)
-        if (a.type != b.type) {
-          return a.type == ContentType.prayer ? -1 : 1;
-        }
-
-        // 4. Alphabetical fallback (titles.en)
-        return a.titles.en.compareTo(b.titles.en);
-      });
+      // Sort by displayOrder ascending - only ordering logic
+      items.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
       return items;
     } catch (e) {

@@ -92,11 +92,11 @@ class _BaniListTileState extends State<BaniListTile>
             onTapUp: _handleTapUp,
             onTapCancel: _handleTapCancel,
             child: Container(
-              padding: const EdgeInsets.all(20),
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
               decoration: BoxDecoration(
                 color: SacredColors.surfacePrimary,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: widget.isCompleted
                       ? SacredColors.primaryAccent.withValues(alpha: 0.4)
@@ -105,9 +105,9 @@ class _BaniListTileState extends State<BaniListTile>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -115,10 +115,10 @@ class _BaniListTileState extends State<BaniListTile>
                 children: [
                   // Leading Icon with sacred styling
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: SacredColors.surfaceSecondary,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(11),
                       border: Border.all(
                         color: SacredColors.borderGold.withValues(alpha: 0.1),
                         width: 1,
@@ -127,54 +127,59 @@ class _BaniListTileState extends State<BaniListTile>
                     child: Icon(
                       widget.icon,
                       color: SacredColors.primaryAccent,
-                      size: 24,
+                      size: 22,
                     ),
                   ),
 
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 14),
 
                   // Title and subtitle section
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           widget.gurmukhiTitle,
                           style: const TextStyle(
                             color: SacredColors.primaryAccent,
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.w600,
-                            height: 1.3,
-                            letterSpacing: 0.3,
+                            height: 1.25,
+                            letterSpacing: 0.2,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           widget.englishTitle,
                           style: TextStyle(
                             color: SacredColors.textSecondary,
-                            fontSize: 14,
-                            height: 1.2,
+                            fontSize: 13,
+                            height: 1.15,
                             fontWeight: FontWeight.w500,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         if (widget.showEstimatedTime &&
                             widget.estimatedTime != null) ...[
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Row(
                             children: [
                               Icon(
                                 Icons.access_time_rounded,
-                                size: 14,
+                                size: 12,
                                 color: SacredColors.primaryAccent
                                     .withValues(alpha: 0.6),
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 4),
                               Text(
                                 _formatDuration(widget.estimatedTime!),
                                 style: TextStyle(
                                   color: SacredColors.textSecondary,
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -185,17 +190,20 @@ class _BaniListTileState extends State<BaniListTile>
                     ),
                   ),
 
+                  const SizedBox(width: 12),
+
                   // Trailing elements
                   Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Completion status
+                      // Completion status or Arrow
                       if (widget.isCompleted)
                         Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.all(5),
                           decoration: BoxDecoration(
                             color: SacredColors.primaryAccent
                                 .withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(18),
                             border: Border.all(
                               color: SacredColors.primaryAccent
                                   .withValues(alpha: 0.3),
@@ -205,19 +213,16 @@ class _BaniListTileState extends State<BaniListTile>
                           child: const Icon(
                             Icons.check_rounded,
                             color: SacredColors.primaryAccent,
-                            size: 16,
+                            size: 14,
                           ),
+                        )
+                      else
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: SacredColors.primaryAccent
+                              .withValues(alpha: 0.25),
+                          size: 14,
                         ),
-
-                      const SizedBox(height: 8),
-
-                      // Arrow indicator
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        color:
-                            SacredColors.primaryAccent.withValues(alpha: 0.3),
-                        size: 16,
-                      ),
                     ],
                   ),
                 ],
@@ -226,113 +231,6 @@ class _BaniListTileState extends State<BaniListTile>
           ),
         );
       },
-    );
-  }
-}
-
-class SpecialBaniTile extends StatelessWidget {
-  final String englishTitle;
-  final String gurmukhiTitle;
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool isCompleted;
-  final Color? accentColor;
-
-  const SpecialBaniTile({
-    super.key,
-    required this.englishTitle,
-    required this.gurmukhiTitle,
-    this.icon = Icons.auto_stories_outlined,
-    required this.onTap,
-    this.isCompleted = false,
-    this.accentColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = accentColor ?? SacredColors.primaryAccent;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: SacredColors.surfacePrimary,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: accent.withValues(alpha: 0.2),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: SacredColors.surfaceSecondary,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: accent.withValues(alpha: 0.1),
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: accent,
-                    size: 28,
-                  ),
-                ),
-                const Spacer(),
-                if (isCompleted)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(
-                      Icons.check_rounded,
-                      color: accent,
-                      size: 20,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Text(
-              gurmukhiTitle,
-              style: const TextStyle(
-                color: SacredColors.primaryAccent,
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              englishTitle,
-              style: const TextStyle(
-                color: SacredColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                height: 1.3,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

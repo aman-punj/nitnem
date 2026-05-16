@@ -39,12 +39,6 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
   const [enabled, setEnabled] = useState(item?.enabled ?? true)
   const [categoryId, setCategoryId] = useState(item?.categoryId ?? 'uncategorized')
 
-  // Phase 2 Fields
-  const [pinToTop, setPinToTop] = useState(item?.pinToTop ?? false)
-  const [contentPriorityType, setContentPriorityType] = useState<'high' | 'normal' | 'low'>(
-    item?.contentPriorityType ?? 'normal'
-  )
-
   const [youtubeUrl, setYoutubeUrl] = useState(item?.type === 'youtube_live' ? item.youtube_url : '')
   const [youtubeThumbnail, setYoutubeThumbnail] = useState(item?.type === 'youtube_live' ? item.thumbnail ?? '' : '')
 
@@ -82,9 +76,7 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
           thumbnail: youtubeThumbnail,
           categoryId,
           enabled,
-          displayOrder: item?.displayOrder ?? 100, // Keep existing order or default
-          pinToTop,
-          contentPriorityType,
+          displayOrder: item?.displayOrder ?? 100,
         }
         await onSave(payload)
       } else {
@@ -97,8 +89,6 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
           categoryId,
           tracks,
           displayOrder: item?.displayOrder ?? 100,
-          pinToTop,
-          contentPriorityType,
         }
         await onSave(payload)
       }
@@ -262,28 +252,6 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
                 onChange={(e) => setCategoryId(e.target.value)}
                 placeholder="nitnem"
               />
-            </div>
-            <div className="label-group">
-              <label>Priority Type</label>
-              <select 
-                value={contentPriorityType} 
-                onChange={(e) => setContentPriorityType(e.target.value as any)}
-              >
-                <option value="low">Low</option>
-                <option value="normal">Normal</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-            <div className="row" style={{ gap: '20px', alignItems: 'center' }}>
-              <div className="label-group" style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <input 
-                  type="checkbox" 
-                  checked={pinToTop} 
-                  onChange={(e) => setPinToTop(e.target.checked)}
-                  id="pin-check"
-                />
-                <label htmlFor="pin-check" style={{ marginBottom: 0, marginLeft: '8px' }}>Pin to Top</label>
-              </div>
             </div>
           </div>
         </div>
