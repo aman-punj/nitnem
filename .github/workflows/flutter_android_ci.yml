@@ -16,8 +16,7 @@ jobs:
 build-android:
 name: Build & Distribute Android
 runs-on: ubuntu-latest
-
-```
+ 
 defaults:
   run:
     working-directory: mobile_app
