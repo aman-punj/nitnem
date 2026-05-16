@@ -10,14 +10,7 @@ inputs:
 testers:
 description: "Tester groups (comma separated)"
 required: false
-default: "dev"
-
-```
-  release_notes:
-    description: "Release notes"
-    required: false
-    default: "Manual build from GitHub Actions"
-```
+default: "dev, testers"
 
 jobs:
 build-android:
