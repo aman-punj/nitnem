@@ -175,13 +175,14 @@ class PrayerController extends GetxController {
     int closestIndex = -1;
 
     for (final position in positions) {
-      if (hasTimings.value && position.index == 0) continue; // Skip flower icon if sync is active
+      // Skip flower icons (index 0 for top, segments.length + 1 for bottom)
+      if (position.index == 0 || position.index == segments.length + 1) continue;
 
       final center = (position.itemLeadingEdge + position.itemTrailingEdge) / 2;
       final distance = (center - targetAlignment).abs();
       if (distance < minDistance) {
         minDistance = distance;
-        closestIndex = hasTimings.value ? position.index - 1 : position.index;
+        closestIndex = position.index - 1;
       }
     }
 

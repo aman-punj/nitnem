@@ -94,12 +94,10 @@ class PrayerPage extends StatelessWidget {
             final hasTimings = controller.hasTimings.value;
             final isAudioMode = controller.primaryMode.value == PrimaryMode.audio;
 
-            // Calculate padding: 
-            // - Large padding (45%) for Focus mode OR Audio mode WITH sync
-            // - Normal padding (24) for Audio mode WITHOUT sync
-            final double verticalPadding = (hasTimings || !isAudioMode)
-                ? constraints.maxHeight * 0.45
-                : 24.0;
+            // Calculate padding to ensure lines start near the top-middle
+            // - Add top padding for initial centering
+            // - Add bottom padding to allow scrolling last items to center
+            final double verticalPadding = constraints.maxHeight * 0.45;
 
             return Column(
               children: [
@@ -108,27 +106,25 @@ class PrayerPage extends StatelessWidget {
                   child: ScrollablePositionedList.builder(
                     itemScrollController: controller.itemScrollController,
                     itemPositionsListener: controller.itemPositionsListener,
-                    itemCount: controller.segments.length + (hasTimings ? 1 : 0),
+                    itemCount: controller.segments.length + 2,
                     padding: EdgeInsets.symmetric(
                       horizontal: 24,
-                      vertical: verticalPadding,
+                    ).copyWith(
+                        top: verticalPadding,
+                        bottom: verticalPadding,
                     ),
                     itemBuilder: (context, index) {
-                      // Only show flower if sync is available
-                      if (hasTimings && index == 0) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 60),
-                            child: Icon(
-                              Icons.local_florist_rounded,
-                              size: 40,
-                              color: SacredColors.primaryAccent.withValues(alpha: 0.3),
-                            ),
-                          ),
-                        );
+                      // Top flower (index 0)
+                      if (index == 0) {
+                        return _buildFlowerIcon(top: true);
+                      }
+                      // Bottom flower (index last)
+                      if (index == controller.segments.length + 1) {
+                        return _buildFlowerIcon(top: false);
                       }
 
-                      final segmentIndex = hasTimings ? index - 1 : index;
+                      // Adjust index (skip top flower)
+                      final segmentIndex = index - 1;
                       final segment = controller.segments[segmentIndex];
 
                       return Obx(() {
@@ -329,6 +325,23 @@ class PrayerPage extends StatelessWidget {
           },
         ));
       }),
+    );
+  }
+
+  // Helper method for flower
+  Widget _buildFlowerIcon({required bool top}) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.only(
+            top: top ? 0 : 60,
+            bottom: top ? 60 : 0
+        ),
+        child: Icon(
+          Icons.local_florist_rounded,
+          size: 40,
+          color: SacredColors.primaryAccent.withValues(alpha: 0.3),
+        ),
+      ),
     );
   }
 }
