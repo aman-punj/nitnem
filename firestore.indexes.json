@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "preference_modules",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "enabled", "order": "ASCENDING" },
+        { "fieldPath": "order",   "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

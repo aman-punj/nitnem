@@ -61,6 +61,14 @@ jobs:
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
           echo "storeFile=upload-keystore.jks" >> android/key.properties
 
+      - name: Verify signing config
+        run: |
+          echo "=== key.properties (passwords masked) ==="
+          sed 's/Password=.*/Password=***/' android/key.properties
+          echo "=== Aliases in keystore ==="
+          keytool -list -keystore android/app/upload-keystore.jks \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" 2>&1 | grep -E "Alias|alias|Entry"
+
       - name: Get dependencies
         run: flutter pub get
 

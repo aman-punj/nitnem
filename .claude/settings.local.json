@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git log *)",
       "Bash(Remove-Item \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\lib\\\\services\\\\audio_handler.dart\" -Force)",
-      "Bash(flutter analyze *)"
+      "Bash(flutter analyze *)",
+      "Bash(flutter pub *)"
     ]
   }
 }

@@ -1,137 +1,177 @@
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter/foundation.dart';
-import 'package:get/get.dart';
 import 'package:audio_session/audio_session.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:get/get.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint('FCM background: ${message.messageId}');
+}
+
 class NotificationService extends GetxService {
-  final FlutterLocalNotificationsPlugin _notificationsPlugin =
+  final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+
+  static const _channelId = 'nitnem_daily';
+  static const _channelName = 'Daily Nitnem Reminders';
 
   Future<NotificationService> init() async {
     tz.initializeTimeZones();
-    
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('ic_notification');
 
-    const DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings();
-
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
+    const android = AndroidInitializationSettings('ic_notification');
+    const ios = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
+    await _plugin.initialize(
+      const InitializationSettings(android: android, iOS: ios),
     );
 
-    await _notificationsPlugin.initialize(
-      initializationSettings,
-    );
-
-    // Configure AudioSession for background playback
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
-    
-    try {
-      await _scheduleDailyNotifications();
-    } catch (e) {
-      debugPrint('Failed to schedule daily notifications: $e');
-    }
+
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    // Show local notification when FCM arrives in foreground
+    FirebaseMessaging.onMessage.listen(_onForegroundMessage);
 
     return this;
   }
 
-  Future<void> _scheduleDailyNotifications() async {
-    // Japji Sahib - 6:00 AM
-    await _notificationsPlugin.zonedSchedule(
-      0,
-      'Time for Japji Sahib',
-      'It is time for your daily Japji Sahib.',
-      _nextInstanceOfTime(6, 0),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'daily_notifications',
-          'Daily Notifications',
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
-
-    // Rehras Sahib - 6:30 PM
-    await _notificationsPlugin.zonedSchedule(
-      1,
-      'Time for Rehras Sahib',
-      'It is time for your daily Rehras Sahib.',
-      _nextInstanceOfTime(18, 30),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'daily_notifications',
-          'Daily Notifications',
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
+  void _onForegroundMessage(RemoteMessage message) {
+    final notification = message.notification;
+    if (notification == null) return;
+    showNotification(
+      id: message.hashCode,
+      title: notification.title ?? '',
+      body: notification.body ?? '',
     );
   }
 
-  tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate =
-        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
-    }
-    return scheduledDate;
-  }
+  // ── Permissions ──────────────────────────────────────────────────────────
 
   Future<void> requestPermissions() async {
-    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin.resolvePlatformSpecificImplementation<
+    await _fcm.requestPermission(alert: true, badge: true, sound: true);
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
+    await android?.requestNotificationsPermission();
+    // Request exact alarm permission on Android 12+ so reminders fire on time.
+    await android?.requestExactAlarmsPermission();
+  }
 
-    if (androidImplementation != null) {
-      await androidImplementation.requestNotificationsPermission();
-    }
+  Future<bool> canScheduleExact() async {
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (android == null) return true;
+    return await android.canScheduleExactNotifications() ?? false;
   }
 
   Future<bool> areNotificationsEnabled() async {
-    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin.resolvePlatformSpecificImplementation<
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
-    if (androidImplementation == null) return true;
-    return await androidImplementation.areNotificationsEnabled() ?? false;
+    if (android == null) return true;
+    return await android.areNotificationsEnabled() ?? false;
   }
 
-  // Standard push notifications
+  // ── FCM topics ───────────────────────────────────────────────────────────
+
+  Future<void> subscribeToTopic(String topic) async {
+    try {
+      await _fcm.subscribeToTopic(topic);
+    } catch (e) {
+      debugPrint('FCM subscribe "$topic" error: $e');
+    }
+  }
+
+  Future<void> unsubscribeFromTopic(String topic) async {
+    try {
+      await _fcm.unsubscribeFromTopic(topic);
+    } catch (e) {
+      debugPrint('FCM unsubscribe "$topic" error: $e');
+    }
+  }
+
+  // ── Local notifications ──────────────────────────────────────────────────
+
+  Future<void> scheduleDailyNotification({
+    required int id,
+    required String title,
+    required String body,
+    required int hour,
+    required int minute,
+  }) async {
+    await _plugin.cancel(id);
+    // Use exact alarms only when the OS has granted permission; fall back to
+    // inexact so scheduling never crashes (notification still fires, ±a few min).
+    final useExact = await canScheduleExact();
+    final scheduleMode = useExact
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
+
+    await _plugin.zonedSchedule(
+      id,
+      title,
+      body,
+      _nextInstanceOfTime(hour, minute),
+      NotificationDetails(
+        android: const AndroidNotificationDetails(
+          _channelId,
+          _channelName,
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: false,
+          presentSound: true,
+        ),
+      ),
+      androidScheduleMode: scheduleMode,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
+    );
+  }
+
+  Future<void> cancelNotification(int id) async {
+    await _plugin.cancel(id);
+  }
+
   Future<void> showNotification({
     required int id,
     required String title,
     required String body,
   }) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'your_channel_id',
-      'your_channel_name',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
-
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
-
-    await _notificationsPlugin.show(
+    await _plugin.show(
       id,
       title,
       body,
-      platformChannelSpecifics,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelId,
+          _channelName,
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+      ),
     );
+  }
+
+  tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduled =
+        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    if (scheduled.isBefore(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+    return scheduled;
   }
 }

@@ -22,6 +22,7 @@ import 'package:nitnem/services/shared_prefs_service.dart';
 import 'package:nitnem/services/preference_service.dart';
 import 'package:nitnem/services/transcript_sync_service.dart';
 import 'package:nitnem/services/share_service.dart';
+import 'package:nitnem/controllers/notification_settings_controller.dart';
 import 'package:nitnem/services/notification_service.dart';
 import 'package:nitnem/services/support_service.dart';
 
@@ -43,6 +44,7 @@ class DependencyInjection {
     Get.put(CacheService());
     Get.put(SettingsController());
     await Get.putAsync(() => NotificationService().init());
+    await Get.putAsync(() => NotificationSettingsController().init());
 
     Get.put(PrayerStorageService());
     Get.put(PrayerAssetService());

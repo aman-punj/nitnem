@@ -1,5 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:nitnem/services/notification_service.dart';
 import 'package:flutter/services.dart' show DeviceOrientation, SystemChrome;
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/font_size_controller.dart';
@@ -19,6 +21,9 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Must be registered before runApp so the isolate is ready for background FCM.
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   await SharedPrefsService.init();
   await DependencyInjection.init();

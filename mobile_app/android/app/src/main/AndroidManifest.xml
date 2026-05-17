@@ -38,6 +38,14 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
+        <!-- FCM: use the same channel and icon as local notifications -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="nitnem_daily" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+
         <!-- Audio Service -->
         <service
             android:name="com.ryanheise.audioservice.AudioService"
