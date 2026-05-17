@@ -6,7 +6,10 @@
       "Bash(flutter analyze *)",
       "Bash(flutter pub *)",
       "Bash(git check-ignore *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(Get-ChildItem -Path \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\admin_panel\" -Force)",
+      "Bash(Select-Object -Property Name, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)"
     ]
   }
 }

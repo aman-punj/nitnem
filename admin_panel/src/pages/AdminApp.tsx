@@ -36,8 +36,11 @@ import { ContentEditor } from '../components/admin/ContentEditor'
 import { RemoteConfigEditor } from '../components/admin/RemoteConfigEditor'
 import { MenuSettingsEditor } from '../components/admin/MenuSettingsEditor'
 import { SupportAdminPanel } from '../components/admin/SupportAdminPanel'
+import { fetchNotificationSettings, saveNotificationSettings } from '../lib/notificationsService'
+import { DEFAULT_NOTIFICATION_SETTINGS, type NotificationSettings } from '../lib/notificationsTypes'
+import { NotificationsEditor } from '../components/admin/NotificationsEditor'
 
-type AdminSection = 'config' | 'content' | 'menu' | 'support'
+type AdminSection = 'config' | 'content' | 'menu' | 'notifications' | 'support'
 
 function SortableItem({ item, onEdit, onDelete }: { item: ContentItem; onEdit: () => void; onDelete: () => void }) {
   const {
@@ -89,6 +92,11 @@ export function AdminApp() {
   const [menuError, setMenuError] = useState('')
   const [dirtyMenu, setDirtyMenu] = useState(false)
 
+  const [notifSettings, setNotifSettings] = useState<NotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS)
+  const [notifLoading, setNotifLoading] = useState(false)
+  const [notifError, setNotifError] = useState('')
+  const [dirtyNotif, setDirtyNotif] = useState(false)
+
   const [publishing, setPublishing] = useState(false)
 
   const sensors = useSensors(
@@ -119,6 +127,7 @@ export function AdminApp() {
     void loadContentList()
     void loadRemoteConfig()
     void loadMenuSettings()
+    void loadNotifSettings()
   }, [])
 
   async function loadContentList(): Promise<void> {
@@ -148,6 +157,20 @@ export function AdminApp() {
     }
   }
 
+  async function loadNotifSettings(): Promise<void> {
+    setNotifLoading(true)
+    setNotifError('')
+    try {
+      const data = await fetchNotificationSettings()
+      setNotifSettings(data)
+      setDirtyNotif(false)
+    } catch (error) {
+      setNotifError(error instanceof Error ? error.message : 'Failed to load notification settings.')
+    } finally {
+      setNotifLoading(false)
+    }
+  }
+
   async function loadMenuSettings(): Promise<void> {
     setMenuLoading(true)
     setMenuError('')
@@ -174,6 +197,11 @@ export function AdminApp() {
         const saved = await saveMenuSettings(menuSettings)
         setMenuSettings(saved)
         setDirtyMenu(false)
+      }
+      if (dirtyNotif) {
+        const saved = await saveNotificationSettings(notifSettings)
+        setNotifSettings(saved)
+        setDirtyNotif(false)
       }
     } catch (error) {
       console.error('Failed to publish changes:', error)
@@ -282,14 +310,14 @@ export function AdminApp() {
               Last Config Update: {formatTimestampLabel(remoteConfig.updatedAt)} | 
               Last Menu Update: {formatTimestampLabel(menuSettings.updatedAt)}
             </span>
-            {(dirtyRemoteConfig || dirtyMenu) && <span className="badge accent">Unsaved changes</span>}
+            {(dirtyRemoteConfig || dirtyMenu || dirtyNotif) && <span className="badge accent">Unsaved changes</span>}
           </div>
         </div>
         <div className="row" style={{ gap: '12px', flexWrap: 'wrap' }}>
-          <button className="secondary" onClick={() => { void loadRemoteConfig(); void loadMenuSettings(); }} disabled={remoteConfigLoading || menuLoading || publishing}>
+          <button className="secondary" onClick={() => { void loadRemoteConfig(); void loadMenuSettings(); void loadNotifSettings() }} disabled={remoteConfigLoading || menuLoading || notifLoading || publishing}>
             Refresh
           </button>
-          <button onClick={() => void publishChanges()} disabled={(!dirtyRemoteConfig && !dirtyMenu) || publishing || remoteConfigLoading || menuLoading}>
+          <button onClick={() => void publishChanges()} disabled={(!dirtyRemoteConfig && !dirtyMenu && !dirtyNotif) || publishing || remoteConfigLoading || menuLoading || notifLoading}>
             {publishing ? 'Publishing...' : 'Publish Changes'}
           </button>
         </div>
@@ -317,6 +345,13 @@ export function AdminApp() {
             onClick={() => setSection('menu')}
           >
             Menu Settings
+          </button>
+          <button
+            className={section === 'notifications' ? '' : 'secondary'}
+            style={{ width: '100%', marginBottom: '8px' }}
+            onClick={() => setSection('notifications')}
+          >
+            Notifications
           </button>
           <button
             className={section === 'support' ? '' : 'secondary'}
@@ -407,6 +442,22 @@ export function AdminApp() {
                     onChange={handleMenuSettingsChange}
                   />
                 )}
+            </div>
+          )}
+          {section === 'notifications' && (
+            <div className="stack">
+              {notifError && <div className="card error-text">{notifError}</div>}
+              {notifLoading ? (
+                <div className="card empty-state">Loading notification settings…</div>
+              ) : (
+                <NotificationsEditor
+                  settings={notifSettings}
+                  onChange={next => { setNotifSettings(next); setDirtyNotif(true) }}
+                  saving={publishing}
+                  dirty={dirtyNotif}
+                  lastPublishedLabel={formatTimestampLabel(notifSettings.updatedAt)}
+                />
+              )}
             </div>
           )}
           {section === 'support' && <SupportAdminPanel />}
