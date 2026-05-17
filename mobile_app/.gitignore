@@ -38,7 +38,6 @@ migrate_working_dir/
 # Android related
 **/android/**/build/
 **/android/app/build/
-android/app/src/main/res/drawable/ic_notification.png
 
 # Symbol debugging data
 Debug/
