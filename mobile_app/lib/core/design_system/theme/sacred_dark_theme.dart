@@ -8,9 +8,9 @@ import 'theme_extensions.dart';
 /// Builds a [ThemeData] entirely from [AppTokens].
 /// This is the single function that turns raw token values into Flutter's
 /// material theme. Swap the tokens → entire theme changes.
-ThemeData buildThemeFromTokens(AppTokens t) {
+ThemeData buildThemeFromTokens(AppTokens t, {Brightness brightness = Brightness.dark}) {
   final colorScheme = ColorScheme(
-    brightness: Brightness.dark,
+    brightness: brightness,
     // Primary gold
     primary:             t.primary,
     onPrimary:           t.onPrimary,
@@ -78,7 +78,7 @@ ThemeData buildThemeFromTokens(AppTokens t) {
 
   return ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
+    brightness: brightness,
     colorScheme: colorScheme,
     scaffoldBackgroundColor: t.background,
     textTheme: textTheme,
@@ -97,10 +97,15 @@ ThemeData buildThemeFromTokens(AppTokens t) {
       ),
       iconTheme: IconThemeData(color: t.primary),
       actionsIconTheme: IconThemeData(color: t.primary),
-      systemOverlayStyle: const SystemUiOverlayStyle(
-        statusBarBrightness: Brightness.dark,
-        statusBarIconBrightness: Brightness.light,
-      ),
+      systemOverlayStyle: brightness == Brightness.dark
+          ? const SystemUiOverlayStyle(
+              statusBarBrightness: Brightness.dark,
+              statusBarIconBrightness: Brightness.light,
+            )
+          : const SystemUiOverlayStyle(
+              statusBarBrightness: Brightness.light,
+              statusBarIconBrightness: Brightness.dark,
+            ),
     ),
 
     // ── Cards ─────────────────────────────────────────────────────────────

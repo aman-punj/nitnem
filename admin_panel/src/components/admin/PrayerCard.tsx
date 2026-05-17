@@ -54,7 +54,7 @@ export function PrayerCard({ item, onEdit, onDelete, dragHandleProps }: PrayerCa
         
         <div className="row" style={{ gap: '8px' }}>
           <button className="outline" onClick={onEdit}>Edit</button>
-          <button className="outline danger" onClick={onDelete} style={{ color: 'red' }}>Delete</button>
+          <button className="outline danger" onClick={onDelete}>Delete</button>
         </div>
       </div>
     </div>

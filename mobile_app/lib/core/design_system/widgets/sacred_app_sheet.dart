@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
+import 'package:nitnem/core/design_system/tokens/radius.dart';
+import 'package:nitnem/core/design_system/tokens/spacing.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 
 enum SacredAppSheetType { info, update, maintenance }
@@ -42,7 +44,7 @@ class SacredAppSheet extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: SacredColors.surfaceContainerLow,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(SacredRadius.xl)),
       ),
       child: Stack(
         children: [
@@ -73,14 +75,14 @@ class SacredAppSheet extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(28, 20, 28, 32),
+            padding: const EdgeInsets.fromLTRB(SacredSpacing.md, SacredSpacing.marginMobile, SacredSpacing.md, SacredSpacing.xxl),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
                   width: 36,
                   height: 4,
-                  margin: const EdgeInsets.only(bottom: 36),
+                  margin: const EdgeInsets.only(bottom: SacredSpacing.lg),
                   decoration: BoxDecoration(
                     color: SacredColors.textSecondary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(2),
@@ -103,16 +105,15 @@ class SacredAppSheet extends StatelessWidget {
                     color: SacredColors.primaryAccent,
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: SacredSpacing.md),
                 Text(
                   title,
                   style: SacredTypography.headlineLg.copyWith(
-                    fontSize: 30,
                     fontWeight: FontWeight.w700,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: SacredSpacing.gutter),
                 Text(
                   body,
                   style: SacredTypography.bodyMd.copyWith(
@@ -121,7 +122,7 @@ class SacredAppSheet extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: SacredSpacing.lg),
                 SizedBox(
                   width: double.infinity,
                   height: 58,
@@ -131,7 +132,7 @@ class SacredAppSheet extends StatelessWidget {
                       backgroundColor: SacredColors.primaryAccent,
                       foregroundColor: SacredColors.onPrimary,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(100),
+                        borderRadius: BorderRadius.circular(SacredRadius.full),
                       ),
                       elevation: 0,
                     ),
@@ -145,7 +146,7 @@ class SacredAppSheet extends StatelessWidget {
                   ),
                 ),
                 if (secondaryButtonText != null) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SacredSpacing.gutter),
                   TextButton(
                     onPressed:
                         onSecondaryPressed ?? () => Navigator.pop(context),
@@ -158,7 +159,7 @@ class SacredAppSheet extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
+                const SizedBox(height: SacredSpacing.sm),
                 const SafeArea(child: SizedBox.shrink()),
               ],
             ),

@@ -11,6 +11,8 @@ import 'package:nitnem/core/design_system/widgets/settings_tile.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_segmented_control.dart';
 import 'package:nitnem/models/drawer_item.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
+import 'package:nitnem/core/design_system/tokens/radius.dart';
+import 'package:nitnem/core/design_system/tokens/spacing.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -49,7 +51,7 @@ class SettingsScreen extends StatelessWidget {
         builder: (context, snapshot) {
           final version = snapshot.data?.version ?? '';
           return ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.marginMobile, vertical: SacredSpacing.sm),
             children: [
               ...groupedItems.entries.map((entry) {
                 return FrostedSettingsCard(
@@ -57,12 +59,12 @@ class SettingsScreen extends StatelessWidget {
                   children: entry.value.map((item) {
                     if (item.id == 'theme') {
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                        padding: const EdgeInsets.fromLTRB(SacredSpacing.marginMobile, SacredSpacing.base, SacredSpacing.marginMobile, SacredSpacing.marginMobile),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Theme', style: TextStyle(color: SacredColors.textSecondary, fontSize: 13)),
-                            const SizedBox(height: 8),
+                            Text('Theme', style: SacredTypography.meta),
+                            const SizedBox(height: SacredSpacing.base),
                             SacredSegmentedControl<String>(
                               segments: const {'auto': 'Auto', 'light': 'Light', 'dark': 'Dark'},
                               selected: _themeModeToString(themeController.themeMode.value),
@@ -74,12 +76,12 @@ class SettingsScreen extends StatelessWidget {
                     }
                     if (item.id == 'language') {
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                        padding: const EdgeInsets.fromLTRB(SacredSpacing.marginMobile, SacredSpacing.base, SacredSpacing.marginMobile, SacredSpacing.marginMobile),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Language', style: TextStyle(color: SacredColors.textSecondary, fontSize: 13)),
-                            const SizedBox(height: 8),
+                            Text('Language', style: SacredTypography.meta),
+                            const SizedBox(height: SacredSpacing.base),
                             SacredSegmentedControl<String>(
                               segments: const {'pa': 'ਪੰਜਾਬੀ', 'en': 'English', 'hi': 'हिन्दी'},
                               selected: languageController.currentLang.value,
@@ -109,23 +111,23 @@ class SettingsScreen extends StatelessWidget {
                     }
                     if (item.itemType == SettingsItemType.slider) {
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                        padding: const EdgeInsets.fromLTRB(SacredSpacing.marginMobile, SacredSpacing.base, SacredSpacing.marginMobile, SacredSpacing.marginMobile),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item.title, style: const TextStyle(color: SacredColors.textSecondary, fontSize: 13)),
-                            const SizedBox(height: 10),
+                            Text(item.title, style: SacredTypography.meta),
+                            const SizedBox(height: SacredSpacing.base),
                             Container(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(SacredSpacing.gutter),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(SacredRadius.md),
                               ),
                               child: Center(
                                 child: Obx(() => Text('ੴ ਸਤਿਨਾਮੁ ਕਰਤਾ ਪੁਰਖੁ', style: SacredTypography.transcript)),
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: SacredSpacing.base),
                             Obx(() => SacredSegmentedControl<int>(
                               segments: const {0: 'Small', 1: 'Medium', 2: 'Large'},
                               selected: fontSizeController.currentStep,
@@ -143,14 +145,14 @@ class SettingsScreen extends StatelessWidget {
                   }).toList(),
                 );
               }),
-              const SizedBox(height: 20),
+              const SizedBox(height: SacredSpacing.marginMobile),
               Center(
-                child: Text('Version $version', style: const TextStyle(color: SacredColors.textSecondary, fontSize: 12)),
+                child: Text('Version $version', style: SacredTypography.labelSm),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: SacredSpacing.xxl),
               Center(
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(SacredSpacing.xs),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: SacredColors.primaryAccent, width: 3),
@@ -160,15 +162,14 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: SacredSpacing.md),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
+                padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.xxl),
                 child: Text(
-                  '“Truth is the highest virtue, but higher still is truthful living.”',
+                  '”Truth is the highest virtue, but higher still is truthful living.”',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: SacredTypography.bodyMd.copyWith(
                     color: SacredColors.primary,
-                    fontSize: 16,
                     fontStyle: FontStyle.italic,
                     shadows: [
                       Shadow(
@@ -179,7 +180,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: SacredSpacing.lg),
             ],
           );
         },

@@ -138,6 +138,17 @@ button.danger {
   background: var(--error);
 }
 
+/* Outlined danger variant: transparent background, red border and text */
+button.outline.danger {
+  background: transparent;
+  color: var(--error);
+  border-color: var(--error);
+}
+
+button.outline.danger:hover {
+  background: rgba(204, 51, 0, 0.06);
+}
+
 input, select, textarea {
   padding: 12px;
   border: 1.5px solid var(--border);

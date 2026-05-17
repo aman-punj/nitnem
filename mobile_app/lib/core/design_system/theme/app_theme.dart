@@ -19,12 +19,17 @@ class AppTheme {
       tokens = tokens.mergeFromJson(config.tokenOverrides!);
     }
 
-    return buildThemeFromTokens(tokens);
+    final brightness = config.themeId == 'sacred_radiance_light'
+        ? Brightness.light
+        : Brightness.dark;
+
+    return buildThemeFromTokens(tokens, brightness: brightness);
   }
 
   static AppTokens _baseTokens(String themeId) {
     switch (themeId) {
-      // Future presets go here — e.g. 'sacred_radiance_light', 'gurpurab_special'
+      case 'sacred_radiance_light':
+        return AppTokens.sacredRadianceLight();
       case 'sacred_radiance_dark':
       default:
         return AppTokens.sacredRadianceDark();

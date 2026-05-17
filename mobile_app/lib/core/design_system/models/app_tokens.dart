@@ -140,6 +140,56 @@ class AppTokens {
     );
   }
 
+  /// Light theme — warm parchment palette. Easily adjustable when design is finalised.
+ factory AppTokens.sacredRadianceLight() {
+  return const AppTokens(
+    // Warm parchment backgrounds
+    background:               Color(0xFFF7F3EC),
+    surface:                  Color(0xFFF7F3EC),
+    surfaceContainerLowest:   Color(0xFFF2EDE3),
+    surfaceContainerLow:      Color(0xFFEDE6D8),
+    surfaceContainer:         Color(0xFFE8DFD0),
+    surfaceContainerHigh:     Color(0xFFDED4C2),
+    surfaceContainerHighest:  Color(0xFFD4C9B4),
+
+    // Text — deep warm brown, not harsh black
+    onSurface:                Color(0xFF1E1408),
+    onSurfaceVariant:         Color(0xFF5C4A2A),
+
+    // Gold — darkened enough to be readable on light bg (4.5:1 contrast)
+    primary:                  Color(0xFFA07800),
+    onPrimary:                Color(0xFFFFFFFF),
+    primaryContainer:         Color(0xFFFFF0C2),
+    onPrimaryContainer:       Color(0xFF3A2800),
+
+    secondary:                Color(0xFF8A6600),
+    onSecondary:              Color(0xFFFFFFFF),
+
+    // Borders
+    outline:                  Color(0xFF9C8A6A),
+    outlineVariant:           Color(0xFFCFC0A0),
+
+    surfaceTint:              Color(0xFFA07800),
+    error:                    Color(0xFFBA1A1A),
+    onError:                  Color(0xFFFFFFFF),
+
+    // Spacing — same
+    spaceXs:           4,
+    spaceSm:           12,
+    spaceMd:           24,
+    spaceLg:           48,
+    spaceXl:           64,
+    spaceGutter:       16,
+    spaceMarginMobile: 20,
+
+    // Radius — same
+    radiusSm:  4,
+    radiusDef: 8,
+    radiusMd:  12,
+    radiusLg:  16,
+    radiusXl:  24,
+  );
+}
   // ─── JSON support ─────────────────────────────────────────────────────────
 
   /// Construct tokens entirely from a JSON map (all fields required).

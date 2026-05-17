@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../core/design_system/tokens/colors.dart';
+import '../core/design_system/tokens/radius.dart';
+import '../core/design_system/tokens/spacing.dart';
+import '../core/design_system/tokens/typography.dart';
 import '../core/design_system/widgets/sacred_app_bar.dart';
 
 import '../controllers/feedback_controller.dart';
@@ -16,7 +19,7 @@ class FeedbackScreen extends StatelessWidget {
       backgroundColor: SacredColors.backgroundPrimary,
       appBar: const SacredDsAppBar(title: "Feedback"),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.gutter, vertical: SacredSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -24,7 +27,7 @@ class FeedbackScreen extends StatelessWidget {
             Container(
               decoration: BoxDecoration(
                 color: SacredColors.surfacePrimary,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(SacredRadius.md),
                 border: Border.all(
                   color: SacredColors.borderGold.withValues(alpha: 0.2),
                   width: 1.5,
@@ -37,17 +40,14 @@ class FeedbackScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(SacredSpacing.gutter),
               child: TextField(
                 controller: controller.feedbackTextController,
                 maxLines: 5,
                 onTapOutside: (_) {
                   FocusManager.instance.primaryFocus?.unfocus();
                 },
-                style: const TextStyle(
-                  color: SacredColors.textPrimary,
-                  fontSize: 16,
-                ),
+                style: SacredTypography.bodyMd,
                 decoration: const InputDecoration(
                   hintText: 'Write your feedback...',
                   hintStyle: TextStyle(color: SacredColors.textSecondary),
@@ -56,7 +56,7 @@ class FeedbackScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: SacredSpacing.marginMobile),
 
             // Image Preview
             Obx(() {
@@ -68,7 +68,7 @@ class FeedbackScreen extends StatelessWidget {
                         Container(
                           height: 150,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(SacredRadius.def),
                             border: Border.all(
                               color: SacredColors.borderGold.withValues(alpha: 0.3),
                             ),
@@ -77,8 +77,8 @@ class FeedbackScreen extends StatelessWidget {
                           child: Image.file(image, fit: BoxFit.cover),
                         ),
                         Positioned(
-                          top: 8,
-                          right: 8,
+                          top: SacredSpacing.base,
+                          right: SacredSpacing.base,
                           child: CircleAvatar(
                             radius: 16,
                             backgroundColor: Colors.black.withValues(alpha: 0.6),
@@ -95,7 +95,7 @@ class FeedbackScreen extends StatelessWidget {
                   : const SizedBox.shrink();
             }),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: SacredSpacing.xxl),
 
             // Buttons
             Row(
@@ -113,9 +113,9 @@ class FeedbackScreen extends StatelessWidget {
                       backgroundColor: SacredColors.surfacePrimary,
                       foregroundColor: SacredColors.textPrimary,
                       elevation: 4,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: SacredSpacing.sm),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(SacredRadius.def),
                         side: BorderSide(
                           color: SacredColors.borderGold.withValues(alpha: 0.2),
                         ),
@@ -133,9 +133,9 @@ class FeedbackScreen extends StatelessWidget {
                       backgroundColor: SacredColors.primaryAccent,
                       foregroundColor: Colors.black,
                       elevation: 6,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: SacredSpacing.sm),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(SacredRadius.def),
                       ),
                     ),
                   ),

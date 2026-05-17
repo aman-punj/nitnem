@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../tokens/colors.dart';
+import '../tokens/radius.dart';
+import '../tokens/spacing.dart';
+import '../tokens/typography.dart';
 
 class BaniListTile extends StatefulWidget {
   final IconData icon;
@@ -92,11 +95,11 @@ class _BaniListTileState extends State<BaniListTile>
             onTapUp: _handleTapUp,
             onTapCancel: _handleTapCancel,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.gutter, vertical: SacredSpacing.gutter),
+              margin: const EdgeInsets.symmetric(horizontal: SacredSpacing.gutter, vertical: SacredSpacing.xs),
               decoration: BoxDecoration(
                 color: SacredColors.surfacePrimary,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(SacredRadius.def),
                 border: Border.all(
                   color: widget.isCompleted
                       ? SacredColors.primaryAccent.withValues(alpha: 0.4)
@@ -115,10 +118,10 @@ class _BaniListTileState extends State<BaniListTile>
                 children: [
                   // Leading Icon with sacred styling
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(SacredSpacing.base),
                     decoration: BoxDecoration(
                       color: SacredColors.surfaceSecondary,
-                      borderRadius: BorderRadius.circular(11),
+                      borderRadius: BorderRadius.circular(SacredRadius.def),
                       border: Border.all(
                         color: SacredColors.borderGold.withValues(alpha: 0.1),
                         width: 1,
@@ -131,7 +134,7 @@ class _BaniListTileState extends State<BaniListTile>
                     ),
                   ),
 
-                  const SizedBox(width: 14),
+                  const SizedBox(width: SacredSpacing.sm),
 
                   // Title and subtitle section
                   Expanded(
@@ -141,9 +144,8 @@ class _BaniListTileState extends State<BaniListTile>
                       children: [
                         Text(
                           widget.gurmukhiTitle,
-                          style: const TextStyle(
+                          style: SacredTypography.bodyMd.copyWith(
                             color: SacredColors.primaryAccent,
-                            fontSize: 17,
                             fontWeight: FontWeight.w600,
                             height: 1.25,
                             letterSpacing: 0.2,
@@ -151,21 +153,16 @@ class _BaniListTileState extends State<BaniListTile>
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: SacredSpacing.xs),
                         Text(
                           widget.englishTitle,
-                          style: TextStyle(
-                            color: SacredColors.textSecondary,
-                            fontSize: 13,
-                            height: 1.15,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: SacredTypography.meta.copyWith(height: 1.15),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (widget.showEstimatedTime &&
                             widget.estimatedTime != null) ...[
-                          const SizedBox(height: 6),
+                          const SizedBox(height: SacredSpacing.xs),
                           Row(
                             children: [
                               Icon(
@@ -174,14 +171,10 @@ class _BaniListTileState extends State<BaniListTile>
                                 color: SacredColors.primaryAccent
                                     .withValues(alpha: 0.6),
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: SacredSpacing.xs),
                               Text(
                                 _formatDuration(widget.estimatedTime!),
-                                style: TextStyle(
-                                  color: SacredColors.textSecondary,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: SacredTypography.meta,
                               ),
                             ],
                           ),
@@ -190,7 +183,7 @@ class _BaniListTileState extends State<BaniListTile>
                     ),
                   ),
 
-                  const SizedBox(width: 12),
+                  const SizedBox(width: SacredSpacing.sm),
 
                   // Trailing elements
                   Column(
@@ -199,11 +192,11 @@ class _BaniListTileState extends State<BaniListTile>
                       // Completion status or Arrow
                       if (widget.isCompleted)
                         Container(
-                          padding: const EdgeInsets.all(5),
+                          padding: const EdgeInsets.all(SacredSpacing.xs),
                           decoration: BoxDecoration(
                             color: SacredColors.primaryAccent
                                 .withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(SacredRadius.md),
                             border: Border.all(
                               color: SacredColors.primaryAccent
                                   .withValues(alpha: 0.3),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nitnem/models/preference_module.dart';
 import '../tokens/colors.dart';
+import '../tokens/radius.dart';
+import '../tokens/spacing.dart';
 import '../tokens/typography.dart';
 
 class SacredPreferenceTile extends StatelessWidget {
@@ -18,10 +20,10 @@ class SacredPreferenceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: SacredSpacing.sm),
       decoration: BoxDecoration(
         color: SacredColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SacredRadius.md),
         border: Border.all(
           color: SacredColors.borderGold.withValues(alpha: 0.1),
           width: 1,
@@ -31,13 +33,13 @@ class SacredPreferenceTile extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(SacredRadius.md),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.marginMobile, vertical: SacredSpacing.gutter),
             child: Row(
               children: [
                 _buildIcon(),
-                const SizedBox(width: 20),
+                const SizedBox(width: SacredSpacing.marginMobile),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,7 +52,7 @@ class SacredPreferenceTile extends StatelessWidget {
                         ),
                       ),
                       if (module.description.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: SacredSpacing.xs),
                         Text(
                           module.description,
                           style: SacredTypography.bodySm.copyWith(
@@ -73,10 +75,10 @@ class SacredPreferenceTile extends StatelessWidget {
   Widget _buildIcon() {
     IconData iconData = _getIconData(module.icon);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(SacredSpacing.sm),
       decoration: BoxDecoration(
         color: SacredColors.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SacredRadius.def),
       ),
       child: Icon(
         iconData,

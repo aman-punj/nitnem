@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
+import 'package:nitnem/core/design_system/tokens/radius.dart';
+import 'package:nitnem/core/design_system/tokens/spacing.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/core/design_system/widgets/focus_transcript_line.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
@@ -71,7 +73,7 @@ class PrayerPage extends StatelessWidget {
         actions: [
           // Mode Switcher in App Bar Actions
           Padding(
-            padding: const EdgeInsets.only(right: 8.0),
+            padding: const EdgeInsets.only(right: SacredSpacing.base),
             child: Obx(() => SacredSegmentedControl<PrimaryMode>(
               segments: const {
                 PrimaryMode.audio: 'Audio',
@@ -107,8 +109,8 @@ class PrayerPage extends StatelessWidget {
                     itemScrollController: controller.itemScrollController,
                     itemPositionsListener: controller.itemPositionsListener,
                     itemCount: controller.segments.length + 2,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 24,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: SacredSpacing.md,
                     ).copyWith(
                         top: verticalPadding,
                         bottom: verticalPadding,
@@ -179,14 +181,14 @@ class PrayerPage extends StatelessWidget {
                   child: controller.primaryMode.value == PrimaryMode.audio
                       ? ClipRRect(
                     key: const ValueKey('audio_player'),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(SacredRadius.xl)),
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                       child: Container(
-                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+                        padding: const EdgeInsets.fromLTRB(SacredSpacing.md, SacredSpacing.marginMobile, SacredSpacing.md, SacredSpacing.lg),
                         decoration: BoxDecoration(
                           color: SacredColors.surfaceContainerLowest.withValues(alpha: 0.7),
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(SacredRadius.xl)),
                           border: Border.all(
                             color: SacredColors.borderGold.withValues(alpha: 0.15),
                             width: 0.5,
@@ -224,7 +226,7 @@ class PrayerPage extends StatelessWidget {
                               ),
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.xs),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -239,7 +241,7 @@ class PrayerPage extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: SacredSpacing.gutter),
                             // Main Controls
                             Stack(
                               alignment: Alignment.center,
@@ -251,7 +253,7 @@ class PrayerPage extends StatelessWidget {
                                       icon: const Icon(Icons.replay_10_rounded, color: SacredColors.textPrimary, size: 28),
                                       onPressed: controller.skipBackward,
                                     ),
-                                    const SizedBox(width: 32),
+                                    const SizedBox(width: SacredSpacing.xxl),
                                     GestureDetector(
                                       onTap: controller.togglePlayback,
                                       child: Container(
@@ -275,7 +277,7 @@ class PrayerPage extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 32),
+                                    const SizedBox(width: SacredSpacing.xxl),
                                     IconButton(
                                       icon: const Icon(Icons.forward_10_rounded, color: SacredColors.textPrimary, size: 28),
                                       onPressed: controller.skipForward,
@@ -287,10 +289,10 @@ class PrayerPage extends StatelessWidget {
                                   right: 0,
                                   child: PopupMenuButton<double>(
                                     icon: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.base, vertical: SacredSpacing.xs),
                                       decoration: BoxDecoration(
                                         border: Border.all(color: SacredColors.primaryAccent.withValues(alpha: 0.3)),
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(SacredRadius.def),
                                       ),
                                       child: Text(
                                         '${controller.playbackSpeed.value}x',
@@ -333,8 +335,8 @@ class PrayerPage extends StatelessWidget {
     return Center(
       child: Padding(
         padding: EdgeInsets.only(
-            top: top ? 0 : 60,
-            bottom: top ? 60 : 0
+            top: top ? 0 : SacredSpacing.xl,
+            bottom: top ? SacredSpacing.xl : 0,
         ),
         child: Icon(
           Icons.local_florist_rounded,

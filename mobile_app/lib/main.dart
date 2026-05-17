@@ -47,7 +47,7 @@ class MyApp extends StatelessWidget {
       return GetMaterialApp(
         debugShowCheckedModeBanner: false,
         themeMode: themeController.themeMode.value,
-        theme: AppTheme.resolve(const ThemeConfig(amoled: true)),
+        theme: AppTheme.resolve(const ThemeConfig(themeId: 'sacred_radiance_light', amoled: false)),
         darkTheme: AppTheme.resolve(const ThemeConfig(amoled: true)),
         home: const SplashScreen(),
       );
