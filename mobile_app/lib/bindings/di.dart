@@ -23,6 +23,7 @@ import 'package:nitnem/services/preference_service.dart';
 import 'package:nitnem/services/transcript_sync_service.dart';
 import 'package:nitnem/services/share_service.dart';
 import 'package:nitnem/services/notification_service.dart';
+import 'package:nitnem/services/support_service.dart';
 
 import '../controllers/home_controller.dart';
 import '../services/firebase_service.dart';
@@ -49,6 +50,7 @@ class DependencyInjection {
     Get.put(FirebaseCategoryService());
     Get.put(LocalContentService(SharedPrefsService.instance));
     Get.put(ShareService());
+    Get.put(SupportService());
 
     // Domain layer
     Get.put(TranscriptPathService(storageService: Get.find()));

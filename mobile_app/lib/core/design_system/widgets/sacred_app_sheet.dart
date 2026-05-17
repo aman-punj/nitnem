@@ -5,6 +5,7 @@ import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/radius.dart';
 import 'package:nitnem/core/design_system/tokens/spacing.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
+import 'package:nitnem/core/design_system/widgets/sacred_button.dart';
 
 enum SacredAppSheetType { info, update, maintenance }
 
@@ -123,27 +124,10 @@ class SacredAppSheet extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: SacredSpacing.lg),
-                SizedBox(
-                  width: double.infinity,
-                  height: 58,
-                  child: ElevatedButton(
-                    onPressed: onPrimaryPressed,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: SacredColors.primaryAccent,
-                      foregroundColor: SacredColors.onPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(SacredRadius.full),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      primaryButtonText,
-                      style: SacredTypography.bodyMd.copyWith(
-                        color: SacredColors.onPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                SacredButton(
+                  label: primaryButtonText,
+                  onPressed: onPrimaryPressed,
+                  fullWidth: true,
                 ),
                 if (secondaryButtonText != null) ...[
                   const SizedBox(height: SacredSpacing.gutter),

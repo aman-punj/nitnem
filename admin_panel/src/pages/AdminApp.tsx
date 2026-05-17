@@ -35,8 +35,9 @@ import { PrayerCard } from '../components/admin/PrayerCard'
 import { ContentEditor } from '../components/admin/ContentEditor'
 import { RemoteConfigEditor } from '../components/admin/RemoteConfigEditor'
 import { MenuSettingsEditor } from '../components/admin/MenuSettingsEditor'
+import { SupportAdminPanel } from '../components/admin/SupportAdminPanel'
 
-type AdminSection = 'config' | 'content' | 'menu'
+type AdminSection = 'config' | 'content' | 'menu' | 'support'
 
 function SortableItem({ item, onEdit, onDelete }: { item: ContentItem; onEdit: () => void; onDelete: () => void }) {
   const {
@@ -317,6 +318,13 @@ export function AdminApp() {
           >
             Menu Settings
           </button>
+          <button
+            className={section === 'support' ? '' : 'secondary'}
+            style={{ width: '100%', marginBottom: '8px' }}
+            onClick={() => setSection('support')}
+          >
+            Support
+          </button>
         </aside>
         <main className="stack" style={{ flex: 1 }}>
           {section === 'config' && (
@@ -401,6 +409,7 @@ export function AdminApp() {
                 )}
             </div>
           )}
+          {section === 'support' && <SupportAdminPanel />}
         </main>
       </div>
     </div>

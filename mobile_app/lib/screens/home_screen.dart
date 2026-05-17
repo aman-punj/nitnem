@@ -5,6 +5,8 @@ import 'package:nitnem/screens/listing_screen.dart';
 import 'package:nitnem/screens/feedback_screen.dart';
 import 'package:nitnem/screens/manage_notifications_screen.dart';
 import 'package:nitnem/screens/settings_screen.dart';
+import 'package:nitnem/screens/faq_screen.dart';
+import 'package:nitnem/screens/privacy_policy_screen.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
 import 'package:nitnem/services/notification_service.dart';
 import 'package:nitnem/services/share_service.dart';
@@ -116,11 +118,11 @@ class _HomeScreenState extends State<HomeScreen> {
         // TODO: Handle this case.
         throw UnimplementedError();
       case DrawerMenuItem.faq:
-        // TODO: Handle this case.
-        throw UnimplementedError();
+        Get.to(() => FaqScreen());
+        break;
       case DrawerMenuItem.privacy_policy:
-        // TODO: Handle this case.
-        throw UnimplementedError();
+        Get.to(() => PrivacyPolicyScreen());
+        break;
     }
   }
 
