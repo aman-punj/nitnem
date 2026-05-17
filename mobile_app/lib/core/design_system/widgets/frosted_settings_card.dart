@@ -16,47 +16,55 @@ class FrostedSettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = SacredColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final cardContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+          child: Text(
+            title,
+            style: TextStyle(
+              color: c.primaryAccent,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+            ),
+          ),
+        ),
+        ...children,
+        const SizedBox(height: 12),
+      ],
+    );
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: c.surfaceContainerLow.withValues(alpha: 0.5),
+        color: isDark
+            ? c.surfaceContainerLow.withValues(alpha: 0.5)
+            : c.surfaceContainerLow,
         borderRadius: BorderRadius.circular(SacredRadius.xl),
         border: Border.all(
-          color: c.borderGold.withValues(alpha: 0.12),
+          color: c.borderGold.withValues(alpha: isDark ? 0.12 : 0.18),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.04),
+            blurRadius: isDark ? 15 : 6,
+            offset: Offset(0, isDark ? 4 : 1),
           ),
         ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(SacredRadius.xl),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: c.primaryAccent,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ),
-              ...children,
-              const SizedBox(height: 12),
-            ],
-          ),
-        ),
+        child: isDark
+            ? BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: cardContent,
+              )
+            : cardContent,
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/services/notification_service.dart';
@@ -225,6 +226,9 @@ class NotificationSettingsController extends GetxService {
   }
 
   Future<void> _applyKumnama() async {
+    // Ensure FCM token is ready before subscribing — token may not exist yet
+    // on first launch when this runs before runApp().
+    await FirebaseMessaging.instance.getToken();
     if (kumnaamaEnabled.value) {
       await _svc.subscribeToTopic(_fcmTopic);
     } else {

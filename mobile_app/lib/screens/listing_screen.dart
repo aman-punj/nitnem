@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/home_controller.dart';
+import 'package:nitnem/controllers/language_controller.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/core/design_system/widgets/bani_tiles.dart';
@@ -16,6 +17,8 @@ class ListingScreen extends StatelessWidget {
     final controller = Get.find<HomeController>();
     final c = SacredColors.of(context);
 
+    final langController = Get.find<LanguageController>();
+
     return Obx(() {
       if (controller.isLoading.value && controller.contentItems.isEmpty) {
         return Center(
@@ -26,6 +29,7 @@ class ListingScreen extends StatelessWidget {
         );
       }
 
+      final currentLang = langController.currentLang.value;
       final searchQuery = controller.searchQuery.value;
       final groupedContent = ContentGroupingService.groupByCategory(
           controller.contentItems,
@@ -38,56 +42,60 @@ class ListingScreen extends StatelessWidget {
       final sortedCategoryIds = ContentGroupingService.getSortedCategoryIds(
           allCategoryIds, categoryMap);
 
-      return CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // ─── Search Bar ─────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: c.surfaceContainerLow.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(25),
-                  border: Border.all(
-                    color: c.borderGold.withValues(alpha: 0.1),
+      return GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // ─── Search Bar ───────────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: c.surfaceContainerLow.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(
+                      color: c.borderGold.withValues(alpha: 0.1),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: c.primaryAccent.withValues(alpha: 0.05),
+                        blurRadius: 20,
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: c.primaryAccent.withValues(alpha: 0.05),
-                      blurRadius: 20,
+                  child: TextField(
+                    style: TextStyle(color: c.textPrimary),
+                    decoration: InputDecoration(
+                      hintText: 'Search for a Bani or Shabad...',
+                      hintStyle: TextStyle(
+                        color: c.textSecondary.withValues(alpha: 0.4),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: c.primaryAccent,
+                        size: 20,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                  ],
-                ),
-                child: TextField(
-                  style: TextStyle(color: c.textPrimary),
-                  decoration: InputDecoration(
-                    hintText: 'Search for a Bani or Shabad...',
-                    hintStyle: TextStyle(
-                      color: c.textSecondary.withValues(alpha: 0.4),
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: c.primaryAccent,
-                      size: 20,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                    onChanged: (val) {
+                      controller.searchQuery.value = val;
+                    },
                   ),
-                  onChanged: (val) {
-                    controller.searchQuery.value = val;
-                  },
                 ),
               ),
             ),
-          ),
 
-          // ─── Content Sections ───────────────────────────────────────────
-          ..._buildCategorySections(
-              sortedCategoryIds, categoryMap, groupedContent, controller, c),
+            // ─── Content Sections ─────────────────────────────────────────
+            ..._buildCategorySections(
+                sortedCategoryIds, categoryMap, groupedContent, controller, c, currentLang),
 
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-        ],
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          ],
+        ),
       );
     });
   }
@@ -98,6 +106,7 @@ class ListingScreen extends StatelessWidget {
     Map<String, List<ContentItem>> groupedContent,
     HomeController controller,
     SacredColors c,
+    String currentLang,
   ) {
     final sections = <Widget>[];
 
@@ -127,7 +136,7 @@ class ListingScreen extends StatelessWidget {
       sections.add(
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
+            padding: const EdgeInsets.fromLTRB(24, 18, 24, 10),
             child: Text(
               title,
               style: SacredTypography.headlineMd.copyWith(
@@ -149,18 +158,21 @@ class ListingScreen extends StatelessWidget {
               (context, index) {
                 final item = items[index];
 
+                final primaryTitle = item.titles.getForLanguage(currentLang);
+                final subtitleTitle = currentLang != 'pa' ? item.titles.pa : item.titles.en;
+
                 if (item.type == ContentType.youtube_live) {
                   return BaniListTile(
-                    gurmukhiTitle: item.titles.pa,
-                    englishTitle: item.titles.en,
+                    gurmukhiTitle: primaryTitle,
+                    englishTitle: subtitleTitle,
                     icon: Icons.live_tv_rounded,
                     onTap: () => controller.onContentTap(item),
                   );
                 }
 
                 return BaniListTile(
-                  gurmukhiTitle: item.titles.pa,
-                  englishTitle: item.titles.en,
+                  gurmukhiTitle: primaryTitle,
+                  englishTitle: subtitleTitle,
                   icon: _getIconForCategory(iconKey),
                   onTap: () => controller.onContentTap(item),
                 );
@@ -171,7 +183,7 @@ class ListingScreen extends StatelessWidget {
         ),
       );
 
-      sections.add(const SliverToBoxAdapter(child: SizedBox(height: 12)));
+      sections.add(const SliverToBoxAdapter(child: SizedBox(height: 4)));
     }
 
     return sections;

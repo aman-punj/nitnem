@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart' as ph;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -39,6 +40,9 @@ class NotificationService extends GetxService {
 
     // Show local notification when FCM arrives in foreground
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
+
+    // Log token so FCM delivery can be verified during development.
+    _fcm.getToken().then((token) => debugPrint('FCM token: $token'));
 
     return this;
   }
@@ -81,11 +85,23 @@ class NotificationService extends GetxService {
     return await android.areNotificationsEnabled() ?? false;
   }
 
+  Future<void> openAppSettings() async {
+    await ph.openAppSettings();
+  }
+
+  Future<void> openAlarmSettings() async {
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    await android?.requestExactAlarmsPermission();
+  }
+
   // ── FCM topics ───────────────────────────────────────────────────────────
 
   Future<void> subscribeToTopic(String topic) async {
     try {
       await _fcm.subscribeToTopic(topic);
+      debugPrint('FCM subscribed to "$topic"');
     } catch (e) {
       debugPrint('FCM subscribe "$topic" error: $e');
     }
@@ -94,6 +110,7 @@ class NotificationService extends GetxService {
   Future<void> unsubscribeFromTopic(String topic) async {
     try {
       await _fcm.unsubscribeFromTopic(topic);
+      debugPrint('FCM unsubscribed from "$topic"');
     } catch (e) {
       debugPrint('FCM unsubscribe "$topic" error: $e');
     }

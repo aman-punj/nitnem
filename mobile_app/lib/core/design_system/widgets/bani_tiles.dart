@@ -32,8 +32,6 @@ class _BaniListTileState extends State<BaniListTile>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  bool _isPressed = false;
-
   @override
   void initState() {
     super.initState();
@@ -57,18 +55,15 @@ class _BaniListTileState extends State<BaniListTile>
   }
 
   void _handleTapDown(TapDownDetails details) {
-    setState(() { _isPressed = true; });
     _animationController.forward();
   }
 
   void _handleTapUp(TapUpDetails details) {
-    setState(() { _isPressed = false; });
     _animationController.reverse();
     widget.onTap();
   }
 
   void _handleTapCancel() {
-    setState(() { _isPressed = false; });
     _animationController.reverse();
   }
 
@@ -80,6 +75,7 @@ class _BaniListTileState extends State<BaniListTile>
   @override
   Widget build(BuildContext context) {
     final c = SacredColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
@@ -96,7 +92,7 @@ class _BaniListTileState extends State<BaniListTile>
               ),
               margin: const EdgeInsets.symmetric(
                 horizontal: SacredSpacing.gutter,
-                vertical: SacredSpacing.xs,
+                vertical: 6,
               ),
               decoration: BoxDecoration(
                 color: c.surfacePrimary,
@@ -104,14 +100,14 @@ class _BaniListTileState extends State<BaniListTile>
                 border: Border.all(
                   color: widget.isCompleted
                       ? c.primaryAccent.withValues(alpha: 0.4)
-                      : c.borderGold.withValues(alpha: 0.1),
+                      : c.borderGold.withValues(alpha: isDark ? 0.1 : 0.2),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
+                    blurRadius: isDark ? 8 : 3,
+                    offset: const Offset(0, 1),
                   ),
                 ],
               ),

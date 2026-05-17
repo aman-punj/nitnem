@@ -7,9 +7,53 @@ import 'package:nitnem/core/design_system/tokens/spacing.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/core/design_system/widgets/frosted_settings_card.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
+import 'package:nitnem/services/notification_service.dart';
 
-class NotificationsSettingsScreen extends GetView<NotificationSettingsController> {
+class NotificationsSettingsScreen extends StatefulWidget {
   const NotificationsSettingsScreen({super.key});
+
+  @override
+  State<NotificationsSettingsScreen> createState() =>
+      _NotificationsSettingsScreenState();
+}
+
+class _NotificationsSettingsScreenState
+    extends State<NotificationsSettingsScreen> with WidgetsBindingObserver {
+  NotificationSettingsController get controller =>
+      Get.find<NotificationSettingsController>();
+  NotificationService get _svc => Get.find<NotificationService>();
+
+  bool _notificationsEnabled = true;
+  bool _canScheduleExact = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkPermissions();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _checkPermissions();
+  }
+
+  Future<void> _checkPermissions() async {
+    final notifOk = await _svc.areNotificationsEnabled();
+    final alarmOk = await _svc.canScheduleExact();
+    if (mounted) {
+      setState(() {
+        _notificationsEnabled = notifOk;
+        _canScheduleExact = alarmOk;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +69,24 @@ class NotificationsSettingsScreen extends GetView<NotificationSettingsController
           SacredSpacing.xl,
         ),
         children: [
+          if (!_notificationsEnabled)
+            _PermissionBanner(
+              icon: Icons.notifications_off_rounded,
+              title: 'Notifications Disabled',
+              body:
+                  'Reminders cannot be delivered. Enable notifications for Nitnem in your device settings.',
+              actionLabel: 'Open Settings',
+              onAction: _svc.openAppSettings,
+            ),
+          if (_notificationsEnabled && !_canScheduleExact)
+            _PermissionBanner(
+              icon: Icons.alarm_off_rounded,
+              title: 'Precise Reminders Limited',
+              body:
+                  'Exact alarm permission is needed to deliver reminders at the exact time you set.',
+              actionLabel: 'Enable Alarms',
+              onAction: _svc.openAlarmSettings,
+            ),
           FrostedSettingsCard(
             title: 'DAILY PRAYERS',
             children: [
@@ -145,6 +207,79 @@ class NotificationsSettingsScreen extends GetView<NotificationSettingsController
   }
 }
 
+// ── Permission banner ─────────────────────────────────────────────────────────
+
+class _PermissionBanner extends StatelessWidget {
+  const _PermissionBanner({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: SacredSpacing.md),
+      padding: const EdgeInsets.all(SacredSpacing.md),
+      decoration: BoxDecoration(
+        color: c.primaryAccent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(SacredRadius.md),
+        border: Border.all(color: c.primaryAccent.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: c.primaryAccent, size: 22),
+          const SizedBox(width: SacredSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: SacredTypography.bodyMd.copyWith(
+                    color: c.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: SacredTypography.bodySm.copyWith(
+                    color: c.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: SacredSpacing.sm),
+                GestureDetector(
+                  onTap: onAction,
+                  child: Text(
+                    actionLabel,
+                    style: SacredTypography.labelSm.copyWith(
+                      color: c.primaryAccent,
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── Prayer reminder tile (toggle + tappable time) ────────────────────────────
 
 class _NotifTile extends StatelessWidget {
@@ -177,7 +312,7 @@ class _NotifTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: SacredSpacing.md,
-        vertical: SacredSpacing.sm,
+        vertical: 14,
       ),
       child: Row(
         children: [
@@ -265,7 +400,7 @@ class _SimpleTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: SacredSpacing.md,
-        vertical: SacredSpacing.sm,
+        vertical: 14,
       ),
       child: Row(
         children: [

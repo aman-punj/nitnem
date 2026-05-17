@@ -79,7 +79,7 @@ class SettingsScreen extends StatelessWidget {
                       ));
                     }
                     if (item.id == 'language') {
-                      return Padding(
+                      return Obx(() => Padding(
                         padding: const EdgeInsets.fromLTRB(SacredSpacing.marginMobile, SacredSpacing.base, SacredSpacing.marginMobile, SacredSpacing.marginMobile),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +93,7 @@ class SettingsScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                      );
+                      ));
                     }
                     if (item.id == 'keep_awake') {
                       return Obx(() => SwitchListTile(
