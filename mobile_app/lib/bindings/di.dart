@@ -1,7 +1,11 @@
-import 'package:audio_service/audio_service.dart';
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
+import 'package:just_audio_platform_interface/just_audio_platform_interface.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
 import 'package:nitnem/controllers/font_size_controller.dart';
 import 'package:nitnem/controllers/preference_controller.dart';
@@ -19,14 +23,15 @@ import 'package:nitnem/services/preference_service.dart';
 import 'package:nitnem/services/transcript_sync_service.dart';
 import 'package:nitnem/services/share_service.dart';
 import 'package:nitnem/services/notification_service.dart';
-import 'package:nitnem/services/audio_handler.dart';
 
 import '../controllers/home_controller.dart';
 import '../services/firebase_service.dart';
 import '../services/transcript_path_service.dart';
 
-
 class DependencyInjection {
+  static final Completer<void> _audioBackgroundReady = Completer<void>();
+  static Future<void> get audioBackgroundReady => _audioBackgroundReady.future;
+
   static Future<void> init() async {
     // Data layer
     Get.put(PreferenceService());
@@ -37,21 +42,6 @@ class DependencyInjection {
     Get.put(CacheService());
     Get.put(SettingsController());
     await Get.putAsync(() => NotificationService().init());
-    try {
-      final audioHandler = await AudioService.init(
-        builder: () => MyAudioHandler(),
-        config: const AudioServiceConfig(
-          androidNotificationChannelId: 'com.banisagar.nitnem.channel.audio',
-          androidNotificationChannelName: 'Audio Playback',
-          androidNotificationIcon: 'ic_notification',
-          androidNotificationOngoing: true,
-        ),
-      );
-      Get.put<MyAudioHandler>(audioHandler);
-    } catch (e, stackTrace) {
-      debugPrint('AudioService init failed: $e');
-      debugPrintStack(stackTrace: stackTrace);
-    }
 
     Get.put(PrayerStorageService());
     Get.put(PrayerAssetService());
@@ -75,5 +65,34 @@ class DependencyInjection {
       syncService: Get.find(),
       appInfoController: Get.find(),
     ));
+  }
+
+  /// Called after runApp() so AudioService.init() runs with a live Flutter
+  /// engine (avoids the native-splash hang some Android devices exhibit).
+  /// On failure the original just_audio platform is restored so plain audio
+  /// still works. Either way a singleton AudioPlayer is registered.
+  static Future<void> initAudioBackground() async {
+    final originalPlatform = JustAudioPlatform.instance;
+    try {
+      await JustAudioBackground.init(
+        androidNotificationChannelId: 'com.banisagar.nitnem.channel.audio',
+        androidNotificationChannelName: 'Audio Playback',
+        androidNotificationIcon: 'drawable/ic_notification',
+        androidStopForegroundOnPause: true,
+      ).timeout(const Duration(seconds: 8));
+      debugPrint('Background audio ready');
+    } catch (e) {
+      debugPrint('Background audio unavailable ($e) - reverting to local playback');
+      // Restore the original platform so AudioPlayer works without background.
+      JustAudioPlatform.instance = originalPlatform;
+    } finally {
+      // Create player only after background initialization attempt.
+      if (!Get.isRegistered<AudioPlayer>()) {
+        Get.put(AudioPlayer(), permanent: true);
+      }
+      if (!_audioBackgroundReady.isCompleted) {
+        _audioBackgroundReady.complete();
+      }
+    }
   }
 }

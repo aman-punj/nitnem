@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio_background/just_audio_background.dart' show MediaItem;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
@@ -10,8 +10,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../models/content_item.dart';
+import '../bindings/di.dart';
 import '../models/transcript_segment.dart';
-import '../services/audio_handler.dart';
 import '../services/local_content_service.dart';
 import '../services/transcript_parser.dart';
 import '../services/transcript_sync_engine.dart';
@@ -30,18 +30,12 @@ class PrayerController extends GetxController {
   final TranscriptSyncEngine transcriptSyncEngine;
   final TranscriptSyncService? _syncService;
   final LocalContentService? _localContentService;
-  MyAudioHandler? _audioHandler;
-  final AudioPlayer _localPlayer = AudioPlayer();
-  String _lastNotificationTimeText = '';
+
+  // Shared singleton player from DI — NOT disposed by this controller.
+  late final AudioPlayer _player;
+  final List<StreamSubscription<dynamic>> _subs = [];
   Uri? _artworkFileUri;
 
-  AudioPlayer get _player {
-    _audioHandler ??= Get.isRegistered<MyAudioHandler>()
-        ? Get.find<MyAudioHandler>()
-        : null;
-    return _audioHandler?.player ?? _localPlayer;
-  }
-  
   final ItemScrollController itemScrollController = ItemScrollController();
   final ItemPositionsListener itemPositionsListener = ItemPositionsListener.create();
 
@@ -53,7 +47,7 @@ class PrayerController extends GetxController {
   final RxBool isPlaying = false.obs;
   final RxBool isLoading = true.obs;
   final RxString loadingMessage = ''.obs;
-  
+
   final Rx<PrimaryMode> primaryMode = PrimaryMode.audio.obs;
   final RxBool hasTimings = false.obs;
   final RxBool hasAudio = false.obs;
@@ -69,59 +63,39 @@ class PrayerController extends GetxController {
   final RxBool isHeaderVisible = true.obs;
   final RxBool hasShownSyncWarning = false.obs;
   Timer? _headerHideTimer;
-
   Timer? _seekDebounce;
-
-
 
   AudioPlayer get player => _player;
 
   @override
   void onInit() {
     super.onInit();
-    _player.positionStream.listen((position) {
+
+    // Resolve the shared player. DI.initAudioBackground() always puts one;
+    // the fallback creates a fresh player if somehow called before that.
+    _player = Get.isRegistered<AudioPlayer>()
+        ? Get.find<AudioPlayer>()
+        : AudioPlayer();
+
+    _subs.add(_player.positionStream.listen((position) {
       currentPosition.value = position;
-      unawaited(_syncNotificationTimeText());
       if (!isUserSeeking.value && primaryMode.value == PrimaryMode.audio && hasTimings.value) {
         _updateCurrentSegment(position);
       }
-    });
-    _player.durationStream.listen((duration) {
-      if (duration != null) {
-        totalDuration.value = duration;
-        unawaited(_syncNotificationTimeText());
-      }
-    });
-    _player.playingStream.listen((playing) {
+    }));
+    _subs.add(_player.durationStream.listen((duration) {
+      if (duration != null) totalDuration.value = duration;
+    }));
+    _subs.add(_player.playingStream.listen((playing) {
       isPlaying.value = playing;
       if (playing) {
         _startHeaderHideTimer();
       } else {
         showHeader();
       }
-    });
+    }));
 
     itemPositionsListener.itemPositions.addListener(_onScroll);
-  }
-
-  Future<void> _syncNotificationTimeText() async {
-    if (_audioHandler == null) return;
-    final currentItem = _audioHandler!.mediaItem.value;
-    if (currentItem == null) return;
-
-    final total = totalDuration.value;
-    final totalText = total > Duration.zero ? formatDuration(total) : '--:--';
-    final timeText = '${formatDuration(currentPosition.value)} / $totalText';
-    if (timeText == _lastNotificationTimeText) return;
-    _lastNotificationTimeText = timeText;
-
-    await _audioHandler!.updateCurrentMediaItem(
-      currentItem.copyWith(
-        displayDescription: timeText,
-        artUri: _artworkFileUri ?? currentItem.artUri,
-        duration: total > Duration.zero ? total : currentItem.duration,
-      ),
-    );
   }
 
   Future<Uri?> _resolveArtworkUri() async {
@@ -194,7 +168,7 @@ class PrayerController extends GetxController {
   void setPrimaryMode(PrimaryMode mode) {
     final oldMode = primaryMode.value;
     primaryMode.value = mode;
-    
+
     if (mode == PrimaryMode.audio) {
       if (!hasTimings.value && !hasShownSyncWarning.value) {
         hasShownSyncWarning.value = true;
@@ -255,13 +229,16 @@ class PrayerController extends GetxController {
   }) async {
     isLoading.value = true;
     loadingMessage.value = 'Preparing prayer...';
-    
+
     try {
+      // Ensure JustAudioBackground initialization completed before player setup.
+      await DependencyInjection.audioBackgroundReady;
+
       String finalAudioPath = audioPath;
       String finalTranscriptPath = transcriptPath;
       bool finalAudioIsLocal = audioIsLocalFile;
       bool finalTranscriptIsLocal = transcriptIsLocalFile;
-      
+
       // Verify file existence
       if (finalAudioIsLocal && !(await File(finalAudioPath).exists())) {
         finalAudioPath = '';
@@ -277,7 +254,7 @@ class PrayerController extends GetxController {
         if (finalAudioPath.isEmpty || finalTranscriptPath.isEmpty) {
           loadingMessage.value = 'Downloading prayer content...';
           await _syncService.syncContent(item);
-          
+
           final localMetadata = _localContentService.getSyncMetadata(item.id);
           if (localMetadata != null) {
             finalAudioPath = localMetadata.audioLocalPath ?? '';
@@ -302,24 +279,17 @@ class PrayerController extends GetxController {
       bool audioLoaded = false;
       if (finalAudioPath.isNotEmpty) {
         try {
+          final artUri = await _resolveArtworkUri();
+          final tag = MediaItem(
+            id: 'prayer_${item?.id ?? audioPath}',
+            title: prayerTitle.value,
+            artist: 'Nitnem',
+            artUri: artUri,
+          );
           final audioSource = finalAudioIsLocal
-              ? AudioSource.file(finalAudioPath)
-              : AudioSource.uri(Uri.parse('asset:///$finalAudioPath'));
-          if (_audioHandler != null) {
-            final artUri = await _resolveArtworkUri();
-            final mediaItem = MediaItem(
-              id: 'prayer_${item?.id ?? audioPath}',
-              title: prayerTitle.value,
-              artist: 'Nitnem',
-              artUri: artUri,
-              duration: _audioHandler!.player.duration,
-            );
-            await _audioHandler!.updateCurrentMediaItem(mediaItem);
-            await _audioHandler!.player.setAudioSource(audioSource);
-            await _syncNotificationTimeText();
-          } else {
-            await _localPlayer.setAudioSource(audioSource);
-          }
+              ? AudioSource.file(finalAudioPath, tag: tag)
+              : AudioSource.uri(Uri.parse('asset:///$finalAudioPath'), tag: tag);
+          await _player.setAudioSource(audioSource);
           audioLoaded = true;
         } catch (e) {
           debugPrint('Error loading audio: $e');
@@ -329,7 +299,7 @@ class PrayerController extends GetxController {
 
       // 4. Determine Capabilities
       hasTimings.value = segments.any((s) => s.start > 0 || s.end > 0);
-      
+
       // 5. Default Mode
       if (hasAudio.value) {
         primaryMode.value = PrimaryMode.audio;
@@ -368,12 +338,10 @@ class PrayerController extends GetxController {
       final targetPos = positions.where((p) => p.index == (hasTimings.value ? index + 1 : index)).toList();
       if (targetPos.isNotEmpty) {
         final pos = targetPos.first;
-        
-        // Trigger scroll earlier (at 70% down the screen instead of 90%)
+
         const double topThreshold = 0.15;
         const double bottomThreshold = 0.7;
 
-        // If item is already well within the viewport, don't scroll
         if (pos.itemLeadingEdge >= topThreshold && pos.itemTrailingEdge <= bottomThreshold) {
           return;
         }
@@ -382,9 +350,9 @@ class PrayerController extends GetxController {
 
     itemScrollController.scrollTo(
       index: hasTimings.value ? index + 1 : index, // Offset for flower icon only if sync available
-      duration: const Duration(milliseconds: 800), // Increased for smoothness
-      curve: Curves.easeInOutQuart, // Gentler curve
-      alignment: 0.35, // Position item in the upper-mid section
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeInOutQuart,
+      alignment: 0.35,
     );
   }
 
@@ -401,8 +369,6 @@ class PrayerController extends GetxController {
 
   void onTapSegment(int index) {
     currentSegmentIndex.value = index;
-    // For single tap, we only highlight visually as per requirements.
-    // If audio is playing, it will eventually sync back to current position.
   }
 
   void onDoubleTapSegment(TranscriptSegment segment, int index) {
@@ -412,12 +378,12 @@ class PrayerController extends GetxController {
     }
   }
 
-  void togglePlayback() async {
+  void togglePlayback() {
     if (!hasAudio.value) return;
     if (_player.playing) {
-      await _player.pause();
+      _player.pause();
     } else {
-      await _player.play();
+      _player.play();
     }
   }
 
@@ -445,8 +411,14 @@ class PrayerController extends GetxController {
 
   @override
   void onClose() {
+    // Cancel stream subscriptions from this controller instance.
+    // Do NOT dispose _player — it is a permanent singleton shared across pages.
+    for (final sub in _subs) {
+      sub.cancel();
+    }
+    itemPositionsListener.itemPositions.removeListener(_onScroll);
     _seekDebounce?.cancel();
-    _player.dispose();
+    _headerHideTimer?.cancel();
     super.onClose();
   }
 }

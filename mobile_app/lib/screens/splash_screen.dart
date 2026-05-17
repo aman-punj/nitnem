@@ -10,6 +10,7 @@ import 'package:nitnem/core/design_system/widgets/sacred_maintenance_sheet.dart'
 import 'package:nitnem/services/firebase_content_service.dart';
 import 'package:nitnem/services/transcript_sync_service.dart';
 import 'package:nitnem/models/content_item.dart';
+import 'package:nitnem/bindings/di.dart';
 
 import 'package:nitnem/services/notification_service.dart';
 import 'home_screen.dart';
@@ -54,6 +55,7 @@ class _SplashScreenState extends State<SplashScreen>
     // 1. Run initialization tasks in parallel
     final initializationTasks = Future.wait([
       getAppInfo(),
+      DependencyInjection.audioBackgroundReady,
       Future.delayed(const Duration(seconds: 4)), // Minimum splash duration
     ]);
 

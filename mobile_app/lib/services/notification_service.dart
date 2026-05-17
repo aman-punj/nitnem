@@ -102,6 +102,14 @@ class NotificationService extends GetxService {
     }
   }
 
+  Future<bool> areNotificationsEnabled() async {
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (androidImplementation == null) return true;
+    return await androidImplementation.areNotificationsEnabled() ?? false;
+  }
+
   // Standard push notifications
   Future<void> showNotification({
     required int id,

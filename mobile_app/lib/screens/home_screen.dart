@@ -31,6 +31,23 @@ class _HomeScreenState extends State<HomeScreen> {
     
     try {
       await notificationService.requestPermissions();
+      final enabled = await notificationService.areNotificationsEnabled();
+      if (!enabled && mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Notifications Disabled'),
+            content: const Text(
+                'Media controls need notification permission. Please enable notifications for Bani Sagar in Android Settings.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         showDialog(

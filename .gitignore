@@ -51,3 +51,7 @@ shared/node_modules/
 # Brand Identity
 stitch_bani_sagar_brand_identity/
 
+# New ignore rules
+scripts/.env
+
+.firebase/hosting.YWRtaW5fcGFuZWxcZGlzdA.cache
