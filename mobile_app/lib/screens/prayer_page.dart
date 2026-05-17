@@ -97,7 +97,9 @@ class PrayerPage extends StatelessWidget {
             return Column(
               children: [
                 Flexible(
-                  child: ScrollablePositionedList.builder(
+                  child: Stack(
+                    children: [
+                      ScrollablePositionedList.builder(
                     itemScrollController: controller.itemScrollController,
                     itemPositionsListener: controller.itemPositionsListener,
                     itemCount: controller.segments.length + 2,
@@ -147,6 +149,30 @@ class PrayerPage extends StatelessWidget {
                         );
                       });
                     },
+                      ),
+                      Obx(() => controller.primaryMode.value == PrimaryMode.audio
+                          ? Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: IgnorePointer(
+                                child: Container(
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        c.backgroundPrimary.withValues(alpha: 0),
+                                        c.backgroundPrimary.withValues(alpha: 0.9),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink()),
+                    ],
                   ),
                 ),
 
@@ -175,16 +201,19 @@ class PrayerPage extends StatelessWidget {
   Widget _buildPlayer(BuildContext context, SacredColors c, PrayerController controller) {
     return Container(
       key: const ValueKey('audio_player'),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: c.surfaceContainerLowest,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(SacredRadius.lg)),
         border: Border(
           top: BorderSide(color: c.primaryAccent.withValues(alpha: 0.12), width: 0.5),
         ),
         boxShadow: [
           BoxShadow(
-            color: c.primaryAccent.withValues(alpha: 0.04),
-            blurRadius: 24,
-            offset: const Offset(0, -6),
+            color: c.primaryAccent.withValues(alpha: 0.08),
+            blurRadius: 32,
+            spreadRadius: -4,
+            offset: const Offset(0, -8),
           ),
         ],
       ),
@@ -200,16 +229,6 @@ class PrayerPage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header row: pauri counter + speed selector
-              Obx(() => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildPauriPill(c, controller),
-                  _buildSpeedButton(context, c, controller),
-                ],
-              )),
-              const SizedBox(height: SacredSpacing.xs),
-
               // Progress slider — inherits SliderTheme from ThemeData
               Slider(
                 min: 0,
@@ -241,45 +260,28 @@ class PrayerPage extends StatelessWidget {
               const SizedBox(height: SacredSpacing.sm),
 
               // Playback controls
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Stack(
+                alignment: Alignment.center,
                 children: [
-                  _iconBtn(Icons.replay_10_rounded, c.textPrimary, 26, controller.skipBackward),
-                  const SizedBox(width: SacredSpacing.xxl),
-                  _playPauseButton(c, controller),
-                  const SizedBox(width: SacredSpacing.xxl),
-                  _iconBtn(Icons.forward_10_rounded, c.textPrimary, 26, controller.skipForward),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _iconBtn(Icons.replay_10_rounded, c.textPrimary, 26, controller.skipBackward),
+                      const SizedBox(width: SacredSpacing.xxl),
+                      _playPauseButton(c, controller),
+                      const SizedBox(width: SacredSpacing.xxl),
+                      _iconBtn(Icons.forward_10_rounded, c.textPrimary, 26, controller.skipForward),
+                    ],
+                  ),
+                  Positioned(
+                    right: 0,
+                    child: Obx(() => _buildSpeedButton(context, c, controller)),
+                  ),
                 ],
               ),
               const SizedBox(height: SacredSpacing.xs),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPauriPill(SacredColors c, PrayerController controller) {
-    final idx = controller.currentSegmentIndex.value;
-    final total = controller.segments.length;
-    final label = idx >= 0 ? 'Pauri ${idx + 1} of $total' : 'Pauri — of $total';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SacredSpacing.sm,
-        vertical: SacredSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: c.primaryAccent.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(SacredRadius.full),
-        border: Border.all(color: c.primaryAccent.withValues(alpha: 0.20), width: 0.5),
-      ),
-      child: Text(
-        label,
-        style: SacredTypography.meta.copyWith(
-          color: c.primaryAccent,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.3,
         ),
       ),
     );
@@ -291,11 +293,9 @@ class PrayerPage extends StatelessWidget {
       color: c.surfaceContainer,
       onSelected: controller.changePlaybackSpeed,
       itemBuilder: (context) => [
-        PopupMenuItem(value: 0.5,  child: Text('0.5x',  style: TextStyle(color: c.textPrimary))),
         PopupMenuItem(value: 0.75, child: Text('0.75x', style: TextStyle(color: c.textPrimary))),
         PopupMenuItem(value: 1.0,  child: Text('1x',    style: TextStyle(color: c.textPrimary))),
         PopupMenuItem(value: 1.25, child: Text('1.25x', style: TextStyle(color: c.textPrimary))),
-        PopupMenuItem(value: 1.5,  child: Text('1.5x',  style: TextStyle(color: c.textPrimary))),
       ],
       child: Container(
         padding: const EdgeInsets.symmetric(

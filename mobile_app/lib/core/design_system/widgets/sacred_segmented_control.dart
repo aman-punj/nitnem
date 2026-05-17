@@ -22,7 +22,7 @@ class SacredSegmentedControl<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = SacredColors.of(context);
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: EdgeInsets.all(isSecondary ? 3 : 4),
       decoration: BoxDecoration(
         color: c.surfaceContainerLow,
         borderRadius: BorderRadius.circular(SacredRadius.full),
@@ -41,8 +41,8 @@ class SacredSegmentedControl<T> extends StatelessWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: SacredMotion.normal),
                 padding: EdgeInsets.symmetric(
-                  horizontal: isSecondary ? 16 : 24,
-                  vertical: isSecondary ? 6 : 8,
+                  horizontal: isSecondary ? 12 : 24,
+                  vertical: isSecondary ? 4 : 8,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected ? c.primaryAccent : Colors.transparent,
