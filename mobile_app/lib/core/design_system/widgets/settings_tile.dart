@@ -17,6 +17,7 @@ class SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -24,19 +25,19 @@ class SettingsTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, color: SacredColors.textPrimary, size: 22),
+            Icon(icon, color: c.textPrimary, size: 22),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
-                  color: SacredColors.textPrimary,
+                style: TextStyle(
+                  color: c.textPrimary,
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-            trailing ?? const Icon(Icons.chevron_right_rounded, color: SacredColors.textSecondary, size: 20),
+            trailing ?? Icon(Icons.chevron_right_rounded, color: c.textSecondary, size: 20),
           ],
         ),
       ),

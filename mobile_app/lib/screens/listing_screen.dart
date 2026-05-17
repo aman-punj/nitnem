@@ -14,12 +14,13 @@ class ListingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<HomeController>();
+    final c = SacredColors.of(context);
 
     return Obx(() {
       if (controller.isLoading.value && controller.contentItems.isEmpty) {
-        return const Center(
+        return Center(
           child: CircularProgressIndicator(
-            color: SacredColors.primaryAccent,
+            color: c.primaryAccent,
             strokeWidth: 2,
           ),
         );
@@ -33,7 +34,6 @@ class ListingScreen extends StatelessWidget {
         for (final category in controller.categories) category.id: category
       };
 
-      // Get all unique category IDs from grouped content and sort them
       final allCategoryIds = groupedContent.keys.toList();
       final sortedCategoryIds = ContentGroupingService.getSortedCategoryIds(
           allCategoryIds, categoryMap);
@@ -47,29 +47,28 @@ class ListingScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color:
-                      SacredColors.surfaceContainerLow.withValues(alpha: 0.5),
+                  color: c.surfaceContainerLow.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(
-                    color: SacredColors.borderGold.withValues(alpha: 0.1),
+                    color: c.borderGold.withValues(alpha: 0.1),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: SacredColors.primaryAccent.withValues(alpha: 0.05),
+                      color: c.primaryAccent.withValues(alpha: 0.05),
                       blurRadius: 20,
                     ),
                   ],
                 ),
                 child: TextField(
-                  style: const TextStyle(color: SacredColors.textPrimary),
+                  style: TextStyle(color: c.textPrimary),
                   decoration: InputDecoration(
                     hintText: 'Search for a Bani or Shabad...',
                     hintStyle: TextStyle(
-                      color: SacredColors.textSecondary.withValues(alpha: 0.4),
+                      color: c.textSecondary.withValues(alpha: 0.4),
                     ),
-                    prefixIcon: const Icon(
+                    prefixIcon: Icon(
                       Icons.search,
-                      color: SacredColors.primaryAccent,
+                      color: c.primaryAccent,
                       size: 20,
                     ),
                     border: InputBorder.none,
@@ -85,9 +84,8 @@ class ListingScreen extends StatelessWidget {
 
           // ─── Content Sections ───────────────────────────────────────────
           ..._buildCategorySections(
-              sortedCategoryIds, categoryMap, groupedContent, controller),
+              sortedCategoryIds, categoryMap, groupedContent, controller, c),
 
-          // ─── Bottom Spacer ──────────────────────────────────────────────
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       );
@@ -99,17 +97,18 @@ class ListingScreen extends StatelessWidget {
     Map<String, ContentCategory> categoryMap,
     Map<String, List<ContentItem>> groupedContent,
     HomeController controller,
+    SacredColors c,
   ) {
     final sections = <Widget>[];
 
     if (controller.contentItems.isEmpty && !controller.isLoading.value) {
       return [
-        const SliverFillRemaining(
+        SliverFillRemaining(
           hasScrollBody: false,
           child: Center(
             child: Text(
               'No content available yet.',
-              style: TextStyle(color: SacredColors.textSecondary),
+              style: TextStyle(color: c.textSecondary),
             ),
           ),
         ),
@@ -118,37 +117,30 @@ class ListingScreen extends StatelessWidget {
 
     for (final categoryId in orderedCategoryIds) {
       final items = groupedContent[categoryId];
-      if (items == null || items.isEmpty) continue; // Skip empty categories
+      if (items == null || items.isEmpty) continue;
 
       final category = categoryMap[categoryId];
       final title =
           ContentGroupingService.getCategoryDisplayTitle(categoryId, category);
       final iconKey = category?.iconKey;
 
-      // ─── Category Header ────────────────────────────────────────────────
       sections.add(
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: SacredTypography.headlineMd.copyWith(
-                    color: SacredColors.textPrimary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
+            child: Text(
+              title,
+              style: SacredTypography.headlineMd.copyWith(
+                color: c.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ),
       );
 
-      // ─── Category Items ─────────────────────────────────────────────────
       sections.add(
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -157,7 +149,6 @@ class ListingScreen extends StatelessWidget {
               (context, index) {
                 final item = items[index];
 
-                // Different styling for YouTube Live items
                 if (item.type == ContentType.youtube_live) {
                   return BaniListTile(
                     gurmukhiTitle: item.titles.pa,
@@ -167,7 +158,6 @@ class ListingScreen extends StatelessWidget {
                   );
                 }
 
-                // Standard Bani tile
                 return BaniListTile(
                   gurmukhiTitle: item.titles.pa,
                   englishTitle: item.titles.en,
@@ -181,7 +171,6 @@ class ListingScreen extends StatelessWidget {
         ),
       );
 
-      // ─── Space after category ───────────────────────────────────────────
       sections.add(const SliverToBoxAdapter(child: SizedBox(height: 12)));
     }
 
@@ -192,22 +181,14 @@ class ListingScreen extends StatelessWidget {
     if (iconKey == null) return Icons.auto_stories_outlined;
 
     switch (iconKey.toLowerCase()) {
-      case 'sun':
-        return Icons.wb_sunny_outlined;
-      case 'star':
-        return Icons.auto_awesome_rounded;
-      case 'moon':
-        return Icons.nights_stay_rounded;
-      case 'shield':
-        return Icons.shield_outlined;
-      case 'heart':
-        return Icons.favorite_border_outlined;
-      case 'book':
-        return Icons.menu_book_rounded;
-      case 'live':
-        return Icons.live_tv_rounded;
-      default:
-        return Icons.auto_stories_outlined;
+      case 'sun':    return Icons.wb_sunny_outlined;
+      case 'star':   return Icons.auto_awesome_rounded;
+      case 'moon':   return Icons.nights_stay_rounded;
+      case 'shield': return Icons.shield_outlined;
+      case 'heart':  return Icons.favorite_border_outlined;
+      case 'book':   return Icons.menu_book_rounded;
+      case 'live':   return Icons.live_tv_rounded;
+      default:       return Icons.auto_stories_outlined;
     }
   }
 }

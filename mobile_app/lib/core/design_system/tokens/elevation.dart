@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'colors.dart';
-
 /// Elevation via tonal layering and golden halos — no harsh drop shadows.
 class SacredElevation {
   SacredElevation._();
@@ -29,7 +27,7 @@ class SacredElevation {
   /// Sacred glow — active / "now reading" elements radiate light.
   static const List<BoxShadow> sacredGlow = [
     BoxShadow(
-      color: SacredColors.focusedLine, // gold @ 15 %
+      color: Color(0x26F2CA50), // gold @ 15 %
       blurRadius: 24,
       spreadRadius: 0,
       offset: Offset(0, 0),

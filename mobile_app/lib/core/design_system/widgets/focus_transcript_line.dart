@@ -21,14 +21,13 @@ class FocusTranscriptLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     final isHighlighted = isPlaybackHighlighted || isFocusHighlighted;
-    
-    // In Focus Mode, non-highlighted lines are significantly more muted.
-    // In Standard mode, we use a softer opacity hierarchy.
-    final double opacity = isHighlighted 
-        ? 1.0 
+
+    final double opacity = isHighlighted
+        ? 1.0
         : (isFocusMode ? 0.25 : 0.6);
-    
+
     final double scale = isHighlighted ? 1.02 : 1.0;
 
     return AnimatedScale(
@@ -48,12 +47,11 @@ class FocusTranscriptLine extends StatelessWidget {
                 text,
                 textAlign: TextAlign.center,
                 style: SacredTypography.transcript.copyWith(
-
-                  color: isHighlighted ? SacredColors.primaryAccent : SacredColors.textPrimary,
+                  color: isHighlighted ? c.primaryAccent : c.textPrimary,
                   fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.w500,
                   shadows: isHighlighted ? [
                     Shadow(
-                      color: SacredColors.primaryAccent.withValues(alpha: 0.3),
+                      color: c.primaryAccent.withValues(alpha: 0.3),
                       blurRadius: 15,
                     ),
                   ] : null,
@@ -69,7 +67,7 @@ class FocusTranscriptLine extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: [
                         Colors.transparent,
-                        SacredColors.primaryAccent.withValues(alpha: 0.5),
+                        c.primaryAccent.withValues(alpha: 0.5),
                         Colors.transparent,
                       ],
                     ),

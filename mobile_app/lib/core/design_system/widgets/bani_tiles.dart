@@ -57,24 +57,18 @@ class _BaniListTileState extends State<BaniListTile>
   }
 
   void _handleTapDown(TapDownDetails details) {
-    setState(() {
-      _isPressed = true;
-    });
+    setState(() { _isPressed = true; });
     _animationController.forward();
   }
 
   void _handleTapUp(TapUpDetails details) {
-    setState(() {
-      _isPressed = false;
-    });
+    setState(() { _isPressed = false; });
     _animationController.reverse();
     widget.onTap();
   }
 
   void _handleTapCancel() {
-    setState(() {
-      _isPressed = false;
-    });
+    setState(() { _isPressed = false; });
     _animationController.reverse();
   }
 
@@ -85,6 +79,7 @@ class _BaniListTileState extends State<BaniListTile>
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
@@ -95,15 +90,21 @@ class _BaniListTileState extends State<BaniListTile>
             onTapUp: _handleTapUp,
             onTapCancel: _handleTapCancel,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.gutter, vertical: SacredSpacing.gutter),
-              margin: const EdgeInsets.symmetric(horizontal: SacredSpacing.gutter, vertical: SacredSpacing.xs),
+              padding: const EdgeInsets.symmetric(
+                horizontal: SacredSpacing.gutter,
+                vertical: SacredSpacing.gutter,
+              ),
+              margin: const EdgeInsets.symmetric(
+                horizontal: SacredSpacing.gutter,
+                vertical: SacredSpacing.xs,
+              ),
               decoration: BoxDecoration(
-                color: SacredColors.surfacePrimary,
+                color: c.surfacePrimary,
                 borderRadius: BorderRadius.circular(SacredRadius.def),
                 border: Border.all(
                   color: widget.isCompleted
-                      ? SacredColors.primaryAccent.withValues(alpha: 0.4)
-                      : SacredColors.borderGold.withValues(alpha: 0.1),
+                      ? c.primaryAccent.withValues(alpha: 0.4)
+                      : c.borderGold.withValues(alpha: 0.1),
                   width: 1.5,
                 ),
                 boxShadow: [
@@ -116,27 +117,26 @@ class _BaniListTileState extends State<BaniListTile>
               ),
               child: Row(
                 children: [
-                  // Leading Icon with sacred styling
+                  // Leading Icon
                   Container(
                     padding: const EdgeInsets.all(SacredSpacing.base),
                     decoration: BoxDecoration(
-                      color: SacredColors.surfaceSecondary,
+                      color: c.surfaceSecondary,
                       borderRadius: BorderRadius.circular(SacredRadius.def),
                       border: Border.all(
-                        color: SacredColors.borderGold.withValues(alpha: 0.1),
+                        color: c.borderGold.withValues(alpha: 0.1),
                         width: 1,
                       ),
                     ),
                     child: Icon(
                       widget.icon,
-                      color: SacredColors.primaryAccent,
+                      color: c.primaryAccent,
                       size: 22,
                     ),
                   ),
 
                   const SizedBox(width: SacredSpacing.sm),
 
-                  // Title and subtitle section
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,7 +145,7 @@ class _BaniListTileState extends State<BaniListTile>
                         Text(
                           widget.gurmukhiTitle,
                           style: SacredTypography.bodyMd.copyWith(
-                            color: SacredColors.primaryAccent,
+                            color: c.primaryAccent,
                             fontWeight: FontWeight.w600,
                             height: 1.25,
                             letterSpacing: 0.2,
@@ -156,7 +156,10 @@ class _BaniListTileState extends State<BaniListTile>
                         const SizedBox(height: SacredSpacing.xs),
                         Text(
                           widget.englishTitle,
-                          style: SacredTypography.meta.copyWith(height: 1.15),
+                          style: SacredTypography.meta.copyWith(
+                            color: c.textSecondary,
+                            height: 1.15,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -168,13 +171,14 @@ class _BaniListTileState extends State<BaniListTile>
                               Icon(
                                 Icons.access_time_rounded,
                                 size: 12,
-                                color: SacredColors.primaryAccent
-                                    .withValues(alpha: 0.6),
+                                color: c.primaryAccent.withValues(alpha: 0.6),
                               ),
                               const SizedBox(width: SacredSpacing.xs),
                               Text(
                                 _formatDuration(widget.estimatedTime!),
-                                style: SacredTypography.meta,
+                                style: SacredTypography.meta.copyWith(
+                                  color: c.textSecondary,
+                                ),
                               ),
                             ],
                           ),
@@ -185,35 +189,31 @@ class _BaniListTileState extends State<BaniListTile>
 
                   const SizedBox(width: SacredSpacing.sm),
 
-                  // Trailing elements
+                  // Trailing
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Completion status or Arrow
                       if (widget.isCompleted)
                         Container(
                           padding: const EdgeInsets.all(SacredSpacing.xs),
                           decoration: BoxDecoration(
-                            color: SacredColors.primaryAccent
-                                .withValues(alpha: 0.1),
+                            color: c.primaryAccent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(SacredRadius.md),
                             border: Border.all(
-                              color: SacredColors.primaryAccent
-                                  .withValues(alpha: 0.3),
+                              color: c.primaryAccent.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.check_rounded,
-                            color: SacredColors.primaryAccent,
+                            color: c.primaryAccent,
                             size: 14,
                           ),
                         )
                       else
                         Icon(
                           Icons.arrow_forward_ios_rounded,
-                          color: SacredColors.primaryAccent
-                              .withValues(alpha: 0.25),
+                          color: c.primaryAccent.withValues(alpha: 0.25),
                           size: 14,
                         ),
                     ],

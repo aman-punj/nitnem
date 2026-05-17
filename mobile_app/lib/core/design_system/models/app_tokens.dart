@@ -33,6 +33,7 @@ class AppTokens {
     required this.surfaceTint,
     required this.error,
     required this.onError,
+    required this.borderSoft,
     // Spacing
     required this.spaceXs,
     required this.spaceSm,
@@ -70,6 +71,7 @@ class AppTokens {
   final Color surfaceTint;
   final Color error;
   final Color onError;
+  final Color borderSoft;
 
   // ─── Spacing ───────────────────────────────────────────────────────────────
   final double spaceXs;
@@ -92,8 +94,6 @@ class AppTokens {
   Color get focusGlow     => primary.withValues(alpha: 0.15);
   /// Subtle gold border for cards and tiles.
   Color get borderGold    => primary.withValues(alpha: 0.25);
-  /// Faint white border for very low-emphasis containers.
-  Color get borderSoft    => const Color(0x1AFFFFFF);
   /// Fading golden gradient divider color.
   Color get dividerGold   => primary.withValues(alpha: 0.20);
 
@@ -123,6 +123,7 @@ class AppTokens {
       surfaceTint:              Color(0xFFE9C349),
       error:                    Color(0xFFFFB4AB),
       onError:                  Color(0xFF690005),
+      borderSoft:               Color(0x1AFFFFFF), // 10% white — dark surfaces only
       // Spacing
       spaceXs:           4,
       spaceSm:           12,
@@ -172,6 +173,7 @@ class AppTokens {
     surfaceTint:              Color(0xFFA07800),
     error:                    Color(0xFFBA1A1A),
     onError:                  Color(0xFFFFFFFF),
+    borderSoft:               Color(0x14B8A890), // 8% warm tan — light surfaces
 
     // Spacing — same
     spaceXs:           4,
@@ -215,6 +217,7 @@ class AppTokens {
       surfaceTint:              _c(json['surfaceTint']),
       error:                    _c(json['error']),
       onError:                  _c(json['onError']),
+      borderSoft:               json.containsKey('borderSoft') ? _c(json['borderSoft']) : const Color(0x1AFFFFFF),
       spaceXs:           (json['spaceXs'] as num).toDouble(),
       spaceSm:           (json['spaceSm'] as num).toDouble(),
       spaceMd:           (json['spaceMd'] as num).toDouble(),
@@ -254,6 +257,7 @@ class AppTokens {
       surfaceTint:              overrides.containsKey('surfaceTint')             ? _c(overrides['surfaceTint'])             : surfaceTint,
       error:                    overrides.containsKey('error')                   ? _c(overrides['error'])                   : error,
       onError:                  overrides.containsKey('onError')                 ? _c(overrides['onError'])                 : onError,
+      borderSoft:               overrides.containsKey('borderSoft')              ? _c(overrides['borderSoft'])              : borderSoft,
       spaceXs:           _d(overrides, 'spaceXs',           spaceXs),
       spaceSm:           _d(overrides, 'spaceSm',           spaceSm),
       spaceMd:           _d(overrides, 'spaceMd',           spaceMd),

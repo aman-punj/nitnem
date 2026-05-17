@@ -29,57 +29,49 @@ class OperationalStatusScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Scaffold(
-      backgroundColor: SacredColors.backgroundPrimary,
+      backgroundColor: c.backgroundPrimary,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.xl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Immersive Icon
               Container(
                 padding: const EdgeInsets.all(SacredSpacing.lg),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: SacredColors.primaryAccent.withValues(alpha: 0.05),
+                  color: c.primaryAccent.withValues(alpha: 0.05),
                   border: Border.all(
-                    color: SacredColors.primaryAccent.withValues(alpha: 0.1),
+                    color: c.primaryAccent.withValues(alpha: 0.1),
                     width: 1,
                   ),
                 ),
                 child: Icon(
-                  status == OperationalStatus.maintenance 
-                      ? Icons.pause_circle_outline_rounded 
+                  status == OperationalStatus.maintenance
+                      ? Icons.pause_circle_outline_rounded
                       : Icons.system_update_rounded,
                   size: 48,
-                  color: SacredColors.primaryAccent,
+                  color: c.primaryAccent,
                 ),
               ),
               const SizedBox(height: SacredSpacing.xl),
-              
-              // Title
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: SacredTypography.headlineLg.copyWith(
-                  color: SacredColors.textPrimary,
-                ),
+                style: SacredTypography.headlineLg.copyWith(color: c.textPrimary),
               ),
               const SizedBox(height: SacredSpacing.sm),
-              
-              // Message
               Text(
                 message,
                 textAlign: TextAlign.center,
                 style: SacredTypography.bodyMd.copyWith(
-                  color: SacredColors.textSecondary,
+                  color: c.textSecondary,
                   height: 1.6,
                 ),
               ),
               const SizedBox(height: SacredSpacing.xxl),
-              
-              // Primary CTA
               SizedBox(
                 width: double.infinity,
                 child: SacredButton(
@@ -90,14 +82,10 @@ class OperationalStatusScreen extends StatelessWidget {
                       if (await canLaunchUrl(url)) {
                         await launchUrl(url);
                       }
-                    } else if (status == OperationalStatus.maintenance) {
-                      // Logic for closing app
                     }
                   },
                 ),
               ),
-              
-              // Secondary CTA
               if (secondaryButtonText != null) ...[
                 const SizedBox(height: SacredSpacing.md),
                 TextButton(
@@ -105,7 +93,7 @@ class OperationalStatusScreen extends StatelessWidget {
                   child: Text(
                     secondaryButtonText!,
                     style: SacredTypography.bodySm.copyWith(
-                      color: SacredColors.textSecondary.withValues(alpha: 0.6),
+                      color: c.textSecondary.withValues(alpha: 0.6),
                       decoration: TextDecoration.underline,
                     ),
                   ),

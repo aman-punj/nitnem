@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
-import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/content_category.dart';
@@ -60,12 +59,12 @@ class HomeController extends GetxController {
 
     Get.dialog(
       AlertDialog(
-        backgroundColor: SacredColors.surfacePrimary,
+        backgroundColor: const Color(0xFF201F1F),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           config.messages.minorUpdate!.title,
           style: SacredTypography.headlineMd
-              .copyWith(color: SacredColors.primaryAccent),
+              .copyWith(color: const Color(0xFFF2CA50)),
         ),
         content: Text(
           config.messages.minorUpdate!.body,
@@ -75,11 +74,11 @@ class HomeController extends GetxController {
           TextButton(
             onPressed: () => Get.back(),
             child: Text(config.messages.minorUpdate!.secondaryButton ?? "Later",
-                style: TextStyle(color: SacredColors.textSecondary)),
+                style: const TextStyle(color: Color(0xFFD0C5AF))),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: SacredColors.primaryAccent,
+              backgroundColor: const Color(0xFFF2CA50),
               foregroundColor: Colors.black,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),

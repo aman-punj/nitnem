@@ -19,13 +19,14 @@ class SacredPreferenceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: SacredSpacing.sm),
       decoration: BoxDecoration(
-        color: SacredColors.surfaceContainerLow,
+        color: c.surfaceContainerLow,
         borderRadius: BorderRadius.circular(SacredRadius.md),
         border: Border.all(
-          color: SacredColors.borderGold.withValues(alpha: 0.1),
+          color: c.borderGold.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -35,10 +36,13 @@ class SacredPreferenceTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(SacredRadius.md),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.marginMobile, vertical: SacredSpacing.gutter),
+            padding: const EdgeInsets.symmetric(
+              horizontal: SacredSpacing.marginMobile,
+              vertical: SacredSpacing.gutter,
+            ),
             child: Row(
               children: [
-                _buildIcon(),
+                _buildIcon(c),
                 const SizedBox(width: SacredSpacing.marginMobile),
                 Expanded(
                   child: Column(
@@ -47,7 +51,7 @@ class SacredPreferenceTile extends StatelessWidget {
                       Text(
                         module.title,
                         style: SacredTypography.bodyMd.copyWith(
-                          color: SacredColors.textPrimary,
+                          color: c.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -56,14 +60,14 @@ class SacredPreferenceTile extends StatelessWidget {
                         Text(
                           module.description,
                           style: SacredTypography.bodySm.copyWith(
-                            color: SacredColors.textSecondary,
+                            color: c.textSecondary,
                           ),
                         ),
                       ],
                     ],
                   ),
                 ),
-                _buildTrailingAction(),
+                _buildTrailingAction(c),
               ],
             ),
           ),
@@ -72,35 +76,34 @@ class SacredPreferenceTile extends StatelessWidget {
     );
   }
 
-  Widget _buildIcon() {
-    IconData iconData = _getIconData(module.icon);
+  Widget _buildIcon(SacredColors c) {
     return Container(
       padding: const EdgeInsets.all(SacredSpacing.sm),
       decoration: BoxDecoration(
-        color: SacredColors.surfaceContainer,
+        color: c.surfaceContainer,
         borderRadius: BorderRadius.circular(SacredRadius.def),
       ),
       child: Icon(
-        iconData,
-        color: SacredColors.primaryAccent,
+        _getIconData(module.icon),
+        color: c.primaryAccent,
         size: 24,
       ),
     );
   }
 
-  Widget _buildTrailingAction() {
+  Widget _buildTrailingAction(SacredColors c) {
     switch (module.type) {
       case PreferenceModuleType.toggle:
         return Switch(
           value: toggleValue ?? true,
           onChanged: (val) => onTap(),
-          activeColor: SacredColors.primaryAccent,
-          activeTrackColor: SacredColors.primaryAccent.withValues(alpha: 0.2),
+          activeThumbColor: c.primaryAccent,
+          activeTrackColor: c.primaryAccent.withValues(alpha: 0.2),
         );
       case PreferenceModuleType.slider:
-        return const Icon(
+        return Icon(
           Icons.linear_scale_rounded,
-          color: SacredColors.textSecondary,
+          color: c.textSecondary,
           size: 20,
         );
       case PreferenceModuleType.navigation:
@@ -109,7 +112,7 @@ class SacredPreferenceTile extends StatelessWidget {
       case PreferenceModuleType.externalLink:
         return Icon(
           Icons.arrow_forward_ios_rounded,
-          color: SacredColors.textSecondary.withValues(alpha: 0.5),
+          color: c.textSecondary.withValues(alpha: 0.5),
           size: 14,
         );
       case PreferenceModuleType.action:

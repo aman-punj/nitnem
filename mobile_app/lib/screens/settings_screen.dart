@@ -5,18 +5,18 @@ import 'package:nitnem/controllers/font_size_controller.dart';
 import 'package:nitnem/controllers/language_controller.dart';
 import 'package:nitnem/controllers/theme_controller.dart';
 import 'package:nitnem/controllers/settings_controller.dart';
-import 'package:nitnem/services/cache_service.dart';
+import 'package:nitnem/core/design_system/tokens/colors.dart';
+import 'package:nitnem/core/design_system/tokens/radius.dart';
+import 'package:nitnem/core/design_system/tokens/spacing.dart';
+import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/core/design_system/widgets/frosted_settings_card.dart';
+import 'package:nitnem/core/design_system/widgets/sacred_button.dart';
 import 'package:nitnem/core/design_system/widgets/settings_tile.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_segmented_control.dart';
 import 'package:nitnem/models/drawer_item.dart';
 import 'package:nitnem/screens/faq_screen.dart';
 import 'package:nitnem/screens/feedback_screen.dart';
 import 'package:nitnem/screens/privacy_policy_screen.dart';
-import 'package:nitnem/core/design_system/tokens/colors.dart';
-import 'package:nitnem/core/design_system/tokens/radius.dart';
-import 'package:nitnem/core/design_system/tokens/spacing.dart';
-import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:nitnem/services/share_service.dart';
 
@@ -25,16 +25,14 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     final appInfoController = Get.find<AppInfoController>();
     final fontSizeController = Get.find<FontSizeController>();
     final languageController = Get.find<LanguageController>();
     final themeController = Get.find<ThemeController>();
     final settingsController = Get.find<SettingsController>();
-    final cacheService = Get.find<CacheService>();
-
     final enabledIds = appInfoController.menuConfig.value?.enabledItems ?? [];
-    
-    // Group items by section
+
     final groupedItems = <SettingsSection, List<DrawerMenuItem>>{};
     for (var item in DrawerMenuItem.values) {
       if (enabledIds.contains(item.id)) {
@@ -43,9 +41,9 @@ class SettingsScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: SacredColors.backgroundPrimary,
+      backgroundColor: c.backgroundPrimary,
       appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(color: SacredColors.textPrimary, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+        title: Text('Settings', style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -62,12 +60,13 @@ class SettingsScreen extends StatelessWidget {
                   title: entry.key.name.toUpperCase(),
                   children: entry.value.map((item) {
                     if (item.id == 'theme') {
-                      return Padding(
+                      // Obx ensures the indicator updates immediately on tap
+                      return Obx(() => Padding(
                         padding: const EdgeInsets.fromLTRB(SacredSpacing.marginMobile, SacredSpacing.base, SacredSpacing.marginMobile, SacredSpacing.marginMobile),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Theme', style: SacredTypography.meta),
+                            Text('Theme', style: SacredTypography.meta.copyWith(color: c.textSecondary)),
                             const SizedBox(height: SacredSpacing.base),
                             SacredSegmentedControl<String>(
                               segments: const {'auto': 'Auto', 'light': 'Light', 'dark': 'Dark'},
@@ -76,7 +75,7 @@ class SettingsScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                      );
+                      ));
                     }
                     if (item.id == 'language') {
                       return Padding(
@@ -84,7 +83,7 @@ class SettingsScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Language', style: SacredTypography.meta),
+                            Text('Language', style: SacredTypography.meta.copyWith(color: c.textSecondary)),
                             const SizedBox(height: SacredSpacing.base),
                             SacredSegmentedControl<String>(
                               segments: const {'pa': 'ਪੰਜਾਬੀ', 'en': 'English', 'hi': 'हिन्दी'},
@@ -96,21 +95,57 @@ class SettingsScreen extends StatelessWidget {
                       );
                     }
                     if (item.id == 'keep_awake') {
-                       return Obx(() => SwitchListTile(
-                         title: Text(item.title, style: const TextStyle(color: SacredColors.textPrimary)),
-                         value: settingsController.isKeepAwakeEnabled.value,
-                         onChanged: settingsController.toggleKeepAwake,
-                       ));
+                      return Obx(() => SwitchListTile(
+                        title: Text(item.title, style: TextStyle(color: c.textPrimary)),
+                        value: settingsController.isKeepAwakeEnabled.value,
+                        onChanged: settingsController.toggleKeepAwake,
+                      ));
                     }
                     if (item.id == 'clear_cache') {
-                      return Obx(() => SettingsTile(
-                        title: '${item.title} (${settingsController.storageUsage})',
-                        icon: item.icon,
-                        onTap: () async {
-                           await cacheService.clearAllCache();
-                           await settingsController.refreshStorageUsage();
-                           Get.snackbar('Success', 'Cache cleared');
-                        },
+                      return Obx(() => Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          SacredSpacing.marginMobile,
+                          SacredSpacing.base,
+                          SacredSpacing.marginMobile,
+                          SacredSpacing.marginMobile,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(SacredSpacing.gutter),
+                          decoration: BoxDecoration(
+                            color: c.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(SacredRadius.md),
+                            border: Border.all(
+                              color: c.borderGold.withValues(alpha: 0.25),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Clear Prayer Cache', style: SacredTypography.bodyMd.copyWith(color: c.textPrimary)),
+                              const SizedBox(height: SacredSpacing.base),
+                              Text(
+                                'Removes downloaded prayer audio and transcript files only. '
+                                'Listing data and app settings stay untouched.',
+                                style: SacredTypography.bodySm.copyWith(color: c.textSecondary),
+                              ),
+                              const SizedBox(height: SacredSpacing.gutter),
+                              Text(
+                                'Stored Playback Cache: ${settingsController.storageUsage.value}',
+                                style: SacredTypography.meta.copyWith(color: c.textSecondary),
+                              ),
+                              const SizedBox(height: SacredSpacing.gutter),
+                              SacredButton(
+                                label: settingsController.isClearingCache.value
+                                    ? 'Clearing...'
+                                    : 'Clear Cache',
+                                fullWidth: true,
+                                onPressed: settingsController.isClearingCache.value
+                                    ? null
+                                    : settingsController.clearPrayerCache,
+                              ),
+                            ],
+                          ),
+                        ),
                       ));
                     }
                     if (item.itemType == SettingsItemType.slider) {
@@ -119,16 +154,16 @@ class SettingsScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item.title, style: SacredTypography.meta),
+                            Text(item.title, style: SacredTypography.meta.copyWith(color: c.textSecondary)),
                             const SizedBox(height: SacredSpacing.base),
                             Container(
                               padding: const EdgeInsets.all(SacredSpacing.gutter),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.05),
+                                color: c.surfaceContainerLow.withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(SacredRadius.md),
                               ),
                               child: Center(
-                                child: Obx(() => Text('ੴ ਸਤਿਨਾਮੁ ਕਰਤਾ ਪੁਰਖੁ', style: SacredTypography.transcript)),
+                                child: Obx(() => Text('ੴ ਸਤਿਨਾਮੁ ਕਰਤਾ ਪੁਰਖੁ', style: SacredTypography.transcript.copyWith(color: c.textPrimary))),
                               ),
                             ),
                             const SizedBox(height: SacredSpacing.base),
@@ -151,7 +186,7 @@ class SettingsScreen extends StatelessWidget {
               }),
               const SizedBox(height: SacredSpacing.marginMobile),
               Center(
-                child: Text('Version $version', style: SacredTypography.labelSm),
+                child: Text('Version $version', style: SacredTypography.labelSm.copyWith(color: c.textSecondary)),
               ),
               const SizedBox(height: SacredSpacing.xxl),
               Center(
@@ -159,10 +194,10 @@ class SettingsScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(SacredSpacing.xs),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: SacredColors.primaryAccent, width: 3),
+                    border: Border.all(color: c.primaryAccent, width: 3),
                   ),
                   child: ClipOval(
-                    child: Image.asset('assets/images/settings_footer.png', width: 60, height: 60,fit: BoxFit.cover),
+                    child: Image.asset('assets/images/settings_footer.png', width: 60, height: 60, fit: BoxFit.cover),
                   ),
                 ),
               ),
@@ -170,14 +205,14 @@ class SettingsScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.xxl),
                 child: Text(
-                  '”Truth is the highest virtue, but higher still is truthful living.”',
+                  '"Truth is the highest virtue, but higher still is truthful living."',
                   textAlign: TextAlign.center,
                   style: SacredTypography.bodyMd.copyWith(
-                    color: SacredColors.primary,
+                    color: c.primary,
                     fontStyle: FontStyle.italic,
                     shadows: [
                       Shadow(
-                        color: SacredColors.primaryAccent.withValues(alpha: 0.5),
+                        color: c.primaryAccent.withValues(alpha: 0.5),
                         blurRadius: 10,
                       ),
                     ],

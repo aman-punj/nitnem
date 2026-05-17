@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/design_system/tokens/colors.dart';
 
-// Enhanced Sacred AppBar to replace the basic grey one
 class NitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String? gurmukhiTitle;
@@ -25,27 +24,25 @@ class NitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: SacredColors.backgroundBlack.withValues(alpha: 0.9),
+        color: c.backgroundBlack.withValues(alpha: 0.9),
         border: Border(
           bottom: BorderSide(
-            color: SacredColors.borderGold.withValues(alpha: 0.1),
+            color: c.borderGold.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
       ),
       child: Stack(
         children: [
-          // Subtle pattern overlay (highly restrained)
           if (showPattern)
             Positioned.fill(
               child: CustomPaint(
-                painter: AppBarPatternPainter(),
+                painter: AppBarPatternPainter(accentColor: c.primaryAccent),
               ),
             ),
-          
-          // Main AppBar content
           AppBar(
             title: gurmukhiTitle != null
                 ? Column(
@@ -53,8 +50,8 @@ class NitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
                     children: [
                       Text(
                         gurmukhiTitle!,
-                        style: const TextStyle(
-                          color: SacredColors.primaryAccent,
+                        style: TextStyle(
+                          color: c.primaryAccent,
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
                           height: 1.2,
@@ -63,8 +60,8 @@ class NitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
                       const SizedBox(height: 2),
                       Text(
                         title,
-                        style: const TextStyle(
-                          color: SacredColors.textSecondary,
+                        style: TextStyle(
+                          color: c.textSecondary,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           height: 1.1,
@@ -74,8 +71,8 @@ class NitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
                   )
                 : Text(
                     title,
-                    style: const TextStyle(
-                      color: SacredColors.textPrimary,
+                    style: TextStyle(
+                      color: c.textPrimary,
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.5,
@@ -89,16 +86,16 @@ class NitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ? Container(
                         margin: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: SacredColors.surfacePrimary.withValues(alpha: 0.5),
+                          color: c.surfacePrimary.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: SacredColors.borderGold.withValues(alpha: 0.1),
+                            color: c.borderGold.withValues(alpha: 0.1),
                             width: 1,
                           ),
                         ),
                         child: IconButton(
                           icon: const Icon(Icons.arrow_back_ios_rounded),
-                          color: SacredColors.primaryAccent,
+                          color: c.primaryAccent,
                           onPressed: onBackPressed ?? () => Navigator.pop(context),
                           iconSize: 20,
                         ),
@@ -109,16 +106,16 @@ class NitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
                 return Container(
                   margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                   decoration: BoxDecoration(
-                    color: SacredColors.surfacePrimary.withValues(alpha: 0.5),
+                    color: c.surfacePrimary.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: SacredColors.borderGold.withValues(alpha: 0.1),
+                      color: c.borderGold.withValues(alpha: 0.1),
                       width: 1,
                     ),
                   ),
                   child: IconButton(
                     icon: action.icon,
-                    color: SacredColors.primaryAccent,
+                    color: c.primaryAccent,
                     onPressed: action.onPressed,
                     iconSize: 20,
                   ),
@@ -126,9 +123,7 @@ class NitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
               }
               return action;
             }).toList(),
-            iconTheme: const IconThemeData(
-              color: SacredColors.primaryAccent,
-            ),
+            iconTheme: IconThemeData(color: c.primaryAccent),
             systemOverlayStyle: const SystemUiOverlayStyle(
               statusBarColor: Colors.transparent,
               statusBarIconBrightness: Brightness.light,
@@ -145,18 +140,19 @@ class NitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
       );
 }
 
-// Subtle pattern painter for AppBar background
 class AppBarPatternPainter extends CustomPainter {
+  final Color accentColor;
+  const AppBarPatternPainter({required this.accentColor});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = SacredColors.primaryAccent.withValues(alpha: 0.04)
+      ..color = accentColor.withValues(alpha: 0.04)
       ..style = PaintingStyle.fill;
 
     const dotSize = 1.2;
     const spacing = 30.0;
 
-    // Draw subtle dot pattern
     for (double y = dotSize; y < size.height; y += spacing) {
       for (double x = dotSize; x < size.width; x += spacing) {
         canvas.drawCircle(Offset(x, y), dotSize, paint);
@@ -165,10 +161,9 @@ class AppBarPatternPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
+  bool shouldRepaint(AppBarPatternPainter old) => old.accentColor != accentColor;
 }
 
-// Simple usage replacement for your current AppBar
 class SimpleNitnemAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget>? actions;
@@ -183,12 +178,13 @@ class SimpleNitnemAppBar extends StatelessWidget implements PreferredSizeWidget 
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: SacredColors.backgroundBlack.withValues(alpha: 0.8),
+        color: c.backgroundBlack.withValues(alpha: 0.8),
         border: Border(
           bottom: BorderSide(
-            color: SacredColors.borderGold.withValues(alpha: 0.1),
+            color: c.borderGold.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
@@ -196,8 +192,8 @@ class SimpleNitnemAppBar extends StatelessWidget implements PreferredSizeWidget 
       child: AppBar(
         title: Text(
           title,
-          style: const TextStyle(
-            color: SacredColors.textPrimary,
+          style: TextStyle(
+            color: c.textPrimary,
             fontWeight: FontWeight.w600,
             fontSize: 20,
             letterSpacing: 0.5,
@@ -207,9 +203,7 @@ class SimpleNitnemAppBar extends StatelessWidget implements PreferredSizeWidget 
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: actions,
-        iconTheme: const IconThemeData(
-          color: SacredColors.primaryAccent,
-        ),
+        iconTheme: IconThemeData(color: c.primaryAccent),
       ),
     );
   }
@@ -217,54 +211,3 @@ class SimpleNitnemAppBar extends StatelessWidget implements PreferredSizeWidget 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
-
-// Usage Examples:
-
-// 1. Direct replacement for your current AppBar:
-/*
-appBar: SimpleNitnemAppBar(
-  title: 'Nitnem',
-  centerTitle: true,
-),
-*/
-
-// 2. Enhanced version with more features:
-/*
-appBar: NitnemAppBar(
-  title: 'Nitnem', 
-  gurmukhiTitle: 'ਨਿਤਨੇਮ', // Optional Gurmukhi
-  centerTitle: true,
-  actions: [
-    IconButton(
-      icon: Icon(Icons.search),
-      onPressed: () {},
-    ),
-    IconButton(
-      icon: Icon(Icons.more_vert),
-      onPressed: () {},
-    ),
-  ],
-),
-*/
-
-// 3. For individual Bani pages:
-/*
-appBar: NitnemAppBar(
-  title: 'Japji Sahib',
-  gurmukhiTitle: 'ਜਪੁਜੀ ਸਾਹਿਬ',
-  actions: [
-    IconButton(
-      icon: Icon(Icons.bookmark_border),
-      onPressed: () {},
-    ),
-    IconButton(
-      icon: Icon(Icons.share),
-      onPressed: () {},
-    ),
-    IconButton(
-      icon: Icon(Icons.text_fields),
-      onPressed: () {},
-    ),
-  ],
-),
-*/

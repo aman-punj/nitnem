@@ -15,18 +15,19 @@ class FrostedSettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03), // Layered low-opacity white
+        color: c.surfaceContainerLow.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(SacredRadius.xl),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08), // Subtle glass border
+          color: c.borderGold.withValues(alpha: 0.12),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2), // Softer shadow
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -35,7 +36,7 @@ class FrostedSettingsCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(SacredRadius.xl),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18), // Stronger blur
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -43,8 +44,8 @@ class FrostedSettingsCard extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    color: SacredColors.primaryAccent,
+                  style: TextStyle(
+                    color: c.primaryAccent,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.5,

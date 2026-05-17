@@ -8,7 +8,7 @@ class ThemeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    final isDark = SharedPrefsService.getBool('theme_is_dark', defaultValue: true);
+    final isDark = SharedPrefsService.getBool('theme_is_dark', defaultValue: false);
     final isLight = SharedPrefsService.getBool('theme_is_light', defaultValue: false);
     final savedTheme = isDark ? 'dark' : (isLight ? 'light' : 'auto');
     themeMode.value = _mapStringToThemeMode(savedTheme);

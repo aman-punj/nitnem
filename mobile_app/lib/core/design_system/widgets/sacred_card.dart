@@ -12,12 +12,13 @@ class SacredCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: SacredColors.surfacePrimary,
+        color: c.surfacePrimary,
         borderRadius: BorderRadius.circular(SacredRadius.md),
-        border: Border.all(color: SacredColors.borderSoft),
+        border: Border.all(color: c.borderSoft),
         boxShadow: SacredElevation.soft,
       ),
       child: child,

@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import '../core/design_system/tokens/colors.dart';
 
+// Legacy utility — static constants kept for backward compatibility.
+// New code should use SacredColors.of(context) instead.
 class AppTheme {
-  // New AMOLED-first palette (mapped to SacredColors)
-  static const Color primaryGold = SacredColors.primaryAccent;
-  static const Color accentSoft = SacredColors.accentSoft;
-  
-  // Legacy color mappings (updated for dark theme compatibility)
-  static const Color textBrown = SacredColors.textPrimary; // Was #8B4513
-  static const Color lightCream = SacredColors.backgroundBlack; // Was #FFFDF7
-  static const Color warmBeige = SacredColors.surfacePrimary; // Was #D4C19C
+  static const Color primaryGold = Color(0xFFF2CA50);
+  static const Color accentSoft  = Color(0xFFF0C12C);
+
+  static const Color textBrown  = Color(0xFFE5E2E1);
+  static const Color lightCream = Color(0xFF0E0E0E);
+  static const Color warmBeige  = Color(0xFF201F1F);
 
   static const TextStyle headingStyle = TextStyle(
-    color: SacredColors.textPrimary,
+    color: Color(0xFFE5E2E1),
     fontSize: 24,
     fontWeight: FontWeight.bold,
     height: 1.4,
@@ -20,21 +19,21 @@ class AppTheme {
   );
 
   static const TextStyle bodyStyle = TextStyle(
-    color: SacredColors.textPrimary,
+    color: Color(0xFFE5E2E1),
     fontSize: 16,
     height: 1.6,
     letterSpacing: 0.5,
   );
 
   static const TextStyle gurmukhiStyle = TextStyle(
-    color: SacredColors.primaryAccent,
+    color: Color(0xFFF2CA50),
     fontSize: 20,
     height: 1.8,
     fontWeight: FontWeight.w600,
   );
-  
+
   static const TextStyle metaStyle = TextStyle(
-    color: SacredColors.textSecondary,
+    color: Color(0xFFD0C5AF),
     fontSize: 14,
     fontWeight: FontWeight.w400,
     letterSpacing: 0.3,

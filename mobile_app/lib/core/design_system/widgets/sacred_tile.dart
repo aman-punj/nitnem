@@ -17,15 +17,16 @@ class SacredTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return ListTile(
-      tileColor: SacredColors.surfacePrimary,
+      tileColor: c.surfacePrimary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SacredRadius.md),
-        side: const BorderSide(color: SacredColors.borderSoft),
+        side: BorderSide(color: c.borderSoft),
       ),
       title: Text(title),
-      subtitle: Text(subtitle, style: const TextStyle(color: SacredColors.textSecondary)),
-      trailing: const Icon(Icons.chevron_right, color: SacredColors.accentSoft),
+      subtitle: Text(subtitle, style: TextStyle(color: c.textSecondary)),
+      trailing: Icon(Icons.chevron_right, color: c.accentSoft),
       onTap: onTap,
     );
   }

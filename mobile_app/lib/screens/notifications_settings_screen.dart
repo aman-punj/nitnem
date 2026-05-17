@@ -17,38 +17,39 @@ class _NotificationsSettingsScreenState extends State<NotificationsSettingsScree
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Scaffold(
-      backgroundColor: SacredColors.backgroundPrimary,
+      backgroundColor: c.backgroundPrimary,
       appBar: const SacredDsAppBar(title: 'Notifications'),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           SwitchListTile(
-            title: const Text('Morning Nitnem Reminder', style: TextStyle(color: SacredColors.textPrimary)),
+            title: Text('Morning Nitnem Reminder', style: TextStyle(color: c.textPrimary)),
             value: morningReminder,
             onChanged: (val) {
               setState(() => morningReminder = val);
               SharedPrefsService.setBool('morning_reminder', val);
             },
-            activeColor: SacredColors.primaryAccent,
+            activeThumbColor: c.primaryAccent,
           ),
           SwitchListTile(
-            title: const Text('Evening Nitnem Reminder', style: TextStyle(color: SacredColors.textPrimary)),
+            title: Text('Evening Nitnem Reminder', style: TextStyle(color: c.textPrimary)),
             value: eveningReminder,
             onChanged: (val) {
               setState(() => eveningReminder = val);
               SharedPrefsService.setBool('evening_reminder', val);
             },
-            activeColor: SacredColors.primaryAccent,
+            activeThumbColor: c.primaryAccent,
           ),
           SwitchListTile(
-            title: const Text('Daily Hukamnama', style: TextStyle(color: SacredColors.textPrimary)),
+            title: Text('Daily Hukamnama', style: TextStyle(color: c.textPrimary)),
             value: hukamnama,
             onChanged: (val) {
               setState(() => hukamnama = val);
               SharedPrefsService.setBool('hukamnama_reminder', val);
             },
-            activeColor: SacredColors.primaryAccent,
+            activeThumbColor: c.primaryAccent,
           ),
         ],
       ),

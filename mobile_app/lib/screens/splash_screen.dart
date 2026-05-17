@@ -7,12 +7,8 @@ import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_update_sheet.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_maintenance_sheet.dart';
-import 'package:nitnem/services/firebase_content_service.dart';
-import 'package:nitnem/services/transcript_sync_service.dart';
-import 'package:nitnem/models/content_item.dart';
 import 'package:nitnem/bindings/di.dart';
 
-import 'package:nitnem/services/notification_service.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -52,11 +48,10 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _initApp() async {
-    // 1. Run initialization tasks in parallel
     final initializationTasks = Future.wait([
       getAppInfo(),
       DependencyInjection.audioBackgroundReady,
-      Future.delayed(const Duration(seconds: 4)), // Minimum splash duration
+      Future.delayed(const Duration(seconds: 4)),
     ]);
 
     await initializationTasks;
@@ -76,17 +71,6 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  Future<void> _ensureNotificationService() async {
-    NotificationService notificationService;
-    if (Get.isRegistered<NotificationService>()) {
-      notificationService = Get.find<NotificationService>();
-    } else {
-      notificationService = Get.put(NotificationService());
-      await notificationService.init();
-    }
-    await notificationService.requestPermissions();
-  }
-
   @override
   void dispose() {
     _fadeController.dispose();
@@ -96,8 +80,9 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Scaffold(
-      backgroundColor: SacredColors.backgroundPrimary,
+      backgroundColor: c.backgroundPrimary,
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: Stack(
@@ -111,7 +96,7 @@ class _SplashScreenState extends State<SplashScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      SacredColors.primaryAccent.withValues(alpha: 0.08),
+                      c.primaryAccent.withValues(alpha: 0.08),
                       Colors.transparent,
                     ],
                   ),
@@ -124,23 +109,19 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo Container
                   Container(
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: SacredColors.surfaceContainerLow
-                          .withValues(alpha: 0.5),
+                      color: c.surfaceContainerLow.withValues(alpha: 0.5),
                       border: Border.all(
-                        color:
-                            SacredColors.primaryAccent.withValues(alpha: 0.2),
+                        color: c.primaryAccent.withValues(alpha: 0.2),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color:
-                              SacredColors.primaryAccent.withValues(alpha: 0.1),
+                          color: c.primaryAccent.withValues(alpha: 0.1),
                           blurRadius: 30,
                           spreadRadius: 5,
                         ),
@@ -151,31 +132,27 @@ class _SplashScreenState extends State<SplashScreen>
                         'assets/images/bani_sagar_logo.png',
                         width: 60,
                         height: 60,
-                        // Fallback icon if image missing
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(
+                        errorBuilder: (context, error, stackTrace) => Icon(
                           Icons.spa_rounded,
-                          color: SacredColors.primaryAccent,
+                          color: c.primaryAccent,
                           size: 48,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 32),
-                  // Title
                   Text(
                     'Bani Sagar',
                     style: SacredTypography.displayLg.copyWith(
-                      color: SacredColors.primaryAccent,
+                      color: c.primaryAccent,
                       letterSpacing: -0.5,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  // Subtitle
                   Text(
                     'Sacred Sound. Calm Presence.',
                     style: SacredTypography.headlineMd.copyWith(
-                      color: SacredColors.textSecondary.withValues(alpha: 0.7),
+                      color: c.textSecondary.withValues(alpha: 0.7),
                       fontSize: 16,
                       fontWeight: FontWeight.w300,
                       letterSpacing: 2.0,
@@ -192,13 +169,11 @@ class _SplashScreenState extends State<SplashScreen>
               right: 0,
               child: Column(
                 children: [
-                  // Elegant Loading Bar
                   Container(
                     width: 180,
                     height: 2,
                     decoration: BoxDecoration(
-                      color: SacredColors.surfaceContainerHighest
-                          .withValues(alpha: 0.3),
+                      color: c.surfaceContainerHighest.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                     child: AnimatedBuilder(
@@ -206,22 +181,17 @@ class _SplashScreenState extends State<SplashScreen>
                       builder: (context, child) {
                         return FractionallySizedBox(
                           alignment: Alignment(
-                            -1.0 +
-                                (Curves.easeInOut
-                                        .transform(_loadingController.value) *
-                                    2),
+                            -1.0 + (Curves.easeInOut.transform(_loadingController.value) * 2),
                             0,
                           ),
                           widthFactor: 0.3,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: SacredColors.primaryAccent
-                                  .withValues(alpha: 0.6),
+                              color: c.primaryAccent.withValues(alpha: 0.6),
                               borderRadius: BorderRadius.circular(2),
                               boxShadow: [
                                 BoxShadow(
-                                  color: SacredColors.primaryAccent
-                                      .withValues(alpha: 0.4),
+                                  color: c.primaryAccent.withValues(alpha: 0.4),
                                   blurRadius: 8,
                                 ),
                               ],
@@ -235,7 +205,7 @@ class _SplashScreenState extends State<SplashScreen>
                   Text(
                     'FINDING STILLNESS',
                     style: SacredTypography.labelSm.copyWith(
-                      color: SacredColors.textSecondary.withValues(alpha: 0.4),
+                      color: c.textSecondary.withValues(alpha: 0.4),
                       letterSpacing: 3.0,
                     ),
                   ),
@@ -254,14 +224,14 @@ class _SplashScreenState extends State<SplashScreen>
                   Icon(
                     Icons.auto_awesome_rounded,
                     size: 14,
-                    color: SacredColors.textSecondary.withValues(alpha: 0.3),
+                    color: c.textSecondary.withValues(alpha: 0.3),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'Crafted for Mindfulness',
                     style: SacredTypography.bodySm.copyWith(
                       fontSize: 11,
-                      color: SacredColors.textSecondary.withValues(alpha: 0.3),
+                      color: c.textSecondary.withValues(alpha: 0.3),
                     ),
                   ),
                 ],
@@ -316,7 +286,6 @@ class _SplashScreenState extends State<SplashScreen>
       return;
     }
 
-    // 3. Recommended Update (Non-blocking)
     if (await controller.shouldRecommendUpdate()) {
       final message = config?.messages.minorUpdate;
       if (message != null && mounted) {
@@ -334,21 +303,4 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-
-
-  Future<void> _syncContent() async {
-    try {
-      final firebaseContentService = Get.find<FirebaseContentService>();
-      final transcriptSyncService = Get.find<TranscriptSyncService>();
-
-      final List<ContentItem> remoteItems =
-          await firebaseContentService.fetchContentCatalog();
-
-      for (final item in remoteItems) {
-        await transcriptSyncService.syncContent(item);
-      }
-    } catch (e) {
-      // Silent fail for sync in splash
-    }
-  }
 }

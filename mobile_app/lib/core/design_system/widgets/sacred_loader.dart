@@ -8,20 +8,21 @@ class SacredLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(
-            color: SacredColors.primaryAccent,
+          CircularProgressIndicator(
+            color: c.primaryAccent,
             strokeWidth: 2,
           ),
           if (text != null) ...[
             const SizedBox(height: 24),
             Text(
               text!,
-              style: const TextStyle(
-                color: SacredColors.textSecondary,
+              style: TextStyle(
+                color: c.textSecondary,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.5,

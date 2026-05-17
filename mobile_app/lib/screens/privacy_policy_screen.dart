@@ -19,8 +19,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Scaffold(
-      backgroundColor: SacredColors.backgroundPrimary,
+      backgroundColor: c.backgroundPrimary,
       appBar: const SacredDsAppBar(title: 'Privacy Policy'),
       body: Obx(() {
         if (controller.isLoading.value) {
@@ -42,7 +43,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   ),
                   child: SelectableText(
                     controller.content.value.content,
-                    style: SacredTypography.bodySm,
+                    style: SacredTypography.bodySm.copyWith(color: c.textSecondary),
                   ),
                 ),
               ],

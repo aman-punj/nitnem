@@ -15,30 +15,31 @@ class SupportRequestForm extends StatelessWidget {
   final SupportFormController controller;
   final Widget? trailingAction;
 
-  InputDecoration _decoration(String hint) {
+  InputDecoration _decoration(String hint, SacredColors c) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: SacredTypography.bodySm,
+      hintStyle: SacredTypography.bodySm.copyWith(color: c.textSecondary),
       filled: true,
-      fillColor: SacredColors.surfaceContainerLow,
+      fillColor: c.surfaceContainerLow,
       contentPadding: const EdgeInsets.all(SacredSpacing.gutter),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(SacredRadius.md),
-        borderSide: BorderSide(color: SacredColors.borderGold.withValues(alpha: 0.3)),
+        borderSide: BorderSide(color: c.borderGold.withValues(alpha: 0.3)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(SacredRadius.md),
-        borderSide: BorderSide(color: SacredColors.borderGold.withValues(alpha: 0.2)),
+        borderSide: BorderSide(color: c.borderGold.withValues(alpha: 0.2)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(SacredRadius.md),
-        borderSide: const BorderSide(color: SacredColors.primaryAccent),
+        borderSide: BorderSide(color: c.primaryAccent),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return ListView(
       padding: const EdgeInsets.symmetric(
         horizontal: SacredSpacing.marginMobile,
@@ -58,27 +59,27 @@ class SupportRequestForm extends StatelessWidget {
                     controller.requestTypeValue == 'feedback'
                         ? 'Share your thoughts to help us improve.'
                         : 'Describe the issue clearly so we can resolve it quickly.',
-                    style: SacredTypography.meta,
+                    style: SacredTypography.meta.copyWith(color: c.textSecondary),
                   ),
                   const SizedBox(height: SacredSpacing.gutter),
                   TextField(
                     controller: controller.titleController,
-                    style: SacredTypography.bodyMd,
-                    decoration: _decoration('Title'),
+                    style: SacredTypography.bodyMd.copyWith(color: c.textPrimary),
+                    decoration: _decoration('Title', c),
                   ),
                   const SizedBox(height: SacredSpacing.gutter),
                   TextField(
                     controller: controller.messageController,
                     maxLines: 7,
-                    style: SacredTypography.bodyMd,
-                    decoration: _decoration('Message'),
+                    style: SacredTypography.bodyMd.copyWith(color: c.textPrimary),
+                    decoration: _decoration('Message', c),
                   ),
                   const SizedBox(height: SacredSpacing.gutter),
                   TextField(
                     controller: controller.emailController,
-                    style: SacredTypography.bodyMd,
+                    style: SacredTypography.bodyMd.copyWith(color: c.textPrimary),
                     keyboardType: TextInputType.emailAddress,
-                    decoration: _decoration('Email (optional)'),
+                    decoration: _decoration('Email (optional)', c),
                   ),
                   const SizedBox(height: SacredSpacing.gutter),
                   Obx(() => SacredButton(

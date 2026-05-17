@@ -21,15 +21,16 @@ class SacredButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     final button = ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: _isPrimary ? SacredColors.primaryAccent : SacredColors.surfaceContainer,
-        foregroundColor: _isPrimary ? Colors.black : SacredColors.textPrimary,
+        backgroundColor: _isPrimary ? c.primaryAccent : c.surfaceContainer,
+        foregroundColor: _isPrimary ? c.onPrimary : c.textPrimary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SacredRadius.sm),
           side: _isPrimary
               ? BorderSide.none
-              : BorderSide(color: SacredColors.borderGold.withValues(alpha: 0.25)),
+              : BorderSide(color: c.borderGold.withValues(alpha: 0.25)),
         ),
       ),
       onPressed: onPressed,

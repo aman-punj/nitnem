@@ -42,41 +42,43 @@ class SacredAppSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Container(
-      decoration: const BoxDecoration(
-        color: SacredColors.surfaceContainerLow,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SacredRadius.xl)),
+      decoration: BoxDecoration(
+        color: c.surfaceContainerLow,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(SacredRadius.xl)),
       ),
       child: Stack(
         children: [
           Positioned.fill(
             child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(28)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(SacredRadius.xl)),
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      SacredColors.surfaceContainerLow,
-                      SacredColors.surfaceContainerLow,
-                      SacredColors.primaryAccent.withValues(alpha: 0.08),
+                      c.surfaceContainerLow,
+                      c.surfaceContainerLow,
+                      c.primaryAccent.withValues(alpha: 0.08),
                     ],
                   ),
                 ),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
                   child: Container(
-                    color: SacredColors.surfaceContainerLow
-                        .withValues(alpha: 0.85),
+                    color: c.surfaceContainerLow.withValues(alpha: 0.85),
                   ),
                 ),
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(SacredSpacing.md, SacredSpacing.marginMobile, SacredSpacing.md, SacredSpacing.xxl),
+            padding: const EdgeInsets.fromLTRB(
+              SacredSpacing.md, SacredSpacing.marginMobile,
+              SacredSpacing.md, SacredSpacing.xxl,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -85,7 +87,7 @@ class SacredAppSheet extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: SacredSpacing.lg),
                   decoration: BoxDecoration(
-                    color: SacredColors.textSecondary.withValues(alpha: 0.2),
+                    color: c.textSecondary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -94,16 +96,16 @@ class SacredAppSheet extends StatelessWidget {
                   height: 88,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: SacredColors.primaryAccent.withValues(alpha: 0.12),
+                    color: c.primaryAccent.withValues(alpha: 0.12),
                     border: Border.all(
-                      color: SacredColors.primaryAccent.withValues(alpha: 0.2),
+                      color: c.primaryAccent.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
                   child: Icon(
                     _icon,
                     size: 40,
-                    color: SacredColors.primaryAccent,
+                    color: c.primaryAccent,
                   ),
                 ),
                 const SizedBox(height: SacredSpacing.md),
@@ -118,7 +120,7 @@ class SacredAppSheet extends StatelessWidget {
                 Text(
                   body,
                   style: SacredTypography.bodyMd.copyWith(
-                    color: SacredColors.textSecondary,
+                    color: c.textSecondary,
                     height: 1.6,
                   ),
                   textAlign: TextAlign.center,
@@ -132,12 +134,11 @@ class SacredAppSheet extends StatelessWidget {
                 if (secondaryButtonText != null) ...[
                   const SizedBox(height: SacredSpacing.gutter),
                   TextButton(
-                    onPressed:
-                        onSecondaryPressed ?? () => Navigator.pop(context),
+                    onPressed: onSecondaryPressed ?? () => Navigator.pop(context),
                     child: Text(
                       secondaryButtonText!,
                       style: SacredTypography.labelSm.copyWith(
-                        color: SacredColors.textSecondary,
+                        color: c.textSecondary,
                         decoration: TextDecoration.underline,
                       ),
                     ),
@@ -147,7 +148,7 @@ class SacredAppSheet extends StatelessWidget {
                 const SafeArea(child: SizedBox.shrink()),
               ],
             ),
-          )
+          ),
         ],
       ),
     );

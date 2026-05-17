@@ -20,8 +20,9 @@ class FaqScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Scaffold(
-      backgroundColor: SacredColors.backgroundPrimary,
+      backgroundColor: c.backgroundPrimary,
       appBar: const SacredDsAppBar(title: 'FAQ'),
       body: Obx(() {
         if (controller.isLoading.value) {
@@ -107,13 +108,13 @@ class FaqScreen extends StatelessWidget {
                         SacredSpacing.marginMobile,
                         SacredSpacing.marginMobile,
                       ),
-                      title: Text(item.question, style: SacredTypography.bodyMd.copyWith(color: SacredColors.textPrimary)),
-                      iconColor: SacredColors.primaryAccent,
-                      collapsedIconColor: SacredColors.primaryAccent,
+                      title: Text(item.question, style: SacredTypography.bodyMd.copyWith(color: c.textPrimary)),
+                      iconColor: c.primaryAccent,
+                      collapsedIconColor: c.primaryAccent,
                       children: [
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: Text(item.answer, style: SacredTypography.bodySm),
+                          child: Text(item.answer, style: SacredTypography.bodySm.copyWith(color: c.textSecondary)),
                         ),
                       ],
                     ),

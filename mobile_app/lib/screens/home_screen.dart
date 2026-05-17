@@ -2,15 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/screens/listing_screen.dart';
-import 'package:nitnem/screens/feedback_screen.dart';
-import 'package:nitnem/screens/manage_notifications_screen.dart';
 import 'package:nitnem/screens/settings_screen.dart';
-import 'package:nitnem/screens/faq_screen.dart';
-import 'package:nitnem/screens/privacy_policy_screen.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
 import 'package:nitnem/services/notification_service.dart';
 import 'package:nitnem/services/share_service.dart';
-import 'package:nitnem/models/drawer_item.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _requestNotificationPermission() async {
     final notificationService = Get.find<NotificationService>();
-    
+
     try {
       await notificationService.requestPermissions();
       final enabled = await notificationService.areNotificationsEnabled();
@@ -72,58 +67,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
     return Scaffold(
-      backgroundColor: SacredColors.backgroundPrimary,
+      backgroundColor: c.backgroundPrimary,
       appBar: SacredDsAppBar(
         title: 'Bani Sagar',
-        appBarStyle: const TextStyle(
+        appBarStyle: TextStyle(
           fontSize: 24,
-          color: SacredColors.primary
+          color: c.primary,
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_rounded, color: SacredColors.primary),
+            icon: Icon(Icons.settings_rounded, color: c.primary),
             onPressed: () => Get.to(() => const SettingsScreen()),
           ),
         ],
       ),
       body: const ListingScreen(),
     );
-  }
-
-  void _onDrawerItemSelect(DrawerMenuItem item) {
-    Get.back();
-    switch (item) {
-      case DrawerMenuItem.notifications:
-        Get.to(() => const ManageNotificationsScreen());
-        break;
-      case DrawerMenuItem.language:
-        break;
-      case DrawerMenuItem.share:
-        onShareApp();
-        break;
-      case DrawerMenuItem.feedback:
-        Get.to(() => FeedbackScreen());
-        break;
-      case DrawerMenuItem.theme:
-        // TODO: Handle this case.
-        throw UnimplementedError();
-      case DrawerMenuItem.typography:
-        // TODO: Handle this case.
-        throw UnimplementedError();
-      case DrawerMenuItem.clear_cache:
-        // TODO: Handle this case.
-        throw UnimplementedError();
-      case DrawerMenuItem.keep_awake:
-        // TODO: Handle this case.
-        throw UnimplementedError();
-      case DrawerMenuItem.faq:
-        Get.to(() => FaqScreen());
-        break;
-      case DrawerMenuItem.privacy_policy:
-        Get.to(() => PrivacyPolicyScreen());
-        break;
-    }
   }
 
   void onShareApp() {
