@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:nitnem/services/notification_service.dart';
 import 'package:flutter/services.dart' show DeviceOrientation, SystemChrome;
@@ -22,6 +26,13 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
   // Must be registered before runApp so the isolate is ready for background FCM.
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
@@ -32,7 +43,10 @@ Future<void> main() async {
   // AudioService.init() (called inside initAudioBackground) requires the Flutter
   // engine to be running — calling it before runApp() can hang on some Android
   // devices because the method channel isn't fully ready yet.
-  runApp(const MyApp());
+  runZonedGuarded(
+    () => runApp(const MyApp()),
+    (error, stack) => FirebaseCrashlytics.instance.recordError(error, stack, fatal: true),
+  );
 
   // Initialize background audio after Flutter is running. Takes up to 8 s on
   // slow devices; the SplashScreen covers that wait gracefully.

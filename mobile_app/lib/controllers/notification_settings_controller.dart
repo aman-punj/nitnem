@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:nitnem/core/utils/app_logs.dart';
+import 'package:nitnem/services/analytics_service.dart';
 import 'package:nitnem/services/notification_service.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
 
@@ -122,7 +124,8 @@ class NotificationSettingsController extends GetxService {
       final doc = await FirebaseFirestore.instance
           .collection('settings')
           .doc('notifications')
-          .get();
+          .get()
+          .timeout(const Duration(seconds: 5));
       if (!doc.exists) return;
       final data = doc.data()!;
       final prefs = SharedPrefsService.instance;
@@ -154,6 +157,7 @@ class NotificationSettingsController extends GetxService {
     morningEnabled.value = val;
     await SharedPrefsService.setBool(_kMorningEnabled, val);
     await _applyMorning();
+    Get.find<AnalyticsService>().logReminderToggled(type: 'morning', enabled: val);
   }
 
   Future<void> setMorningTime(TimeOfDay time) async {
@@ -169,6 +173,7 @@ class NotificationSettingsController extends GetxService {
     eveningEnabled.value = val;
     await SharedPrefsService.setBool(_kEveningEnabled, val);
     await _applyEvening();
+    Get.find<AnalyticsService>().logReminderToggled(type: 'evening', enabled: val);
   }
 
   Future<void> setEveningTime(TimeOfDay time) async {
@@ -184,6 +189,7 @@ class NotificationSettingsController extends GetxService {
     kumnaamaEnabled.value = val;
     await SharedPrefsService.setBool(_kKumnaamaEnabled, val);
     await _applyKumnama();
+    Get.find<AnalyticsService>().logReminderToggled(type: 'kumnama', enabled: val);
   }
 
   // ── Schedule helpers ──────────────────────────────────────────────────────
@@ -228,7 +234,14 @@ class NotificationSettingsController extends GetxService {
   Future<void> _applyKumnama() async {
     // Ensure FCM token is ready before subscribing — token may not exist yet
     // on first launch when this runs before runApp().
-    await FirebaseMessaging.instance.getToken();
+    try {
+      await FirebaseMessaging.instance.getToken()
+          .timeout(const Duration(seconds: 5));
+    } catch (e) {
+      appLogs('FCM getToken failed — skipping kumnama subscription',
+          tag: 'NOTIF', error: e, stackTrace: StackTrace.current);
+      return;
+    }
     if (kumnaamaEnabled.value) {
       await _svc.subscribeToTopic(_fcmTopic);
     } else {
@@ -273,6 +286,7 @@ class NotificationSettingsController extends GetxService {
     customReminders.add(r);
     await _saveCustomReminders();
     await _applyCustomReminder(r);
+    Get.find<AnalyticsService>().logCustomReminderAdded();
   }
 
   Future<void> toggleCustomReminder(int id) async {

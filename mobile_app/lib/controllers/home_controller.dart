@@ -12,6 +12,7 @@ import '../services/firebase_category_service.dart';
 import '../services/firebase_content_service.dart';
 import '../services/local_content_service.dart';
 import '../services/transcript_sync_service.dart';
+import '../services/analytics_service.dart';
 import '../services/shared_prefs_service.dart';
 
 class HomeController extends GetxController {
@@ -149,6 +150,11 @@ class HomeController extends GetxController {
   }
 
   void _openPrayer(ContentItem item) async {
+    Get.find<AnalyticsService>().logPrayerOpened(
+      prayerId: item.id,
+      prayerName: item.titles.getForLanguage('en'),
+    );
+
     final localMetadata = _localContentService.getSyncMetadata(item.id);
 
     final title = item.titles.getForLanguage(currentLang.value);

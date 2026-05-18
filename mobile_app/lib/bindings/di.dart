@@ -24,6 +24,7 @@ import 'package:nitnem/services/transcript_sync_service.dart';
 import 'package:nitnem/services/share_service.dart';
 import 'package:nitnem/controllers/notification_settings_controller.dart';
 import 'package:nitnem/services/notification_service.dart';
+import 'package:nitnem/services/analytics_service.dart';
 import 'package:nitnem/services/support_service.dart';
 
 import '../controllers/home_controller.dart';
@@ -53,6 +54,7 @@ class DependencyInjection {
     Get.put(LocalContentService(SharedPrefsService.instance));
     Get.put(ShareService());
     Get.put(SupportService());
+    Get.put(AnalyticsService());
 
     // Domain layer
     Get.put(TranscriptPathService(storageService: Get.find()));
