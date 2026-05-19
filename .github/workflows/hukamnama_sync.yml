@@ -1,0 +1,57 @@
+name: Daily Hukamnama Sync
+
+on:
+  schedule:
+    # 04:00 UTC = 09:30 IST — after Hukamnama is published at Sri Harmandir Sahib
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Trigger Hukamnama Sync
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wake backend and sync Hukamnama
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          SYNC_API_KEY: ${{ secrets.SYNC_API_KEY }}
+        run: |
+          # Render free tier may be asleep — allow up to 3 min for cold start + processing
+          # The backend is idempotent so retrying on failure is safe
+          MAX_ATTEMPTS=3
+          ATTEMPT=0
+          SUCCESS=false
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "=== Attempt $ATTEMPT of $MAX_ATTEMPTS ==="
+
+            HTTP_STATUS=$(curl --silent --output /tmp/response.json \
+              --write-out "%{http_code}" \
+              --max-time 180 \
+              -X POST \
+              -H "x-api-key: ${SYNC_API_KEY}" \
+              -H "Content-Type: application/json" \
+              "${BACKEND_URL}/sync-hukamnama")
+
+            echo "HTTP status: $HTTP_STATUS"
+            echo "Response: $(cat /tmp/response.json)"
+
+            if [ "$HTTP_STATUS" = "200" ] && \
+               cat /tmp/response.json | python3 -c "import sys,json; d=json.load(sys.stdin); sys.exit(0 if d.get('success') else 1)"; then
+              echo "Sync succeeded."
+              SUCCESS=true
+              break
+            fi
+
+            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+              echo "Attempt $ATTEMPT failed — retrying in 60s..."
+              sleep 60
+            fi
+          done
+
+          if [ "$SUCCESS" != "true" ]; then
+            echo "All $MAX_ATTEMPTS attempts failed."
+            exit 1
+          fi

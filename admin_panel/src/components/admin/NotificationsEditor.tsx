@@ -39,7 +39,7 @@ export function NotificationsEditor({ settings, onChange, saving, dirty, lastPub
     setSendResult(null)
     try {
       await sendBroadcast(broadcastTitle.trim(), broadcastBody.trim())
-      setSendResult({ ok: true, msg: 'Queued successfully. Users will see it on next app open.' })
+      setSendResult({ ok: true, msg: 'Broadcast sent successfully. Users will receive a push notification shortly.' })
       setBroadcastTitle('')
       setBroadcastBody('')
       void loadHistory()

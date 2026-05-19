@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: bani-sagar-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Set these in the Render dashboard (never commit secrets)
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false
+      - key: SYNC_API_KEY
+        sync: false
