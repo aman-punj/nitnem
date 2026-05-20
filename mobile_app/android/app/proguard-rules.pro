@@ -52,6 +52,11 @@
 -keepattributes InnerClasses
 -keepattributes EnclosingMethod
 
+# ---------------- App Widgets ----------------
+
+-keep class com.banisagar.app.HukamnamaWidget { *; }
+-keep class * extends android.appwidget.AppWidgetProvider { *; }
+
 # ---------------- Enum Safety ----------------
 
 -keepclassmembers enum * {

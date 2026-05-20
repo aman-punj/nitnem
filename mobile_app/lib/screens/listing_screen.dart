@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/home_controller.dart';
+import 'package:nitnem/controllers/hukamnama_controller.dart';
 import 'package:nitnem/controllers/language_controller.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/core/design_system/widgets/bani_tiles.dart';
+import 'package:nitnem/core/design_system/widgets/hukamnama_sheet.dart';
 import 'package:nitnem/models/content_category.dart';
 import 'package:nitnem/models/content_item.dart';
+import 'package:nitnem/models/hukamnama_model.dart';
 import 'package:nitnem/services/content_grouping_service.dart';
 
 class ListingScreen extends StatelessWidget {
@@ -48,6 +51,9 @@ class ListingScreen extends StatelessWidget {
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
+            // ─── Hukamnama Card ───────────────────────────────────────────
+            SliverToBoxAdapter(child: _HukamnamaCard()),
+
             // ─── Search Bar ───────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
@@ -202,5 +208,152 @@ class ListingScreen extends StatelessWidget {
       case 'live':   return Icons.live_tv_rounded;
       default:       return Icons.auto_stories_outlined;
     }
+  }
+}
+
+// ── Hukamnama card ────────────────────────────────────────────────────────────
+
+class _HukamnamaCard extends StatelessWidget {
+  const _HukamnamaCard();
+
+  void _openSheet(BuildContext context, HukamnamaModel data) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, __) => HukamnamaSheet(data: data),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
+    final ctrl = Get.find<HukamnamaController>();
+
+    return Obx(() {
+      final data = ctrl.hukamnama.value;
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+        child: GestureDetector(
+          onTap: data != null ? () => _openSheet(context, data) : null,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: c.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: c.borderGold.withValues(alpha: 0.25)),
+            ),
+            child: data == null ? _buildLoading(c) : _buildContent(c, data),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildLoading(SacredColors c) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Hukamnama Sahib',
+              style: SacredTypography.bodySm.copyWith(
+                color: c.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Spacer(),
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                color: c.primaryAccent,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          height: 13,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: c.outlineVariant.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(height: 7),
+        Container(
+          height: 13,
+          width: 180,
+          decoration: BoxDecoration(
+            color: c.outlineVariant.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContent(SacredColors c, HukamnamaModel data) {
+    final lines = data.gurmukhi
+        .split('\n')
+        .where((l) => l.trim().isNotEmpty)
+        .toList();
+    final preview = lines.take(2).join('\n');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'Hukamnama Sahib',
+              style: SacredTypography.bodySm.copyWith(
+                color: c.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              data.date,
+              style: SacredTypography.bodySm.copyWith(color: c.textSecondary),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Text(
+          preview,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 15,
+            height: 1.7,
+            color: c.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              'Read full Hukamnama',
+              style: SacredTypography.bodySm.copyWith(color: c.primaryAccent),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.arrow_forward_rounded, size: 14, color: c.primaryAccent),
+          ],
+        ),
+      ],
+    );
   }
 }

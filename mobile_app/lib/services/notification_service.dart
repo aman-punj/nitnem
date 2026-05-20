@@ -2,6 +2,7 @@ import 'package:audio_session/audio_session.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart' as ph;
 import 'package:timezone/data/latest.dart' as tz;
@@ -22,6 +23,8 @@ class NotificationService extends GetxService {
 
   Future<NotificationService> init() async {
     tz.initializeTimeZones();
+    final localTz = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(localTz));
 
     const android = AndroidInitializationSettings('ic_notification');
     const ios = DarwinInitializationSettings(
