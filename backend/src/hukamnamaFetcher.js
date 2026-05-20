@@ -2,7 +2,7 @@
 
 const logger = require('./logger');
 
-const HUKAMNAMA_API_URL = 'https://dev-api.gurbaninow.com/v2/hukamnama/today';
+const HUKAMNAMA_URL = 'https://hukamnama.khalsa.tech/';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 2000;
 
@@ -15,19 +15,19 @@ async function fetchHukamnama() {
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      logger.info(`Fetching Hukamnama from GurbaniNow (attempt ${attempt})`);
+      logger.info(`Fetching Hukamnama from khalsa.tech (attempt ${attempt})`);
 
-      const res = await fetch(HUKAMNAMA_API_URL, {
-        headers: { Accept: 'application/json' },
+      const res = await fetch(HUKAMNAMA_URL, {
+        headers: { Accept: 'text/html' },
         signal: AbortSignal.timeout(15_000),
       });
 
       if (!res.ok) {
-        throw new Error(`GurbaniNow API responded with HTTP ${res.status}`);
+        throw new Error(`khalsa.tech responded with HTTP ${res.status}`);
       }
 
-      const json = await res.json();
-      return normalizeHukamnama(json);
+      const html = await res.text();
+      return parseHukamnamaHtml(html);
     } catch (err) {
       lastError = err;
       logger.warn(`Fetch attempt ${attempt} failed`, { error: err.message });
@@ -40,61 +40,52 @@ async function fetchHukamnama() {
   );
 }
 
-function normalizeHukamnama(raw) {
-  const { date, hukamnama } = raw ?? {};
+function stripTags(html) {
+  return html.replace(/<[^>]+>/g, '').trim();
+}
 
-  if (!date || !hukamnama) {
-    throw new Error('Invalid API response: missing "date" or "hukamnama" fields');
+function parseHukamnamaHtml(html) {
+  // Extract <main id="hukamnama">...</main>
+  const mainMatch = html.match(/<main[^>]*id="hukamnama"[^>]*>([\s\S]*?)<\/main>/i);
+  if (!mainMatch) {
+    throw new Error('Validation failed: <main id="hukamnama"> not found in response');
+  }
+  const mainContent = mainMatch[1];
+
+  // First <h3> is the raag / shabad header
+  const h3Match = mainContent.match(/<h3>([\s\S]*?)<\/h3>/i);
+  const raagLine = h3Match ? stripTags(h3Match[1]) : '';
+
+  // All <div> elements are the shabad lines
+  const divMatches = [...mainContent.matchAll(/<div>([\s\S]*?)<\/div>/gi)];
+  const lines = divMatches.map((m) => stripTags(m[1])).filter(Boolean);
+
+  if (lines.length === 0) {
+    throw new Error('Validation failed: no shabad lines found in response');
   }
 
-  // Build ISO date string from gregorian fields
-  const greg = date.gregorian ?? {};
-  const monthNo =
-    typeof greg.month === 'object' ? greg.month?.no : greg.month;
-  if (!greg.year || !monthNo || !greg.date) {
-    throw new Error('Invalid API response: incomplete gregorian date fields');
-  }
-  const dateStr = [
-    greg.year,
-    String(monthNo).padStart(2, '0'),
-    String(greg.date).padStart(2, '0'),
+  // Combine raag header + shabad lines
+  const gurmukhi = [raagLine, ...lines].filter(Boolean).join('\n');
+
+  const source = raagLine
+    ? `Sri Darbar Sahib, Amritsar — ${raagLine}`
+    : 'Sri Darbar Sahib, Amritsar';
+
+  // This endpoint always returns today's Hukamnama
+  const now = new Date();
+  const date = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
   ].join('-');
 
-  const lines = Array.isArray(hukamnama.lines) ? hukamnama.lines : [];
-
-  const gurmukhi = lines
-    .map((l) => l?.line?.gurmukhi?.unicode ?? '')
-    .filter(Boolean)
-    .join(' ');
-
-  if (!gurmukhi) {
-    throw new Error('Validation failed: gurmukhi text is empty in API response');
-  }
-
-  const translationEnglish = lines
-    .map((l) => {
-      const en = l?.line?.translation?.en ?? {};
-      return en.bdb || en.ssk || en.ms || '';
-    })
-    .filter(Boolean)
-    .join(' ');
-
-  const translationPunjabi = lines
-    .map((l) => l?.line?.translation?.pu?.bdb?.unicode ?? '')
-    .filter(Boolean)
-    .join(' ');
-
-  const src = hukamnama.source ?? {};
-  const ang = hukamnama.ang;
-  const source = [
-    src.english || 'Sri Guru Granth Sahib Ji',
-    ang ? `Ang ${ang}` : null,
-    src.raagName?.EN ? `Raag ${src.raagName.EN}` : null,
-  ]
-    .filter(Boolean)
-    .join(', ');
-
-  return { date: dateStr, gurmukhi, translationEnglish, translationPunjabi, source };
+  return {
+    date,
+    gurmukhi,
+    translationEnglish: '',
+    translationPunjabi: '',
+    source,
+  };
 }
 
 module.exports = { fetchHukamnama };

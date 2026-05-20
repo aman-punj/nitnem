@@ -1,11 +1,10 @@
 import { initializeApp } from 'firebase/app'
 import {
-  GoogleAuthProvider,
   browserLocalPersistence,
   getAuth,
   onAuthStateChanged,
   setPersistence,
-  signInWithPopup,
+  signInWithEmailAndPassword,
   signOut,
   type User,
 } from 'firebase/auth'
@@ -16,9 +15,6 @@ import { envConfig } from '../config/env'
 const app = initializeApp(envConfig.firebase)
 export const db = getFirestore(app)
 export const auth = getAuth(app)
-
-const provider = new GoogleAuthProvider()
-provider.setCustomParameters({ prompt: 'select_account' })
 
 export function isAllowedAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false
@@ -33,16 +29,16 @@ export function onAdminAuthChange(callback: (user: User | null) => void): () => 
   return onAuthStateChanged(auth, callback)
 }
 
-export async function signInAdminWithGoogle(): Promise<User> {
-  const result = await signInWithPopup(auth, provider)
-  const user = result.user
+export async function signInAdmin(email: string, password: string): Promise<User> {
+  await initAuthPersistence()
+  const result = await signInWithEmailAndPassword(auth, email, password)
 
-  if (!isAllowedAdminEmail(user.email)) {
+  if (!isAllowedAdminEmail(result.user.email)) {
     await signOut(auth)
-    throw new Error('Access denied: this Google account is not in the admin allowlist.')
+    throw new Error('Access denied: this account is not in the admin allowlist.')
   }
 
-  return user
+  return result.user
 }
 
 export async function signOutAdmin(): Promise<void> {

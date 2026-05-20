@@ -18,39 +18,37 @@ import 'package:nitnem/bindings/di.dart';
 import 'package:nitnem/firebase_options.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  runZonedGuarded<Future<void>>(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+
+      await FirebaseCrashlytics.instance
+          .setCrashlyticsCollectionEnabled(!kDebugMode);
+      FlutterError.onError =
+          FirebaseCrashlytics.instance.recordFlutterFatalError;
+      PlatformDispatcher.instance.onError = (error, stack) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        return true;
+      };
+
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+      await SharedPrefsService.init();
+      await DependencyInjection.init();
+
+      runApp(const MyApp());
+
+      await DependencyInjection.initAudioBackground();
+    },
+    (error, stack) =>
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true),
   );
-
-  await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
-
-  // Must be registered before runApp so the isolate is ready for background FCM.
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-  await SharedPrefsService.init();
-  await DependencyInjection.init();
-
-  // runApp() first so the Flutter SplashScreen shows immediately.
-  // AudioService.init() (called inside initAudioBackground) requires the Flutter
-  // engine to be running — calling it before runApp() can hang on some Android
-  // devices because the method channel isn't fully ready yet.
-  runZonedGuarded(
-    () => runApp(const MyApp()),
-    (error, stack) => FirebaseCrashlytics.instance.recordError(error, stack, fatal: true),
-  );
-
-  // Initialize background audio after Flutter is running. Takes up to 8 s on
-  // slow devices; the SplashScreen covers that wait gracefully.
-  await DependencyInjection.initAudioBackground();
 }
 
 class MyApp extends StatelessWidget {

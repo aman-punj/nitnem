@@ -59,8 +59,28 @@ function requireApiKey(req, res, next) {
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', ts: new Date().toISOString() });
+app.get('/health', async (_req, res) => {
+  const start = Date.now();
+  const checks = {};
+
+  // Firestore ping — lightweight read against a known doc
+  try {
+    await admin.firestore().collection('hukamnama').doc('today').get();
+    checks.firestore = 'ok';
+  } catch (err) {
+    checks.firestore = `error: ${err.message}`;
+  }
+
+  const allOk = Object.values(checks).every((v) => v === 'ok');
+
+  res.status(allOk ? 200 : 503).json({
+    status: allOk ? 'ok' : 'degraded',
+    ts: new Date().toISOString(),
+    uptimeSeconds: Math.floor(process.uptime()),
+    project: serviceAccount.project_id,
+    checks,
+    responseMs: Date.now() - start,
+  });
 });
 
 // Triggered by GitHub Actions cron — protected by static API key

@@ -7,5 +7,4 @@
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/hukamnama_widget"
     android:resizeMode="horizontal|vertical"
-    android:widgetCategory="home_screen"
-    android:description="Daily Hukamnama Sahib from Bani Sagar" />
+    android:widgetCategory="home_screen" />
