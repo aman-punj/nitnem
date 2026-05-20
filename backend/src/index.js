@@ -1,5 +1,6 @@
 'use strict';
 
+const cors = require('cors');
 const express = require('express');
 const admin = require('firebase-admin');
 const { syncHukamnama } = require('./syncHandler');
@@ -30,14 +31,7 @@ logger.info('Firebase Admin SDK initialised', { project: serviceAccount.project_
 
 const app = express();
 
-// CORS — admin panel is hosted on a different origin (Firebase Hosting)
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  next();
-});
+app.use(cors({ origin: '*', allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'] }));
 
 app.use(express.json());
 
