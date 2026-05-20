@@ -46,6 +46,19 @@
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notification" />
 
+        <!-- Hukamnama home-screen widget -->
+        <receiver
+            android:name=".HukamnamaWidget"
+            android:exported="true"
+            android:label="Hukamnama Sahib">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hukamnama_widget_info" />
+        </receiver>
+
         <!-- Audio Service -->
         <service
             android:name="com.ryanheise.audioservice.AudioService"

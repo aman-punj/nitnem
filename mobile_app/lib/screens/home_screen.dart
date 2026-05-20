@@ -2,7 +2,9 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:nitnem/controllers/hukamnama_controller.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
+import 'package:nitnem/core/design_system/widgets/hukamnama_sheet.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_sheet.dart';
 import 'package:nitnem/screens/listing_screen.dart';
 import 'package:nitnem/screens/settings_screen.dart';
@@ -28,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _maybeShowPermissionSheet();
+      _maybeShowHukamnamaSheet();
     });
   }
 
@@ -67,6 +70,31 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
     );
+  }
+
+  void _maybeShowHukamnamaSheet() {
+    final ctrl = Get.find<HukamnamaController>();
+    if (!ctrl.shouldShowTodaySheet()) return;
+
+    // Wait for the controller to finish fetching before showing
+    ever(ctrl.hukamnama, (data) {
+      if (data == null) return;
+      if (!ctrl.shouldShowTodaySheet()) return;
+      ctrl.markSheetShown();
+      showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (_) => DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.4,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (_, scrollController) =>
+              HukamnamaSheet(data: data),
+        ),
+      );
+    });
   }
 
   @override

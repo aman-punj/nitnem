@@ -19,7 +19,13 @@
       "Bash(dir \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\.github\" /b /s)",
       "Bash(dir \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\firebase.json\")",
       "Bash(dir \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\.github\\\\workflows\" /b)",
-      "PowerShell(Remove-Item -Recurse -Force \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\functions\" -Confirm:$false)"
+      "PowerShell(Remove-Item -Recurse -Force \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\functions\" -Confirm:$false)",
+      "Bash(dir \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\android\\\\app\\\\src\\\\main\" /b /s)",
+      "Bash(dir \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\android\\\\app\\\\src\\\\main\\\\kotlin\\\\com\" /b /s)",
+      "Bash(dir \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\android\\\\app\\\\src\\\\main\\\\kotlin\\\\com\\\\banisagar\" /b /s)",
+      "Bash(dir \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\android\\\\app\\\\src\\\\main\\\\kotlin\\\\com\\\\banisagar\\\\nitnem\" /b /s)",
+      "Bash(dir \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\android\\\\app\\\\src\\\\main\\\\kotlin\\\\com\\\\banisagar\\\\app\" /b /s)",
+      "Bash(dir \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\android\\\\app\\\\src\\\\main\\\\res\\\\values\" /b)"
     ]
   }
 }

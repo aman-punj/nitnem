@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/hukamnama_widget_bg"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <!-- Header: app name + date -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="BANI SAGAR"
+            android:textColor="#F2CA50"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.12" />
+
+        <TextView
+            android:id="@+id/widget_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="#99A89880"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="10dp"
+        android:background="#33F2CA50" />
+
+    <!-- Gurmukhi text -->
+    <TextView
+        android:id="@+id/widget_gurmukhi"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text="ਹੁਕਮਨਾਮਾ ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ…"
+        android:textColor="#F2EDE0"
+        android:textSize="14sp"
+        android:lineSpacingMultiplier="1.6"
+        android:ellipsize="end"
+        android:maxLines="4" />
+
+    <!-- Footer label -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Tap to read full Hukamnama"
+        android:textColor="#66F2EDE0"
+        android:textSize="9sp" />
+
+</LinearLayout>

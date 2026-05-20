@@ -22,7 +22,9 @@ import 'package:nitnem/services/shared_prefs_service.dart';
 import 'package:nitnem/services/preference_service.dart';
 import 'package:nitnem/services/transcript_sync_service.dart';
 import 'package:nitnem/services/share_service.dart';
+import 'package:nitnem/controllers/hukamnama_controller.dart';
 import 'package:nitnem/controllers/notification_settings_controller.dart';
+import 'package:nitnem/services/hukamnama_service.dart';
 import 'package:nitnem/services/notification_service.dart';
 import 'package:nitnem/services/analytics_service.dart';
 import 'package:nitnem/services/support_service.dart';
@@ -64,6 +66,7 @@ class DependencyInjection {
     Get.put(AppInfoController(
       service: FirebaseAppInfoService(firestoreInstance: FirebaseFirestore.instance),
     ));
+    Get.put(HukamnamaController(service: HukamnamaService()));
     Get.put(HomeController(
       firebaseContentService: Get.find(),
       firebaseCategoryService: Get.find(),
