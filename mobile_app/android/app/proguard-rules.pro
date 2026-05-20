@@ -52,6 +52,21 @@
 -keepattributes InnerClasses
 -keepattributes EnclosingMethod
 
+# ---------------- Timezone ----------------
+
+-keep class com.flutter_timezone.** { *; }
+-dontwarn com.flutter_timezone.**
+
+# ---------------- Permission Handler ----------------
+
+-keep class com.baseflow.permissionhandler.** { *; }
+-dontwarn com.baseflow.permissionhandler.**
+
+# ---------------- Home Widget ----------------
+
+-keep class es.antonborri.home_widget.** { *; }
+-dontwarn es.antonborri.home_widget.**
+
 # ---------------- App Widgets ----------------
 
 -keep class com.banisagar.app.HukamnamaWidget { *; }
