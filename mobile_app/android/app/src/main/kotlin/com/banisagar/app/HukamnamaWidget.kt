@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.widget.RemoteViews
 import com.banisagar.app.R
 
@@ -39,9 +40,10 @@ class HukamnamaWidget : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_gurmukhi, gurmukhi)
             views.setTextViewText(R.id.widget_date, date)
 
-            // Tap opens the app
+            // Tap opens the app and routes to the Hukamnama detail sheet
             val launchIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                data = Uri.parse("banisagar://hukamnama")
             }
             val pendingIntent = PendingIntent.getActivity(
                 context, 0, launchIntent,

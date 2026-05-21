@@ -33,8 +33,8 @@
             android:textSize="10sp" />
     </LinearLayout>
 
-    <!-- Divider -->
-    <View
+    <!-- Divider: plain View is blocked in RemoteViews on Android 12+; use TextView instead -->
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginTop="8dp"
