@@ -49,7 +49,7 @@ class _HukamnamaScreenState extends State<HukamnamaScreen>
     tabs.add((label: 'ਗੁਰਬਾਣੀ', content: widget.data.gurmukhi));
     if (widget.data.translationPunjabi.isNotEmpty) {
       tabs.add((
-        label: 'ਪੰਜਾਬੀ',
+        label: 'ਵਿਆਖਿਆ',
         content: widget.data.translationPunjabi,
       ));
     }
@@ -140,7 +140,7 @@ class _HukamnamaScreenState extends State<HukamnamaScreen>
               controller: _tabController,
               children: tabs.map((t) => _ContentTab(
                     content: t.content,
-                    isGurmukhi: t.label == 'ਗੁਰਬਾਣੀ',
+                    largeFontGurmukhi: t.label == 'ਗੁਰਬਾਣੀ',
                   )).toList(),
             ),
           ),
@@ -175,10 +175,10 @@ class _HukamnamaScreenState extends State<HukamnamaScreen>
 }
 
 class _ContentTab extends StatelessWidget {
-  const _ContentTab({required this.content, required this.isGurmukhi});
+  const _ContentTab({required this.content, required this.largeFontGurmukhi});
 
   final String content;
-  final bool isGurmukhi;
+  final bool largeFontGurmukhi;
 
   @override
   Widget build(BuildContext context) {
@@ -187,7 +187,7 @@ class _ContentTab extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
       child: Text(
         content,
-        style: isGurmukhi
+        style: largeFontGurmukhi
             ? TextStyle(
                 fontSize: 19,
                 height: 2.1,

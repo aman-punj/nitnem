@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:nitnem/controllers/hukamnama_controller.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
-import 'package:nitnem/core/design_system/widgets/hukamnama_sheet.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_sheet.dart';
 import 'package:nitnem/models/hukamnama_model.dart';
 import 'package:nitnem/screens/hukamnama_screen.dart';
@@ -30,26 +30,45 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _kAppOpenCount = 'app_open_count';
 
   StreamSubscription<Uri?>? _widgetClickSub;
+  StreamSubscription<RemoteMessage>? _fcmOpenedSub;
 
   @override
   void initState() {
     super.initState();
+
+    // Route notification taps (local notifications with hukamnama payload)
+    Get.find<NotificationService>().onHukamnamaTap = _openHukamnamaDetail;
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _maybeShowPermissionSheet();
-      _maybeShowHukamnamaSheet();
-      // Cold-start: app launched by tapping the widget
-      final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
-      if (uri != null) _openHukamnamaDetail();
+      _maybeOpenHukamnamaScreen();
+
+      // Widget cold-start (app launched by tapping the home widget)
+      final widgetUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
+      if (widgetUri != null) _openHukamnamaDetail();
+
+      // FCM terminated-start (app opened by tapping a push notification)
+      final initialMsg =
+          await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMsg != null) _openHukamnamaDetail();
     });
-    // Warm-start: widget tapped while app is already running
+
+    // Widget warm-start (widget tapped while app is running)
     _widgetClickSub = HomeWidget.widgetClicked.listen((uri) {
       if (uri != null) _openHukamnamaDetail();
+    });
+
+    // FCM background-start (notification tapped while app is in background)
+    _fcmOpenedSub = FirebaseMessaging.onMessageOpenedApp.listen((_) {
+      _openHukamnamaDetail();
     });
   }
 
   @override
   void dispose() {
     _widgetClickSub?.cancel();
+    _fcmOpenedSub?.cancel();
+    Get.find<NotificationService>().onHukamnamaTap = null;
     super.dispose();
   }
 
@@ -59,23 +78,41 @@ class _HomeScreenState extends State<HomeScreen> {
     if (data != null) {
       Get.to(() => HukamnamaScreen(data: data));
     } else {
-      // Data still loading — navigate as soon as it arrives
       once(ctrl.hukamnama, (HukamnamaModel? d) {
         if (d != null) Get.to(() => HukamnamaScreen(data: d));
       });
     }
   }
 
+  /// Opens Hukamnama screen directly on the first daily launch (no sheet).
+  void _maybeOpenHukamnamaScreen() {
+    final ctrl = Get.find<HukamnamaController>();
+    if (!ctrl.isEnabled.value) return;
+    if (!ctrl.shouldShowTodaySheet()) return;
+
+    if (ctrl.hukamnama.value != null) {
+      ctrl.markSheetShown();
+      Get.to(() => HukamnamaScreen(data: ctrl.hukamnama.value!));
+      return;
+    }
+
+    once(ctrl.hukamnama, (HukamnamaModel? data) {
+      if (data == null) return;
+      if (!ctrl.isEnabled.value) return;
+      if (!ctrl.shouldShowTodaySheet()) return;
+      ctrl.markSheetShown();
+      Get.to(() => HukamnamaScreen(data: data));
+    });
+  }
+
   void _maybeShowPermissionSheet() {
     final prefs = SharedPrefsService.instance;
 
-    // Never show again once the user has accepted
     if (prefs.getBool(_kPermAccepted) ?? false) return;
 
     final openCount = (prefs.getInt(_kAppOpenCount) ?? 0) + 1;
     prefs.setInt(_kAppOpenCount, openCount);
 
-    // If a deferred open target is set and we haven't reached it yet, skip
     final nextOpen = prefs.getInt(_kPermNextOpen);
     if (nextOpen != null && openCount < nextOpen) return;
 
@@ -95,40 +132,12 @@ class _HomeScreenState extends State<HomeScreen> {
           Get.find<NotificationService>().requestPermissions();
         },
         onSecondaryPressed: () {
-          // Re-prompt after a random 10–20 opens
           final next = openCount + 10 + Random().nextInt(11);
           prefs.setInt(_kPermNextOpen, next);
           Navigator.pop(context);
         },
       ),
     );
-  }
-
-  void _maybeShowHukamnamaSheet() {
-    final ctrl = Get.find<HukamnamaController>();
-    if (!ctrl.isEnabled.value) return;
-    if (!ctrl.shouldShowTodaySheet()) return;
-
-    // Wait for the controller to finish fetching before showing
-    ever(ctrl.hukamnama, (data) {
-      if (data == null) return;
-      if (!ctrl.isEnabled.value) return;
-      if (!ctrl.shouldShowTodaySheet()) return;
-      ctrl.markSheetShown();
-      showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (_) => DraggableScrollableSheet(
-          initialChildSize: 0.75,
-          minChildSize: 0.4,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (_, scrollController) =>
-              HukamnamaSheet(data: data),
-        ),
-      );
-    });
   }
 
   @override

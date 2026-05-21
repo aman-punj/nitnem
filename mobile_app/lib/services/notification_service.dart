@@ -18,6 +18,9 @@ class NotificationService extends GetxService {
       FlutterLocalNotificationsPlugin();
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
 
+  /// Set by HomeScreen to handle hukamnama notification taps.
+  void Function()? onHukamnamaTap;
+
   static const _channelId = 'nitnem_daily';
   static const _channelName = 'Daily Nitnem Reminders';
 
@@ -38,6 +41,11 @@ class NotificationService extends GetxService {
     );
     await _plugin.initialize(
       const InitializationSettings(android: android, iOS: ios),
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        if (response.payload == 'hukamnama') {
+          onHukamnamaTap?.call();
+        }
+      },
     );
 
     final session = await AudioSession.instance;
@@ -57,10 +65,12 @@ class NotificationService extends GetxService {
   void _onForegroundMessage(RemoteMessage message) {
     final notification = message.notification;
     if (notification == null) return;
+    final isHukamnama = message.data['type'] == 'hukamnama';
     showNotification(
       id: message.hashCode,
       title: notification.title ?? '',
       body: notification.body ?? '',
+      payload: isHukamnama ? 'hukamnama' : null,
     );
   }
 
@@ -173,6 +183,7 @@ class NotificationService extends GetxService {
     required int id,
     required String title,
     required String body,
+    String? payload,
   }) async {
     await _plugin.show(
       id,
@@ -186,6 +197,7 @@ class NotificationService extends GetxService {
           priority: Priority.high,
         ),
       ),
+      payload: payload,
     );
   }
 
