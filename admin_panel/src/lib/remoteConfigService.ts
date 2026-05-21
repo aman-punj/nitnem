@@ -54,6 +54,10 @@ export async function fetchRemoteConfig(): Promise<RemoteConfig> {
       ...DEFAULT_REMOTE_CONFIG.storeUrl,
       ...(data.storeUrl ?? {}),
     },
+    features: {
+      ...DEFAULT_REMOTE_CONFIG.features,
+      ...(data.features ?? {}),
+    },
   }
 }
 
@@ -76,6 +80,7 @@ export async function saveRemoteConfig(config: RemoteConfig): Promise<RemoteConf
     messages: config.messages,
     maintenance: config.maintenance,
     storeUrl: config.storeUrl,
+    features: config.features,
     updatedAt: serverTimestamp(),
     updatedBy: auth.currentUser?.email ?? 'unknown',
   }

@@ -9,6 +9,7 @@ import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/widgets/hukamnama_sheet.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_sheet.dart';
 import 'package:nitnem/models/hukamnama_model.dart';
+import 'package:nitnem/screens/hukamnama_screen.dart';
 import 'package:nitnem/screens/listing_screen.dart';
 import 'package:nitnem/screens/settings_screen.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
@@ -56,29 +57,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final ctrl = Get.find<HukamnamaController>();
     final data = ctrl.hukamnama.value;
     if (data != null) {
-      _showHukamnamaSheet(data);
+      Get.to(() => HukamnamaScreen(data: data));
     } else {
-      // Data still loading — show as soon as it arrives
+      // Data still loading — navigate as soon as it arrives
       once(ctrl.hukamnama, (HukamnamaModel? d) {
-        if (d != null) _showHukamnamaSheet(d);
+        if (d != null) Get.to(() => HukamnamaScreen(data: d));
       });
     }
-  }
-
-  void _showHukamnamaSheet(HukamnamaModel data) {
-    if (!mounted) return;
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        minChildSize: 0.4,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (_, __) => HukamnamaSheet(data: data),
-      ),
-    );
   }
 
   void _maybeShowPermissionSheet() {
@@ -121,11 +106,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _maybeShowHukamnamaSheet() {
     final ctrl = Get.find<HukamnamaController>();
+    if (!ctrl.isEnabled.value) return;
     if (!ctrl.shouldShowTodaySheet()) return;
 
     // Wait for the controller to finish fetching before showing
     ever(ctrl.hukamnama, (data) {
       if (data == null) return;
+      if (!ctrl.isEnabled.value) return;
       if (!ctrl.shouldShowTodaySheet()) return;
       ctrl.markSheetShown();
       showModalBottomSheet<void>(

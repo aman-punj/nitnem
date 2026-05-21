@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
+import 'package:nitnem/controllers/language_controller.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/content_category.dart';
@@ -13,7 +14,6 @@ import '../services/firebase_content_service.dart';
 import '../services/local_content_service.dart';
 import '../services/transcript_sync_service.dart';
 import '../services/analytics_service.dart';
-import '../services/shared_prefs_service.dart';
 
 class HomeController extends GetxController {
   final FirebaseContentService _firebaseContentService;
@@ -37,13 +37,11 @@ class HomeController extends GetxController {
   final RxList<ContentItem> contentItems = <ContentItem>[].obs;
   final RxList<ContentCategory> categories = <ContentCategory>[].obs;
   final RxBool isLoading = false.obs;
-  final RxString currentLang = 'pa'.obs;
   final RxString searchQuery = ''.obs;
 
   @override
   void onInit() {
     super.onInit();
-    currentLang.value = SharedPrefsService.getLanguage();
     _loadInitialContent();
     _checkUpdate();
   }
@@ -155,14 +153,11 @@ class HomeController extends GetxController {
       prayerName: item.titles.getForLanguage('en'),
     );
 
+    final lang = Get.find<LanguageController>().currentLang.value;
     final localMetadata = _localContentService.getSyncMetadata(item.id);
-
-    final title = item.titles.getForLanguage(currentLang.value);
-
-    // Rely on synced local paths. Fallback removed as per task to remove old path assumptions.
+    final title = item.titles.getForLanguage(lang);
     final audioPath = localMetadata?.audioLocalPath;
-    final transcriptPath =
-        localMetadata?.transcriptLocalPaths[currentLang.value];
+    final transcriptPath = localMetadata?.transcriptLocalPaths[lang];
 
     Get.to(() => PrayerPage(
           title: title,
@@ -171,7 +166,7 @@ class HomeController extends GetxController {
           audioIsLocalFile: audioPath != null,
           transcriptIsLocalFile: transcriptPath != null,
           contentItem: item,
-          currentLang: currentLang.value,
+          currentLang: lang,
         ));
   }
 

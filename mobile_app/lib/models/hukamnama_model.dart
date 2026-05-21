@@ -22,4 +22,14 @@ class HukamnamaModel {
       source: map['source'] as String? ?? '',
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'date': date,
+      'gurmukhi': gurmukhi,
+      'translationEnglish': translationEnglish,
+      'translationPunjabi': translationPunjabi,
+      'source': source,
+    };
+  }
 }

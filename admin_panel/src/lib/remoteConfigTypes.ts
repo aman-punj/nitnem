@@ -23,6 +23,9 @@ export type RemoteConfig = {
     android: string
     ios: string
   }
+  features: {
+    hukamnamaEnabled: boolean
+  }
   updatedAt?: unknown
   updatedBy?: string
 }
@@ -63,6 +66,9 @@ export const DEFAULT_REMOTE_CONFIG: RemoteConfig = {
   storeUrl: {
     android: '',
     ios: '',
+  },
+  features: {
+    hukamnamaEnabled: true,
   },
 }
 

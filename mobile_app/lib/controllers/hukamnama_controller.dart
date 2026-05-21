@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:home_widget/home_widget.dart';
@@ -16,6 +17,7 @@ class HukamnamaController extends GetxController {
       : _service = service ?? HukamnamaService();
 
   final Rx<HukamnamaModel?> hukamnama = Rx<HukamnamaModel?>(null);
+  final isEnabled = true.obs;
 
   @override
   void onInit() {
@@ -24,6 +26,19 @@ class HukamnamaController extends GetxController {
   }
 
   Future<void> _fetchAndSync() async {
+    try {
+      final configDoc = await FirebaseFirestore.instance
+          .collection('app_config')
+          .doc('mobile')
+          .get();
+      final enabled =
+          configDoc.data()?['features']?['hukamnamaEnabled'] as bool? ?? true;
+      isEnabled.value = enabled;
+      if (!enabled) return;
+    } catch (_) {
+      // Default to enabled if config can't be fetched
+    }
+
     final data = await _service.fetchToday();
     if (data == null) return;
     hukamnama.value = data;

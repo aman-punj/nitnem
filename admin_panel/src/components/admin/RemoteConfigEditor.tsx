@@ -64,6 +64,16 @@ export function RemoteConfigEditor({ appConfig, onChange }: RemoteConfigEditorPr
   return (
     <div className="remote-config-editor stack">
       <div className="card">
+        <h3>Features</h3>
+        <ToggleRow
+          label="Hukamnama"
+          description="Show daily Hukamnama card on the home screen and bottom sheet on app open."
+          checked={appConfig.features.hukamnamaEnabled}
+          onChange={(value) => updateConfig({ features: { hukamnamaEnabled: value } })}
+        />
+      </div>
+
+      <div className="card">
         <h3>Maintenance</h3>
         <ToggleRow
           label="Enable Maintenance Mode"

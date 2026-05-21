@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../models/hukamnama_model.dart';
+import '../../../screens/hukamnama_screen.dart';
 import '../tokens/colors.dart';
 import '../tokens/typography.dart';
 
@@ -36,7 +38,7 @@ class HukamnamaSheet extends StatelessWidget {
           ),
           Flexible(
             child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(24, 12, 24, bottom + 32),
+              padding: EdgeInsets.fromLTRB(24, 12, 24, bottom + 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -46,7 +48,7 @@ class HukamnamaSheet extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'Hukamnama Sahib',
+                          'ਹੁਕਮਨਾਮਾ ਸਾਹਿਬ',
                           style: SacredTypography.headlineMd
                               .copyWith(color: c.primary),
                         ),
@@ -72,9 +74,9 @@ class HukamnamaSheet extends StatelessWidget {
                   ],
                   const SizedBox(height: 20),
 
-                  // Gurmukhi text — system font so Gurmukhi script renders correctly
+                  // Gurmukhi text preview (first 3 lines)
                   Text(
-                    data.gurmukhi,
+                    _previewGurmukhi(data.gurmukhi),
                     style: TextStyle(
                       fontSize: 18,
                       height: 2.0,
@@ -82,17 +84,40 @@ class HukamnamaSheet extends StatelessWidget {
                     ),
                   ),
 
-                  // English translation
                   if (data.translationEnglish.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     Divider(color: c.outlineVariant, height: 1),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
                     Text(
-                      data.translationEnglish,
+                      _previewEnglish(data.translationEnglish),
                       style: SacredTypography.bodySm
                           .copyWith(color: c.textSecondary, height: 1.7),
                     ),
                   ],
+
+                  const SizedBox(height: 20),
+
+                  // View Full button
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Get.to(() => HukamnamaScreen(data: data));
+                      },
+                      icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                      label: const Text('ਪੂਰਾ ਹੁਕਮਨਾਮਾ ਪੜ੍ਹੋ'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: c.primary,
+                        side: BorderSide(color: c.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: bottom > 0 ? 0 : 16),
                 ],
               ),
             ),
@@ -100,5 +125,19 @@ class HukamnamaSheet extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _previewGurmukhi(String text) {
+    final lines = text.split('\n').where((l) => l.trim().isNotEmpty).toList();
+    if (lines.length <= 4) return text;
+    return '${lines.take(4).join('\n')}…';
+  }
+
+  String _previewEnglish(String text) {
+    const maxChars = 220;
+    if (text.length <= maxChars) return text;
+    final trimmed = text.substring(0, maxChars).trimRight();
+    final lastSpace = trimmed.lastIndexOf(' ');
+    return '${trimmed.substring(0, lastSpace)}…';
   }
 }

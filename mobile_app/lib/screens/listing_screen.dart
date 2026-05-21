@@ -237,6 +237,7 @@ class _HukamnamaCard extends StatelessWidget {
     final ctrl = Get.find<HukamnamaController>();
 
     return Obx(() {
+      if (!ctrl.isEnabled.value) return const SizedBox.shrink();
       final data = ctrl.hukamnama.value;
 
       return Padding(
