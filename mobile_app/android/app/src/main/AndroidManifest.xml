@@ -37,6 +37,10 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Work around black-screen rendering issues on some OEM GPUs/ROMs. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
 
         <!-- FCM: use the same channel and icon as local notifications -->
         <meta-data

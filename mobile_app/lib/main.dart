@@ -44,7 +44,10 @@ Future<void> main() async {
 
       runApp(const MyApp());
 
-      await DependencyInjection.initAudioBackground();
+      await Future.wait([
+        DependencyInjection.initAudioBackground(),
+        DependencyInjection.initNotificationSettings(),
+      ]);
     },
     (error, stack) =>
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true),

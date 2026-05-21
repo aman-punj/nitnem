@@ -21,9 +21,13 @@ class NotificationService extends GetxService {
   static const _channelId = 'nitnem_daily';
   static const _channelName = 'Daily Nitnem Reminders';
 
+  // Some Android versions return the deprecated IANA name; map to the canonical one.
+  static const _tzAliases = {'Asia/Calcutta': 'Asia/Kolkata'};
+
   Future<NotificationService> init() async {
     tz.initializeTimeZones();
-    final localTz = await FlutterTimezone.getLocalTimezone();
+    final rawTz = await FlutterTimezone.getLocalTimezone();
+    final localTz = _tzAliases[rawTz] ?? rawTz;
     tz.setLocalLocation(tz.getLocation(localTz));
 
     const android = AndroidInitializationSettings('ic_notification');

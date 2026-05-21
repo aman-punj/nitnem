@@ -55,45 +55,45 @@ class ListingScreen extends StatelessWidget {
             SliverToBoxAdapter(child: _HukamnamaCard()),
 
             // ─── Search Bar ───────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: c.surfaceContainerLow.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: c.borderGold.withValues(alpha: 0.1),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: c.primaryAccent.withValues(alpha: 0.05),
-                        blurRadius: 20,
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    style: TextStyle(color: c.textPrimary),
-                    decoration: InputDecoration(
-                      hintText: 'Search for a Bani or Shabad...',
-                      hintStyle: TextStyle(
-                        color: c.textSecondary.withValues(alpha: 0.4),
-                      ),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: c.primaryAccent,
-                        size: 20,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    onChanged: (val) {
-                      controller.searchQuery.value = val;
-                    },
-                  ),
-                ),
-              ),
-            ),
+            // SliverToBoxAdapter(
+            //   child: Padding(
+            //     padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            //     child: Container(
+            //       decoration: BoxDecoration(
+            //         color: c.surfaceContainerLow.withValues(alpha: 0.5),
+            //         borderRadius: BorderRadius.circular(25),
+            //         border: Border.all(
+            //           color: c.borderGold.withValues(alpha: 0.1),
+            //         ),
+            //         boxShadow: [
+            //           BoxShadow(
+            //             color: c.primaryAccent.withValues(alpha: 0.05),
+            //             blurRadius: 20,
+            //           ),
+            //         ],
+            //       ),
+            //       child: TextField(
+            //         style: TextStyle(color: c.textPrimary),
+            //         decoration: InputDecoration(
+            //           hintText: 'Search for a Bani or Shabad...',
+            //           hintStyle: TextStyle(
+            //             color: c.textSecondary.withValues(alpha: 0.4),
+            //           ),
+            //           prefixIcon: Icon(
+            //             Icons.search,
+            //             color: c.primaryAccent,
+            //             size: 20,
+            //           ),
+            //           border: InputBorder.none,
+            //           contentPadding: const EdgeInsets.symmetric(vertical: 16),
+            //         ),
+            //         onChanged: (val) {
+            //           controller.searchQuery.value = val;
+            //         },
+            //       ),
+            //     ),
+            //   ),
+            // ),
 
             // ─── Content Sections ─────────────────────────────────────────
             ..._buildCategorySections(

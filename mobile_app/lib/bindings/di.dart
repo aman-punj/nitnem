@@ -37,6 +37,9 @@ class DependencyInjection {
   static final Completer<void> _audioBackgroundReady = Completer<void>();
   static Future<void> get audioBackgroundReady => _audioBackgroundReady.future;
 
+  static final Completer<void> _notifSettingsReady = Completer<void>();
+  static Future<void> get notifSettingsReady => _notifSettingsReady.future;
+
   static Future<void> init() async {
     // Data layer
     Get.put(PreferenceService());
@@ -46,8 +49,16 @@ class DependencyInjection {
     Get.put(ThemeController());
     Get.put(CacheService());
     Get.put(SettingsController());
-    await Get.putAsync(() => NotificationService().init());
-    await Get.putAsync(() => NotificationSettingsController().init());
+    try {
+      await Get.putAsync(
+        () => NotificationService().init().timeout(const Duration(seconds: 8)),
+      );
+    } catch (e) {
+      debugPrint('NotificationService init failed: $e');
+      if (!Get.isRegistered<NotificationService>()) {
+        Get.put(NotificationService());
+      }
+    }
 
     Get.put(PrayerStorageService());
     Get.put(PrayerAssetService());
@@ -101,6 +112,27 @@ class DependencyInjection {
       }
       if (!_audioBackgroundReady.isCompleted) {
         _audioBackgroundReady.complete();
+      }
+    }
+  }
+
+  /// Initializes notification scheduling after runApp() so it doesn't block
+  /// Flutter's first frame. Firestore sync inside can take up to 5 s.
+  static Future<void> initNotificationSettings() async {
+    try {
+      await Get.putAsync(
+        () => NotificationSettingsController()
+            .init()
+            .timeout(const Duration(seconds: 8)),
+      );
+    } catch (e) {
+      debugPrint('NotificationSettingsController init failed: $e');
+      if (!Get.isRegistered<NotificationSettingsController>()) {
+        Get.put(NotificationSettingsController());
+      }
+    } finally {
+      if (!_notifSettingsReady.isCompleted) {
+        _notifSettingsReady.complete();
       }
     }
   }
