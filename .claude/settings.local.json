@@ -26,7 +26,9 @@
       "Bash(dir \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\android\\\\app\\\\src\\\\main\\\\kotlin\\\\com\\\\banisagar\\\\nitnem\" /b /s)",
       "Bash(dir \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\android\\\\app\\\\src\\\\main\\\\kotlin\\\\com\\\\banisagar\\\\app\" /b /s)",
       "Bash(dir \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\android\\\\app\\\\src\\\\main\\\\res\\\\values\" /b)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(Get-ChildItem -Path \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\" -Directory)",
+      "Bash(Select-Object Name)"
     ]
   }
 }

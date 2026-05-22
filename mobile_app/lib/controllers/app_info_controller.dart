@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:nitnem/models/app_config_model.dart';
+import 'package:nitnem/models/developer_support_model.dart';
 import 'package:nitnem/services/app_info_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -8,6 +9,7 @@ class AppInfoController extends GetxController {
 
   final Rxn<AppConfig> appConfig = Rxn<AppConfig>();
   final Rxn<Menu> menuConfig = Rxn<Menu>();
+  final Rxn<DeveloperSupport> developerSupport = Rxn<DeveloperSupport>();
   // final Rxn<FeatureFlags> featureFlags = Rxn<FeatureFlags>();
   final RxBool isLoading = false.obs;
 
@@ -16,12 +18,14 @@ class AppInfoController extends GetxController {
   Future<void> loadAppInfo() async {
     isLoading.value = true;
     try {
-      final config = await service.fetchAppInfo();
-      // final flags = await service.fetchFeatureFlags();
-      final menu = await service.fetchMenuSettings();
-      appConfig.value = config;
-      // featureFlags.value = flags;
-      menuConfig.value = menu;
+      final results = await Future.wait([
+        service.fetchAppInfo(),
+        service.fetchMenuSettings(),
+        service.fetchDeveloperSupport(),
+      ]);
+      appConfig.value = results[0] as AppConfig?;
+      menuConfig.value = results[1] as Menu?;
+      developerSupport.value = results[2] as DeveloperSupport?;
     } finally {
       isLoading.value = false;
     }

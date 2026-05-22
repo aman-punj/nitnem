@@ -14,6 +14,7 @@ import 'package:nitnem/core/design_system/widgets/sacred_button.dart';
 import 'package:nitnem/core/design_system/widgets/settings_tile.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_segmented_control.dart';
 import 'package:nitnem/models/drawer_item.dart';
+import 'package:nitnem/screens/developer_support_screen.dart';
 import 'package:nitnem/screens/faq_screen.dart';
 import 'package:nitnem/screens/feedback_screen.dart';
 import 'package:nitnem/screens/notifications_settings_screen.dart';
@@ -240,6 +241,9 @@ class SettingsScreen extends StatelessWidget {
     switch (item) {
       case DrawerMenuItem.share:
         Get.find<ShareService>().shareApp(context);
+        break;
+      case DrawerMenuItem.support_dev:
+        Get.to(() => const DeveloperSupportScreen());
         break;
       case DrawerMenuItem.notifications:
         Get.to(() => const NotificationsSettingsScreen());

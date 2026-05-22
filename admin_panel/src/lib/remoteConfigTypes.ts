@@ -25,6 +25,7 @@ export type RemoteConfig = {
   }
   features: {
     hukamnamaEnabled: boolean
+    kofiEnabled: boolean
   }
   updatedAt?: unknown
   updatedBy?: string
@@ -69,6 +70,7 @@ export const DEFAULT_REMOTE_CONFIG: RemoteConfig = {
   },
   features: {
     hukamnamaEnabled: true,
+    kofiEnabled: false,
   },
 }
 

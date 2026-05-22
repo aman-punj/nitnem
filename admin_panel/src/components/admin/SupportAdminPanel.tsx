@@ -1,18 +1,23 @@
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import {
   createFaqEntry,
   deleteFaqEntry,
+  DeveloperSupport,
   FaqEntry,
+  fetchDeveloperSupport,
   fetchFaqEntries,
   fetchPrivacyPolicy,
   fetchSupportRequests,
   PrivacyPolicy,
+  saveDeveloperSupport,
   savePrivacyPolicy,
   SupportRequest,
   SupportRequestStatus,
   updateFaqEntry,
   updateSupportRequestStatus,
 } from '../../lib/supportService'
+import { uploadImageToCloudinary } from '../../lib/cloudinary'
+import { auth } from '../../lib/firebase'
 
 function formatDate(value: any) {
   if (!value) return '-'
@@ -26,6 +31,11 @@ export function SupportAdminPanel() {
   const [faqEntries, setFaqEntries] = useState<FaqEntry[]>([])
   const [policy, setPolicy] = useState<PrivacyPolicy>({ title: 'Privacy Policy', content: '' })
   const [loading, setLoading] = useState(false)
+
+  const [devSupport, setDevSupport] = useState<DeveloperSupport>({ upiId: '', upiQrUrl: '', kofiUrl: '' })
+  const [devSupportSaving, setDevSupportSaving] = useState(false)
+  const [qrUploadProgress, setQrUploadProgress] = useState<number | null>(null)
+  const qrFileInputRef = useRef<HTMLInputElement>(null)
 
   const [newFaq, setNewFaq] = useState<Omit<FaqEntry, 'id'>>({
     question: '',
@@ -41,16 +51,40 @@ export function SupportAdminPanel() {
   async function load() {
     setLoading(true)
     try {
-      const [supportData, faqData, policyData] = await Promise.all([
+      const [supportData, faqData, policyData, devSupportData] = await Promise.all([
         fetchSupportRequests(),
         fetchFaqEntries(),
         fetchPrivacyPolicy(),
+        fetchDeveloperSupport(),
       ])
       setRequests(supportData)
       setFaqEntries(faqData)
       setPolicy(policyData)
+      setDevSupport(devSupportData)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function onUploadQrImage(file: File) {
+    setQrUploadProgress(0)
+    try {
+      const result = await uploadImageToCloudinary(file, (p) => setQrUploadProgress(p))
+      setDevSupport((prev) => ({ ...prev, upiQrUrl: result.secureUrl }))
+    } finally {
+      setQrUploadProgress(null)
+    }
+  }
+
+  async function onSaveDevSupport() {
+    setDevSupportSaving(true)
+    try {
+      await saveDeveloperSupport(
+        { upiId: devSupport.upiId, upiQrUrl: devSupport.upiQrUrl, kofiUrl: devSupport.kofiUrl },
+        auth.currentUser?.email ?? 'admin',
+      )
+    } finally {
+      setDevSupportSaving(false)
     }
   }
 
@@ -89,6 +123,57 @@ export function SupportAdminPanel() {
   return (
     <div className="stack">
       {loading && <div className="card info-text">Loading support data...</div>}
+
+      <div className="card stack">
+        <h3>Developer Support</h3>
+        <p className="info-text">Configure payment options shown to users in the Support Development screen.</p>
+
+        <div className="stack">
+          <label className="field-label">UPI ID</label>
+          <input
+            value={devSupport.upiId}
+            onChange={(e) => setDevSupport((p) => ({ ...p, upiId: e.target.value }))}
+            placeholder="e.g. yourname@upi"
+          />
+        </div>
+
+        <div className="stack">
+          <label className="field-label">UPI QR Image</label>
+          {devSupport.upiQrUrl && (
+            <img
+              src={devSupport.upiQrUrl}
+              alt="UPI QR"
+              style={{ width: 160, height: 160, objectFit: 'contain', borderRadius: 8, border: '1px solid var(--border)' }}
+            />
+          )}
+          <input
+            ref={qrFileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) void onUploadQrImage(file)
+            }}
+          />
+          <button className="outline" onClick={() => qrFileInputRef.current?.click()} disabled={qrUploadProgress !== null}>
+            {qrUploadProgress !== null ? `Uploading… ${qrUploadProgress}%` : 'Upload QR Image'}
+          </button>
+        </div>
+
+        <div className="stack">
+          <label className="field-label">Ko-fi URL</label>
+          <input
+            value={devSupport.kofiUrl}
+            onChange={(e) => setDevSupport((p) => ({ ...p, kofiUrl: e.target.value }))}
+            placeholder="e.g. https://ko-fi.com/yourname"
+          />
+        </div>
+
+        <button onClick={() => void onSaveDevSupport()} disabled={devSupportSaving}>
+          {devSupportSaving ? 'Saving…' : 'Save Developer Support'}
+        </button>
+      </div>
 
       <div className="card stack">
         <h3>Support Requests</h3>

@@ -46,6 +46,7 @@ export function MenuSettingsEditor({ settings, onChange }: MenuSettingsEditorPro
     { id: 'clear_cache', label: 'Clear Cache', section: 'Storage' },
     { id: 'keep_awake', label: 'Keep Awake', section: 'Experience' },
     { id: 'share', label: 'Share App', section: 'Support' },
+    { id: 'support_dev', label: 'Support Development', section: 'Support' },
     { id: 'feedback', label: 'Feedback', section: 'Support' },
     { id: 'faq', label: 'FAQ', section: 'Support' },
     { id: 'privacy_policy', label: 'Privacy Policy', section: 'Support' },

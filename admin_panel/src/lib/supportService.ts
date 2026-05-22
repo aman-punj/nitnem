@@ -85,3 +85,28 @@ export async function savePrivacyPolicy(policy: Pick<PrivacyPolicy, 'title' | 'c
     { merge: true },
   )
 }
+
+export type DeveloperSupport = {
+  upiId: string
+  upiQrUrl: string
+  kofiUrl: string
+  updatedAt?: any
+  updatedBy?: string
+}
+
+export async function fetchDeveloperSupport(): Promise<DeveloperSupport> {
+  const snap = await getDoc(doc(db, 'app_config', 'developer_support'))
+  if (!snap.exists()) return { upiId: '', upiQrUrl: '', kofiUrl: '' }
+  return snap.data() as DeveloperSupport
+}
+
+export async function saveDeveloperSupport(
+  data: Pick<DeveloperSupport, 'upiId' | 'upiQrUrl' | 'kofiUrl'>,
+  updatedBy: string,
+): Promise<void> {
+  await setDoc(
+    doc(db, 'app_config', 'developer_support'),
+    { ...data, updatedAt: serverTimestamp(), updatedBy },
+    { merge: true },
+  )
+}

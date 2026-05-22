@@ -8,6 +8,7 @@ type EnvKey =
   | 'VITE_CLOUDINARY_CLOUD_NAME'
   | 'VITE_CLOUDINARY_AUDIO_UPLOAD_PRESET'
   | 'VITE_CLOUDINARY_TRANSCRIPT_UPLOAD_PRESET'
+  | 'VITE_CLOUDINARY_IMAGE_UPLOAD_PRESET'
   | 'VITE_ADMIN_ALLOWED_EMAILS'
   | 'VITE_BACKEND_URL'
 
@@ -21,6 +22,7 @@ const REQUIRED_KEYS: EnvKey[] = [
   'VITE_CLOUDINARY_CLOUD_NAME',
   'VITE_CLOUDINARY_AUDIO_UPLOAD_PRESET',
   'VITE_CLOUDINARY_TRANSCRIPT_UPLOAD_PRESET',
+  'VITE_CLOUDINARY_IMAGE_UPLOAD_PRESET',
   'VITE_ADMIN_ALLOWED_EMAILS',
   'VITE_BACKEND_URL',
 ]
@@ -69,6 +71,7 @@ export type AppEnvConfig = {
     cloudName: string
     audioUploadPreset: string
     transcriptUploadPreset: string
+    imageUploadPreset: string
   }
   auth: {
     allowedEmails: string[]
@@ -88,6 +91,7 @@ export const envConfig: AppEnvConfig = {
     cloudName: readEnv('VITE_CLOUDINARY_CLOUD_NAME'),
     audioUploadPreset: readEnv('VITE_CLOUDINARY_AUDIO_UPLOAD_PRESET'),
     transcriptUploadPreset: readEnv('VITE_CLOUDINARY_TRANSCRIPT_UPLOAD_PRESET'),
+    imageUploadPreset: readEnv('VITE_CLOUDINARY_IMAGE_UPLOAD_PRESET'),
   },
   auth: {
     allowedEmails: parseAllowedEmails(readEnv('VITE_ADMIN_ALLOWED_EMAILS')),
