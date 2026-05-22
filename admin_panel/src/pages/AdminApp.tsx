@@ -294,11 +294,9 @@ export function AdminApp() {
 
   return (
     <div className="app fade-in">
-      <header className="row spread" style={{ marginBottom: '40px' }}>
-        <div>
-          <h1>Nitnem Admin</h1>
-          <p className="info-text">Premium internal control center for Bani Sagar mobile configuration.</p>
-        </div>
+      <header style={{ marginBottom: '24px' }}>
+        <h1 style={{ margin: '0 0 4px' }}>Nitnem Admin</h1>
+        <p className="info-text" style={{ margin: 0 }}>Bani Sagar control center</p>
       </header>
 
       {/* Shared Toolbar */}
@@ -327,35 +325,30 @@ export function AdminApp() {
         <aside className="admin-sidebar card">
           <button
             className={section === 'config' ? '' : 'secondary'}
-            style={{ width: '100%', marginBottom: '8px' }}
             onClick={() => setSection('config')}
           >
             App Config
           </button>
           <button
             className={section === 'content' ? '' : 'secondary'}
-            style={{ width: '100%', marginBottom: '8px' }}
             onClick={() => setSection('content')}
           >
-            Content Management
+            Content
           </button>
           <button
             className={section === 'menu' ? '' : 'secondary'}
-            style={{ width: '100%', marginBottom: '8px' }}
             onClick={() => setSection('menu')}
           >
-            Menu Settings
+            Menu
           </button>
           <button
             className={section === 'notifications' ? '' : 'secondary'}
-            style={{ width: '100%', marginBottom: '8px' }}
             onClick={() => setSection('notifications')}
           >
             Notifications
           </button>
           <button
             className={section === 'support' ? '' : 'secondary'}
-            style={{ width: '100%', marginBottom: '8px' }}
             onClick={() => setSection('support')}
           >
             Support

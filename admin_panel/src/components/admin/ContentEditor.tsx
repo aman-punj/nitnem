@@ -9,9 +9,11 @@ import {
   YoutubeLiveContentData 
 } from '../../lib/contentTypes'
 import { uploadAudioToCloudinary, uploadTranscriptJsonToCloudinary } from '../../lib/cloudinary'
+import { parseLrc } from '../../lib/transcript'
 import { AudioUploader } from './AudioUploader'
 import { TranscriptEditor } from './TranscriptEditor'
 import { TrackCard } from './TrackCard'
+import { LrcStudio } from './LrcStudio'
 
 type TranscriptLang = 'pa' | 'hi' | 'en'
 
@@ -50,9 +52,11 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
   )
 
   const [trackEditor, setTrackEditor] = useState<TrackEditorState | null>(null)
+  const [trackLoading, setTrackLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [uploadProgress, setUploadProgress] = useState<{ label: string; percent: number } | null>(null)
+  const [lrcStudioLang, setLrcStudioLang] = useState<TranscriptLang | null>(null)
 
   useEffect(() => {
     if (!idTouched && !isEdit) {
@@ -99,6 +103,26 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
     }
   }
 
+  function segmentsJsonToLrc(json: string): string {
+    try {
+      const { segments } = JSON.parse(json) as {
+        segments: Array<{ startTime: number | null; pa: string; hi: string; en: string }>
+      }
+      return segments
+        .filter(s => s.startTime !== null)
+        .map(s => {
+          const text = s.pa || s.hi || s.en
+          const t = s.startTime!
+          const m = Math.floor(t / 60)
+          const sec = (t % 60).toFixed(2).padStart(5, '0')
+          return `[${String(m).padStart(2, '0')}:${sec}]${text}`
+        })
+        .join('\n')
+    } catch {
+      return ''
+    }
+  }
+
   const openAddTrack = () => {
     const newId = nextTrackId(Object.keys(tracks))
     setTrackEditor({
@@ -111,15 +135,36 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
     })
   }
 
-  const openEditTrack = (track: PrayerTrack) => {
+  const openEditTrack = async (track: PrayerTrack) => {
     setTrackEditor({
       mode: 'edit',
       id: track.id,
       title: track.title,
       audioFile: null,
-      transcriptLrc: { pa: '', hi: '', en: '' }, // We don't have original LRC stored
+      transcriptLrc: { pa: '', hi: '', en: '' },
       transcriptJson: { pa: '', hi: '', en: '' },
     })
+    setTrackLoading(true)
+
+    const langs: TranscriptLang[] = ['pa', 'hi', 'en']
+    const lrcResult: Record<TranscriptLang, string> = { pa: '', hi: '', en: '' }
+    const jsonResult: Record<TranscriptLang, string> = { pa: '', hi: '', en: '' }
+
+    await Promise.all(langs.map(async (lang) => {
+      const url = track.transcripts[lang]?.url
+      if (!url) return
+      try {
+        const res = await fetch(url)
+        const text = await res.text()
+        jsonResult[lang] = text
+        lrcResult[lang] = segmentsJsonToLrc(text)
+      } catch {
+        // leave empty — user can re-paste if fetch fails
+      }
+    }))
+
+    setTrackEditor(prev => prev ? { ...prev, transcriptLrc: lrcResult, transcriptJson: jsonResult } : prev)
+    setTrackLoading(false)
   }
 
   const handleSaveTrack = async () => {
@@ -315,12 +360,52 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
 
                   <div className="section-divider" />
 
-                  <h4>Transcripts</h4>
-                  <TranscriptEditor 
+                  <div className="row spread">
+                    <h4 style={{ margin: 0 }}>
+                      Transcripts
+                      {trackLoading && <span className="info-text" style={{ marginLeft: '10px', fontWeight: 400 }}>Loading…</span>}
+                    </h4>
+                    <div className="row" style={{ gap: '8px' }}>
+                      {(['pa', 'hi', 'en'] as TranscriptLang[]).map(lang => (
+                        <button
+                          key={lang}
+                          className="secondary"
+                          style={{ fontSize: '0.8rem', padding: '4px 10px' }}
+                          disabled={trackLoading}
+                          onClick={() => setLrcStudioLang(lang)}
+                        >
+                          {lang === 'pa' ? 'ਪੰਜਾਬੀ' : lang === 'hi' ? 'हिन्दी' : 'EN'} Studio
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <TranscriptEditor
                     lrc={trackEditor.transcriptLrc}
                     json={trackEditor.transcriptJson}
                     onChange={(l, j) => setTrackEditor({ ...trackEditor, transcriptLrc: l, transcriptJson: j })}
                   />
+
+                  {lrcStudioLang && (
+                    <LrcStudio
+                      audioFile={trackEditor.audioFile}
+                      audioUrl={tracks[trackEditor.id]?.audio?.url}
+                      initialLrc={trackEditor.transcriptLrc[lrcStudioLang]}
+                      lang={lrcStudioLang}
+                      onClose={() => setLrcStudioLang(null)}
+                      onSave={(lrc) => {
+                        if (!trackEditor) return
+                        const nextLrc = { ...trackEditor.transcriptLrc, [lrcStudioLang]: lrc }
+                        try {
+                          const segments = parseLrc(lrc)
+                          const nextJson = { ...trackEditor.transcriptJson, [lrcStudioLang]: JSON.stringify({ segments }, null, 2) }
+                          setTrackEditor({ ...trackEditor, transcriptLrc: nextLrc, transcriptJson: nextJson })
+                        } catch {
+                          setTrackEditor({ ...trackEditor, transcriptLrc: nextLrc })
+                        }
+                      }}
+                    />
+                  )}
 
                   {uploadProgress && (
                     <div className="stack" style={{ gap: '4px' }}>
