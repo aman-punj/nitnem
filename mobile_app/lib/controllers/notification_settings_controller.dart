@@ -66,7 +66,10 @@ class NotificationSettingsController extends GetxService {
   static const _kCustomReminders = 'notif_custom_reminders';
   static const _kCustomIdCounter = 'notif_custom_id_counter';
 
-  static const _fcmTopic = 'kumnama';
+  static const _fcmTopic = 'hukamnama';
+  // Legacy topic name used before the fix — unsubscribe once on upgrade.
+  static const _fcmTopicLegacy = 'kumnama';
+  static const _kLegacyTopicCleaned = 'notif_legacy_topic_cleaned';
 
   // Reactive state
   final morningEnabled = true.obs;
@@ -241,6 +244,11 @@ class NotificationSettingsController extends GetxService {
       appLogs('FCM getToken failed — skipping kumnama subscription',
           tag: 'NOTIF', error: e, stackTrace: StackTrace.current);
       return;
+    }
+    // One-time migration: unsubscribe from the old mis-named topic.
+    if (!SharedPrefsService.getBool(_kLegacyTopicCleaned)) {
+      await _svc.unsubscribeFromTopic(_fcmTopicLegacy);
+      await SharedPrefsService.setBool(_kLegacyTopicCleaned, true);
     }
     if (kumnaamaEnabled.value) {
       await _svc.subscribeToTopic(_fcmTopic);
