@@ -39,6 +39,7 @@ export function RemoteConfigEditor({ appConfig, onChange }: RemoteConfigEditorPr
     onChange({
       ...appConfig,
       ...changes,
+      features: { ...appConfig.features, ...(changes.features ?? {}) },
       versions: { ...appConfig.versions, ...(changes.versions ?? {}) },
       messages: {
         ...appConfig.messages,
@@ -70,6 +71,12 @@ export function RemoteConfigEditor({ appConfig, onChange }: RemoteConfigEditorPr
           description="Show daily Hukamnama card on the home screen and bottom sheet on app open."
           checked={appConfig.features.hukamnamaEnabled}
           onChange={(value) => updateConfig({ features: { hukamnamaEnabled: value } })}
+        />
+        <ToggleRow
+          label="Ko-fi Support"
+          description="Show the Ko-fi button in the Support Development screen."
+          checked={appConfig.features.kofiEnabled}
+          onChange={(value) => updateConfig({ features: { kofiEnabled: value } })}
         />
       </div>
 

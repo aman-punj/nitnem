@@ -6,8 +6,8 @@ import 'package:nitnem/controllers/language_controller.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/core/design_system/widgets/bani_tiles.dart';
-import 'package:nitnem/core/design_system/widgets/hukamnama_sheet.dart';
 import 'package:nitnem/models/content_category.dart';
+import 'package:nitnem/screens/hukamnama_screen.dart';
 import 'package:nitnem/models/content_item.dart';
 import 'package:nitnem/models/hukamnama_model.dart';
 import 'package:nitnem/services/content_grouping_service.dart';
@@ -216,21 +216,6 @@ class ListingScreen extends StatelessWidget {
 class _HukamnamaCard extends StatelessWidget {
   const _HukamnamaCard();
 
-  void _openSheet(BuildContext context, HukamnamaModel data) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        minChildSize: 0.4,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (_, __) => HukamnamaSheet(data: data),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final c = SacredColors.of(context);
@@ -243,7 +228,7 @@ class _HukamnamaCard extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
         child: GestureDetector(
-          onTap: data != null ? () => _openSheet(context, data) : null,
+          onTap: data != null ? () => Get.to(() => HukamnamaScreen(data: data)) : null,
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(

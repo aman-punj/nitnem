@@ -3,12 +3,16 @@ class AppConfig {
   final Messages messages;
   final Maintenance maintenance;
   final StoreUrl storeUrl;
+  final Features features;
+  final String backendUrl;
 
   const AppConfig({
     required this.versions,
     required this.messages,
     required this.maintenance,
     required this.storeUrl,
+    required this.features,
+    this.backendUrl = '',
   });
 
   factory AppConfig.fromMap(Map<String, dynamic> map) {
@@ -17,6 +21,8 @@ class AppConfig {
       messages: Messages.fromMap(map['messages'] ?? {}),
       maintenance: Maintenance.fromMap(map['maintenance'] ?? {}),
       storeUrl: StoreUrl.fromMap(map['storeUrl'] ?? {}),
+      features: Features.fromMap(map['features'] ?? {}),
+      backendUrl: (map['backendUrl'] as String?) ?? '',
     );
   }
 }
@@ -111,6 +117,23 @@ class StoreUrl {
     return StoreUrl(
       android: (map['android'] ?? '') as String,
       ios: (map['ios'] ?? '') as String,
+    );
+  }
+}
+
+class Features {
+  final bool hukamnamaEnabled;
+  final bool kofiEnabled;
+
+  const Features({
+    required this.hukamnamaEnabled,
+    required this.kofiEnabled,
+  });
+
+  factory Features.fromMap(Map<String, dynamic> map) {
+    return Features(
+      hukamnamaEnabled: map['hukamnamaEnabled'] as bool? ?? true,
+      kofiEnabled: map['kofiEnabled'] as bool? ?? false,
     );
   }
 }

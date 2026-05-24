@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../core/utils/app_logs.dart';
 import '../models/app_config_model.dart';
+import '../models/developer_support_model.dart';
 import '../models/feature_flags_model.dart';
 import 'app_info_service.dart';
 
@@ -65,5 +66,19 @@ class FirebaseAppInfoService implements AppInfoService {
   @override
   Future<FeatureFlags?> fetchFeatureFlags() {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<DeveloperSupport?> fetchDeveloperSupport() async {
+    try {
+      final doc = await firestore.collection('app_config').doc('developer_support').get();
+      if (doc.data() != null) {
+        appLogs('Fetched developer support config', tag: 'FIRESTORE');
+        return DeveloperSupport.fromMap(doc.data()!);
+      }
+    } catch (e) {
+      log('Error fetching developer support: $e');
+    }
+    return null;
   }
 }

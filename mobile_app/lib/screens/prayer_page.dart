@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:nitnem/controllers/mini_player_controller.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/radius.dart';
 import 'package:nitnem/core/design_system/tokens/spacing.dart';
@@ -274,6 +275,10 @@ class PrayerPage extends StatelessWidget {
                     ],
                   ),
                   Positioned(
+                    left: 0,
+                    child: _buildLockButton(c),
+                  ),
+                  Positioned(
                     right: 0,
                     child: Obx(() => _buildSpeedButton(context, c, controller)),
                   ),
@@ -315,6 +320,24 @@ class PrayerPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildLockButton(SacredColors c) {
+    if (!Get.isRegistered<MiniPlayerController>()) return const SizedBox.shrink();
+    final miniCtrl = Get.find<MiniPlayerController>();
+    return Obx(() {
+      final allowed = miniCtrl.allowBackgroundPlay.value;
+      return IconButton(
+        icon: Icon(
+          allowed ? Icons.lock_open_rounded : Icons.lock_rounded,
+          size: 20,
+          color: allowed ? c.primaryAccent : c.textSecondary.withValues(alpha: 0.5),
+        ),
+        tooltip: allowed ? 'Plays when locked' : 'Pauses when locked',
+        onPressed: miniCtrl.toggleBackgroundPlay,
+        visualDensity: VisualDensity.compact,
+      );
+    });
   }
 
   Widget _playPauseButton(SacredColors c, PrayerController controller) {

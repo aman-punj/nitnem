@@ -4,12 +4,14 @@ type UploadResult = {
   secureUrl: string
 }
 
-type CloudinaryResourceType = 'video' | 'raw'
+type CloudinaryResourceType = 'video' | 'raw' | 'image'
 
-type PresetType = 'audio' | 'transcript'
+type PresetType = 'audio' | 'transcript' | 'image'
 
 function presetFor(type: PresetType): string {
-  return type === 'audio' ? envConfig.cloudinary.audioUploadPreset : envConfig.cloudinary.transcriptUploadPreset
+  if (type === 'audio') return envConfig.cloudinary.audioUploadPreset
+  if (type === 'transcript') return envConfig.cloudinary.transcriptUploadPreset
+  return envConfig.cloudinary.imageUploadPreset
 }
 
 function uploadToCloudinary(
@@ -56,6 +58,10 @@ function uploadToCloudinary(
 
 export function uploadAudioToCloudinary(file: File, onProgress: (percent: number) => void): Promise<UploadResult> {
   return uploadToCloudinary(file, 'video', 'audio', onProgress)
+}
+
+export function uploadImageToCloudinary(file: File, onProgress: (percent: number) => void): Promise<UploadResult> {
+  return uploadToCloudinary(file, 'image', 'image', onProgress)
 }
 
 export function uploadTranscriptJsonToCloudinary(

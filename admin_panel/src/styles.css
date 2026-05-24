@@ -1,3 +1,7 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 :root {
   --bg: #fdfaf3;
   --fg: #2d2419;
@@ -18,37 +22,37 @@
 
 body {
   margin: 0;
-  padding: 40px 20px; /* Added padding to body */
+  padding: 16px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg);
   color: var(--fg);
   line-height: 1.5;
 }
 
-.admin-layout {
-  display: flex;
-  gap: 40px; /* Increased gap */
-  align-items: flex-start;
-  max-width: 1400px; /* Added max-width */
-  margin: 0 auto; /* Centered layout */
-}
-
-.admin-sidebar {
-  width: 220px;
-  position: sticky;
-  top: 20px;
+@media (min-width: 640px) {
+  body {
+    padding: 40px 20px;
+  }
 }
 
 .admin-layout {
   display: flex;
   gap: 20px;
   align-items: flex-start;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .admin-sidebar {
   width: 220px;
   position: sticky;
   top: 20px;
+  flex-shrink: 0;
+}
+
+.admin-sidebar button {
+  width: 100%;
+  margin-bottom: 8px;
 }
 
 h1, h2, h3, h4 {
@@ -84,7 +88,7 @@ h1, h2, h3, h4 {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
   gap: 20px;
 }
 
@@ -155,10 +159,19 @@ input, select, textarea {
   border-radius: 10px;
   background: white;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--fg);
   outline: none;
   transition: border-color 0.2s;
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (min-width: 640px) {
+  input, select, textarea {
+    font-size: 14px;
+    width: auto;
+  }
 }
 
 input:focus, select:focus, textarea:focus {
@@ -298,6 +311,35 @@ textarea {
   .admin-sidebar {
     width: 100%;
     position: static;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .admin-sidebar button {
+    width: auto;
+    flex: 1;
+    min-width: 110px;
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  button {
+    min-height: 44px;
+  }
+
+  .card {
+    padding: 16px;
+    border-radius: 12px;
   }
 }
 
@@ -323,7 +365,7 @@ textarea {
 
 .panel-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
   gap: 24px;
 }
 
@@ -350,7 +392,7 @@ textarea {
 
 .field-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
   gap: 16px;
 }
 

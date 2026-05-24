@@ -30,7 +30,10 @@ import 'package:nitnem/services/analytics_service.dart';
 import 'package:nitnem/services/support_service.dart';
 
 import '../controllers/home_controller.dart';
+import '../controllers/mini_player_controller.dart';
+import '../controllers/quote_controller.dart';
 import '../services/firebase_service.dart';
+import '../services/quote_service.dart';
 import '../services/transcript_path_service.dart';
 
 class DependencyInjection {
@@ -78,6 +81,7 @@ class DependencyInjection {
       service: FirebaseAppInfoService(firestoreInstance: FirebaseFirestore.instance),
     ));
     Get.put(HukamnamaController(service: HukamnamaService()));
+    Get.put(QuoteController(service: QuoteService()));
     Get.put(HomeController(
       firebaseContentService: Get.find(),
       firebaseCategoryService: Get.find(),
@@ -109,6 +113,9 @@ class DependencyInjection {
       // Create player only after background initialization attempt.
       if (!Get.isRegistered<AudioPlayer>()) {
         Get.put(AudioPlayer(), permanent: true);
+      }
+      if (!Get.isRegistered<MiniPlayerController>()) {
+        Get.put(MiniPlayerController(), permanent: true);
       }
       if (!_audioBackgroundReady.isCompleted) {
         _audioBackgroundReady.complete();

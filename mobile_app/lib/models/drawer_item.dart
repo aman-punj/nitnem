@@ -66,6 +66,13 @@ enum DrawerMenuItem {
     section: SettingsSection.support,
     itemType: SettingsItemType.action,
   ),
+  support_dev(
+    id: 'support_dev',
+    title: 'Support Development',
+    icon: Icons.volunteer_activism,
+    section: SettingsSection.support,
+    itemType: SettingsItemType.navigation,
+  ),
   feedback(
     id: 'feedback',
     title: 'Feedback',

@@ -2,7 +2,11 @@
 
 const logger = require('./logger');
 
-const HUKAMNAMA_URL = 'https://hukamnama.khalsa.tech/';
+const MONTHS = [
+  'january', 'february', 'march', 'april', 'may', 'june',
+  'july', 'august', 'september', 'october', 'november', 'december',
+];
+
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 2000;
 
@@ -11,23 +15,37 @@ function sleep(ms) {
 }
 
 async function fetchHukamnama() {
-  let lastError;
+  const now = new Date();
+  const url = `https://sgpc.net/${now.getDate()}-${MONTHS[now.getMonth()]}-${now.getFullYear()}/`;
 
+  let lastError;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      logger.info(`Fetching Hukamnama from khalsa.tech (attempt ${attempt})`);
+      logger.info(`Fetching Hukamnama from sgpc.net (attempt ${attempt})`, { url });
 
-      const res = await fetch(HUKAMNAMA_URL, {
-        headers: { Accept: 'text/html' },
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 ' +
+            '(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+          Accept:
+            'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,pa;q=0.9,en;q=0.8',
+        },
         signal: AbortSignal.timeout(15_000),
       });
 
-      if (!res.ok) {
-        throw new Error(`khalsa.tech responded with HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`sgpc.net responded with HTTP ${res.status}`);
 
       const html = await res.text();
-      return parseHukamnamaHtml(html);
+      const data = parseHukamnamaHtml(html);
+      logger.info('Parsed Hukamnama from sgpc.net', {
+        date: data.date,
+        gurmukhiLines: data.gurmukhi.split('\n').length,
+        hasEnglish: data.translationEnglish.length > 0,
+        hasPunjabi: data.translationPunjabi.length > 0,
+      });
+      return data;
     } catch (err) {
       lastError = err;
       logger.warn(`Fetch attempt ${attempt} failed`, { error: err.message });
@@ -40,38 +58,77 @@ async function fetchHukamnama() {
   );
 }
 
-function stripTags(html) {
-  return html.replace(/<[^>]+>/g, '').trim();
+// ── HTML helpers ─────────────────────────────────────────────────────────────
+
+function stripHtml(html) {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#8211;/g, '–')
+    .replace(/&#8217;/g, "'")
+    .replace(/&#038;/g, '&')
+    .trim();
+}
+
+function isDateLine(text) {
+  return (
+    /\b(January|February|March|April|May|June|July|August|September|October|November|December)\b/i.test(
+      text
+    ) && /\d{4}/.test(text)
+  );
 }
 
 function parseHukamnamaHtml(html) {
-  // Extract <main id="hukamnama">...</main>
-  const mainMatch = html.match(/<main[^>]*id="hukamnama"[^>]*>([\s\S]*?)<\/main>/i);
-  if (!mainMatch) {
-    throw new Error('Validation failed: <main id="hukamnama"> not found in response');
+  // SGPC wraps the shabad in <article class="small single">
+  const articleStart = html.indexOf('<article class="small single">');
+  const articleEnd = html.lastIndexOf('</article>');
+  if (articleStart === -1 || articleEnd === -1) {
+    throw new Error('Validation failed: <article class="small single"> not found');
   }
-  const mainContent = mainMatch[1];
+  const articleHtml = html.slice(articleStart, articleEnd);
 
-  // First <h3> is the raag / shabad header
-  const h3Match = mainContent.match(/<h3>([\s\S]*?)<\/h3>/i);
-  const raagLine = h3Match ? stripTags(h3Match[1]) : '';
-
-  // All <div> elements are the shabad lines
-  const divMatches = [...mainContent.matchAll(/<div>([\s\S]*?)<\/div>/gi)];
-  const lines = divMatches.map((m) => stripTags(m[1])).filter(Boolean);
-
-  if (lines.length === 0) {
-    throw new Error('Validation failed: no shabad lines found in response');
+  // Collect all <p> text blocks
+  const pRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  const paragraphs = [];
+  let match;
+  while ((match = pRegex.exec(articleHtml)) !== null) {
+    const text = stripHtml(match[1]).trim();
+    if (text) paragraphs.push(text);
   }
 
-  // Combine raag header + shabad lines
-  const gurmukhi = [raagLine, ...lines].filter(Boolean).join('\n');
+  if (paragraphs.length === 0) {
+    throw new Error('Validation failed: no paragraphs found in article');
+  }
 
-  const source = raagLine
-    ? `Sri Darbar Sahib, Amritsar — ${raagLine}`
+  let gurmukhi = '';
+  let translationPunjabi = '';
+  const englishParts = [];
+  let inEnglish = false;
+
+  for (const p of paragraphs) {
+    if (p.startsWith('ਪੰਜਾਬੀ ਵਿਆਖਿਆ:')) {
+      translationPunjabi = p.replace('ਪੰਜਾਬੀ ਵਿਆਖਿਆ:', '').trim();
+      inEnglish = false;
+    } else if (p.includes('English Translation')) {
+      inEnglish = true;
+    } else if (inEnglish) {
+      if (!isDateLine(p)) englishParts.push(p);
+    } else if (!gurmukhi) {
+      gurmukhi = p;
+    }
+  }
+
+  if (!gurmukhi) throw new Error('Validation failed: no Gurmukhi text found');
+
+  const sourceLine = gurmukhi.split('\n')[0]?.trim() ?? '';
+  const source = sourceLine
+    ? `Sri Darbar Sahib, Amritsar — ${sourceLine}`
     : 'Sri Darbar Sahib, Amritsar';
 
-  // This endpoint always returns today's Hukamnama
   const now = new Date();
   const date = [
     now.getFullYear(),
@@ -82,8 +139,8 @@ function parseHukamnamaHtml(html) {
   return {
     date,
     gurmukhi,
-    translationEnglish: '',
-    translationPunjabi: '',
+    translationEnglish: englishParts.join('\n\n'),
+    translationPunjabi,
     source,
   };
 }

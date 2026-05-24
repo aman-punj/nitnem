@@ -9,6 +9,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
+import '../controllers/mini_player_controller.dart';
 import '../models/content_item.dart';
 import '../bindings/di.dart';
 import '../models/transcript_segment.dart';
@@ -64,6 +65,8 @@ class PrayerController extends GetxController {
   final RxBool hasShownSyncWarning = false.obs;
   Timer? _headerHideTimer;
   Timer? _seekDebounce;
+
+  bool _contentLoaded = false;
 
   AudioPlayer get player => _player;
 
@@ -227,6 +230,7 @@ class PrayerController extends GetxController {
     ContentItem? item,
     String? currentLang,
   }) async {
+    if (_contentLoaded) return;
     isLoading.value = true;
     loadingMessage.value = 'Preparing prayer...';
 
@@ -305,6 +309,26 @@ class PrayerController extends GetxController {
         primaryMode.value = PrimaryMode.audio;
       } else {
         primaryMode.value = PrimaryMode.focus;
+      }
+
+      _contentLoaded = true;
+
+      // Notify the global mini-player so it can show the persistent bar.
+      if (Get.isRegistered<MiniPlayerController>()) {
+        Get.find<MiniPlayerController>().setCurrentPrayer(
+          title: prayerTitle.value,
+          hasAudio: hasAudio.value,
+          thumbnailUrl: item?.thumbnail,
+          navArgs: PrayerNavArgs(
+            title: prayerTitle.value,
+            audioPath: audioPath,
+            transcriptPath: transcriptPath,
+            audioIsLocalFile: finalAudioIsLocal,
+            transcriptIsLocalFile: finalTranscriptIsLocal,
+            contentItem: item,
+            currentLang: currentLang,
+          ),
+        );
       }
 
     } catch (e) {

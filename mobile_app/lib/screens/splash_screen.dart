@@ -128,16 +128,21 @@ class _SplashScreenState extends State<SplashScreen>
                       ],
                     ),
                     child: Center(
-                      child: Image.asset(
-                        'assets/images/bani_sagar_logo.png',
-                        width: 60,
-                        height: 60,
-                        errorBuilder: (context, error, stackTrace) => Icon(
-                          Icons.spa_rounded,
-                          color: c.primaryAccent,
-                          size: 48,
-                        ),
-                      ),
+                      child: Builder(builder: (context) {
+                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                        return Image.asset(
+                          'assets/images/bani_sagar_logo.png',
+                          width: 60,
+                          height: 60,
+                          color: isDark ? null : c.primaryAccent,
+                          colorBlendMode: BlendMode.srcATop,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.spa_rounded,
+                            color: c.primaryAccent,
+                            size: 48,
+                          ),
+                        );
+                      }),
                     ),
                   ),
                   const SizedBox(height: 32),
