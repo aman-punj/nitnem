@@ -10,6 +10,9 @@ import 'package:nitnem/models/content_category.dart';
 import 'package:nitnem/screens/hukamnama_screen.dart';
 import 'package:nitnem/models/content_item.dart';
 import 'package:nitnem/models/hukamnama_model.dart';
+import 'package:nitnem/controllers/quote_controller.dart';
+import 'package:nitnem/core/design_system/tokens/radius.dart';
+import 'package:nitnem/core/design_system/tokens/spacing.dart';
 import 'package:nitnem/services/content_grouping_service.dart';
 
 class ListingScreen extends StatelessWidget {
@@ -99,6 +102,7 @@ class ListingScreen extends StatelessWidget {
             ..._buildCategorySections(sortedCategoryIds, categoryMap,
                 groupedContent, controller, c, currentLang),
 
+            SliverToBoxAdapter(child: _QuoteCard()),
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
         ),
@@ -223,6 +227,70 @@ class ListingScreen extends StatelessWidget {
       case 'book':        return 'assets/icons/ic_book.svg';
       default:            return 'assets/icons/ic_bani.svg';
     }
+  }
+}
+
+// ── Quote card ────────────────────────────────────────────────────────────────
+
+class _QuoteCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final c = SacredColors.of(context);
+    return Obx(() {
+      final q = Get.find<QuoteController>().homeQuote;
+      if (q.text.isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: SacredSpacing.xl,
+          vertical: SacredSpacing.md,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(SacredSpacing.gutter),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(SacredRadius.md),
+            border: Border.all(color: c.primaryAccent.withValues(alpha: 0.2)),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                c.primaryAccent.withValues(alpha: 0.06),
+                c.surfaceContainerLow.withValues(alpha: 0.4),
+              ],
+            ),
+          ),
+          child: Column(
+            children: [
+              Text(
+                '"${q.text}"',
+                textAlign: TextAlign.center,
+                style: SacredTypography.bodyMd.copyWith(
+                  color: c.primary,
+                  fontStyle: FontStyle.italic,
+                  height: 1.55,
+                  shadows: [
+                    Shadow(
+                      color: c.primaryAccent.withValues(alpha: 0.35),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+              ),
+              if (q.author != null) ...[
+                const SizedBox(height: SacredSpacing.sm),
+                Text(
+                  '— ${q.author}',
+                  textAlign: TextAlign.center,
+                  style: SacredTypography.meta.copyWith(
+                    color: c.textSecondary.withValues(alpha: 0.7),
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    });
   }
 }
 
