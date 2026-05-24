@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/tokens/typography.dart';
+import 'package:nitnem/core/design_system/widgets/sacred_app_sheet.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_update_sheet.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_maintenance_sheet.dart';
 import 'package:nitnem/bindings/di.dart';
+import 'package:nitnem/services/shared_prefs_service.dart';
 
 import 'home_screen.dart';
 
@@ -48,16 +51,32 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _initApp() async {
-    final initializationTasks = Future.wait([
-      getAppInfo(),
-      DependencyInjection.audioBackgroundReady,
-      Future.delayed(const Duration(seconds: 4)),
-    ]);
+    final isConnected = await _checkConnectivity();
 
-    await initializationTasks;
+    if (!isConnected) {
+      // First-ever launch with no cached content: prompt to connect.
+      if (!SharedPrefsService.hasContentCached()) {
+        await _showNoInternetFirstLaunchSheet();
+      }
+      // Wait 4 s with cached data; getAppInfo uses SharedPrefs cache.
+      await Future.wait([
+        getAppInfo(),
+        DependencyInjection.audioBackgroundReady,
+        Future.delayed(const Duration(seconds: 4)),
+      ]);
+    } else {
+      // Connected: resolve as soon as tasks finish, min 0.5 s, max 4 s.
+      await Future.any([
+        Future.wait([
+          getAppInfo(),
+          DependencyInjection.audioBackgroundReady,
+          Future.delayed(const Duration(milliseconds: 500)),
+        ]),
+        Future.delayed(const Duration(seconds: 4)),
+      ]);
+    }
 
     if (_isOperationalBlocked) return;
-
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
@@ -67,6 +86,34 @@ class _SplashScreenState extends State<SplashScreen>
           return FadeTransition(opacity: animation, child: child);
         },
         transitionDuration: const Duration(milliseconds: 800),
+      ),
+    );
+  }
+
+  Future<bool> _checkConnectivity() async {
+    try {
+      final results = await Connectivity().checkConnectivity();
+      return results.any((r) => r != ConnectivityResult.none);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _showNoInternetFirstLaunchSheet() async {
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: false,
+      builder: (_) => SacredAppSheet(
+        title: 'Connect to Internet',
+        body: 'Please connect to the internet to download prayers and content '
+            'for the first time. Tap "I\'m Connected" once you\'re online.',
+        primaryButtonText: 'I\'m Connected',
+        secondaryButtonText: 'Continue Offline',
+        onPrimaryPressed: () => Navigator.pop(context),
+        onSecondaryPressed: () => Navigator.pop(context),
       ),
     );
   }
@@ -252,6 +299,8 @@ class _SplashScreenState extends State<SplashScreen>
     final controller = Get.find<AppInfoController>();
     await controller.loadAppInfo();
 
+    if (_isOperationalBlocked || !mounted) return;
+
     final config = controller.appConfig.value;
     final storeUrl =
         Platform.isIOS ? config?.storeUrl.ios ?? '' : config?.storeUrl.android ?? '';
@@ -307,5 +356,4 @@ class _SplashScreenState extends State<SplashScreen>
       }
     }
   }
-
 }

@@ -8,6 +8,7 @@ class SharedPrefsService {
   static const _keyLanguage = 'language';
   static const _latestPatchApplied = 'last_patch_applied';
   static const _appInfo = 'app_info';
+  static const _quotesCache = 'quotes_cache';
 
   static Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -89,6 +90,24 @@ class SharedPrefsService {
         experimentalHome: false,
       ),
     );
+  }
+
+  static Future<void> cacheQuotes(List<Map<String, dynamic>> quotes) async {
+    await _prefs?.setString(_quotesCache, json.encode(quotes));
+  }
+
+  static List<Map<String, dynamic>>? getCachedQuotes() {
+    final s = _prefs?.getString(_quotesCache);
+    if (s == null || s.isEmpty) return null;
+    try {
+      return (json.decode(s) as List).cast<Map<String, dynamic>>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static bool hasContentCached() {
+    return _prefs?.containsKey('content_catalog') ?? false;
   }
 
   static Future<void> clear() async {

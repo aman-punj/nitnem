@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/content_category.dart';
 import '../models/content_item.dart';
 import '../screens/prayer_page.dart';
+import '../services/connectivity_service.dart';
 import '../services/firebase_category_service.dart';
 import '../services/firebase_content_service.dart';
 import '../services/local_content_service.dart';
@@ -148,15 +149,27 @@ class HomeController extends GetxController {
   }
 
   void _openPrayer(ContentItem item) async {
+    final lang = Get.find<LanguageController>().currentLang.value;
+    final localMetadata = _localContentService.getSyncMetadata(item.id);
+    final audioPath = localMetadata?.audioLocalPath;
+
+    // If audio is not downloaded locally, require an internet connection.
+    if (audioPath == null) {
+      final connectivity = Get.find<ConnectivityService>();
+      if (!connectivity.isConnected) {
+        connectivity.showOfflineSnackbar(
+          message: 'Connect to the internet to play "${item.titles.getForLanguage('en')}".',
+        );
+        return;
+      }
+    }
+
     Get.find<AnalyticsService>().logPrayerOpened(
       prayerId: item.id,
       prayerName: item.titles.getForLanguage('en'),
     );
 
-    final lang = Get.find<LanguageController>().currentLang.value;
-    final localMetadata = _localContentService.getSyncMetadata(item.id);
     final title = item.titles.getForLanguage(lang);
-    final audioPath = localMetadata?.audioLocalPath;
     final transcriptPath = localMetadata?.transcriptLocalPaths[lang];
 
     Get.to(() => PrayerPage(
@@ -172,14 +185,17 @@ class HomeController extends GetxController {
 
   void _openYoutube(ContentItem item) async {
     if (item.youtubeUrl == null) return;
-    final url = Uri.parse(item.youtubeUrl!);
 
-    // Attempt to open in YouTube app, fallback to external browser
-    if (!await launchUrl(
-      url,
-      mode: LaunchMode.externalApplication,
-    )) {
-      // Fallback: If external app launch fails, try opening in browser
+    final connectivity = Get.find<ConnectivityService>();
+    if (!connectivity.isConnected) {
+      connectivity.showOfflineSnackbar(
+        message: 'Connect to the internet to open this video.',
+      );
+      return;
+    }
+
+    final url = Uri.parse(item.youtubeUrl!);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       await launchUrl(url, mode: LaunchMode.externalNonBrowserApplication);
     }
   }

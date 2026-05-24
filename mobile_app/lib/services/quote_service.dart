@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/quote_model.dart';
+import 'shared_prefs_service.dart';
 
 class QuoteService {
   static const _fallback = [
@@ -21,15 +22,30 @@ class QuoteService {
       if (doc.exists && doc.data() != null) {
         final raw = doc.data()!['quotes'] as List<dynamic>?;
         if (raw != null && raw.isNotEmpty) {
-          return raw
+          final quotes = raw
               .whereType<Map<String, dynamic>>()
               .map(QuoteModel.fromMap)
               .where((q) => q.text.isNotEmpty)
               .toList();
+          if (quotes.isNotEmpty) {
+            await SharedPrefsService.cacheQuotes(
+              quotes.map((q) => q.toMap()).toList(),
+            );
+            return quotes;
+          }
         }
       }
     } catch (e) {
       debugPrint('QuoteService fetch error: $e');
+    }
+
+    // Try cached quotes before using hardcoded fallback
+    final cached = SharedPrefsService.getCachedQuotes();
+    if (cached != null && cached.isNotEmpty) {
+      return cached
+          .map(QuoteModel.fromMap)
+          .where((q) => q.text.isNotEmpty)
+          .toList();
     }
     return _fallback;
   }

@@ -34,7 +34,11 @@
       "WebSearch",
       "WebFetch(domain:www.banidb.com)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:api.gurbaninow.com)"
+      "WebFetch(domain:api.gurbaninow.com)",
+      "Bash(Get-ChildItem -Path \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\" -Recurse -Force)",
+      "Bash(Select-Object -First 30)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)"
     ],
     "additionalDirectories": [
       "C:\\Users\\apsin\\.claude\\projects\\d--Dev-Projects-flutter-projects-nitnem\\memory"

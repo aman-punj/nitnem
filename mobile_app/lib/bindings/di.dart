@@ -32,6 +32,7 @@ import 'package:nitnem/services/support_service.dart';
 import '../controllers/home_controller.dart';
 import '../controllers/mini_player_controller.dart';
 import '../controllers/quote_controller.dart';
+import '../services/connectivity_service.dart';
 import '../services/firebase_service.dart';
 import '../services/quote_service.dart';
 import '../services/transcript_path_service.dart';
@@ -44,6 +45,9 @@ class DependencyInjection {
   static Future<void> get notifSettingsReady => _notifSettingsReady.future;
 
   static Future<void> init() async {
+    // Network
+    Get.put(ConnectivityService());
+
     // Data layer
     Get.put(PreferenceService());
     Get.put(FontSizeController());

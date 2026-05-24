@@ -109,17 +109,22 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
   function segmentsJsonToLrc(json: string): string {
     try {
       const { segments } = JSON.parse(json) as {
-        segments: Array<{ startTime: number | null; pa: string; hi: string; en: string }>
+        segments: Array<{ startTime: unknown; pa?: string; hi?: string; en?: string }>
       }
+      if (!Array.isArray(segments)) return ''
       return segments
-        .filter(s => s.startTime !== null)
         .map(s => {
-          const text = s.pa || s.hi || s.en
-          const t = s.startTime!
-          const m = Math.floor(t / 60)
+          const text = (s.pa || s.hi || s.en || '').trim()
+          if (!text) return null
+          // Null / missing startTime → emit plain text so the studio can load it unformatted
+          if (s.startTime === null || s.startTime === undefined) return text
+          const t = Number(s.startTime)
+          if (!isFinite(t) || isNaN(t)) return text
+          const mins = Math.floor(t / 60)
           const sec = (t % 60).toFixed(2).padStart(5, '0')
-          return `[${String(m).padStart(2, '0')}:${sec}]${text}`
+          return `[${String(mins).padStart(2, '0')}:${sec}]${text}`
         })
+        .filter(Boolean)
         .join('\n')
     } catch {
       return ''

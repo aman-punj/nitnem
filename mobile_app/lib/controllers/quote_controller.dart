@@ -6,12 +6,17 @@ import '../services/quote_service.dart';
 class QuoteController extends GetxController {
   final QuoteService _service;
 
-  final _quote = const QuoteModel(text: '').obs;
+  final _homeQuote = const QuoteModel(text: '').obs;
+  final _settingsQuote = const QuoteModel(text: '').obs;
 
   QuoteController({QuoteService? service})
       : _service = service ?? QuoteService();
 
-  QuoteModel get quote => _quote.value;
+  /// Quote shown at the bottom of the home screen.
+  QuoteModel get homeQuote => _homeQuote.value;
+
+  /// Quote shown at the bottom of the settings screen.
+  QuoteModel get quote => _settingsQuote.value;
 
   @override
   void onInit() {
@@ -21,9 +26,12 @@ class QuoteController extends GetxController {
 
   Future<void> _load() async {
     final quotes = await _service.fetchQuotes();
-    if (quotes.isNotEmpty) {
-      final shuffled = List<QuoteModel>.from(quotes)..shuffle(Random());
-      _quote.value = shuffled.first;
+    if (quotes.isEmpty) return;
+    final shuffled = List<QuoteModel>.from(quotes)..shuffle(Random());
+    _homeQuote.value = shuffled[0];
+    // Only assign a settings quote if we have at least 2, ensuring they differ.
+    if (shuffled.length > 1) {
+      _settingsQuote.value = shuffled[1];
     }
   }
 }
