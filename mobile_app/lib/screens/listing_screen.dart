@@ -180,6 +180,7 @@ class ListingScreen extends StatelessWidget {
                   gurmukhiTitle: primaryTitle,
                   englishTitle: subtitleTitle,
                   icon: _getIconForCategory(iconKey),
+                  iconUrl: item.iconUrl,
                   onTap: () => controller.onContentTap(item),
                 );
               },

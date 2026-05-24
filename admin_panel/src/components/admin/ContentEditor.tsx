@@ -8,7 +8,7 @@ import {
   PrayerTrack, 
   YoutubeLiveContentData 
 } from '../../lib/contentTypes'
-import { uploadAudioToCloudinary, uploadTranscriptJsonToCloudinary } from '../../lib/cloudinary'
+import { uploadAudioToCloudinary, uploadImageToCloudinary, uploadTranscriptJsonToCloudinary } from '../../lib/cloudinary'
 import { parseLrc } from '../../lib/transcript'
 import { AudioUploader } from './AudioUploader'
 import { TranscriptEditor } from './TranscriptEditor'
@@ -43,6 +43,8 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
 
   const [youtubeUrl, setYoutubeUrl] = useState(item?.type === 'youtube_live' ? item.youtube_url : '')
   const [youtubeThumbnail, setYoutubeThumbnail] = useState(item?.type === 'youtube_live' ? item.thumbnail ?? '' : '')
+  const [iconUrl, setIconUrl] = useState(item?.type === 'prayer' ? (item as PrayerContentData).iconUrl ?? '' : '')
+  const [iconUploadProgress, setIconUploadProgress] = useState<number | null>(null)
 
   const [tracks, setTracks] = useState<Record<string, PrayerTrack>>(
     item?.type === 'prayer' ? item.tracks : {}
@@ -93,6 +95,7 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
           categoryId,
           tracks,
           displayOrder: item?.displayOrder ?? 100,
+          ...(iconUrl.trim() ? { iconUrl: iconUrl.trim() } : {}),
         }
         await onSave(payload)
       }
@@ -298,6 +301,56 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
                 placeholder="nitnem"
               />
             </div>
+            {contentType === 'prayer' && (
+              <div className="label-group">
+                <label>Prayer Icon (Optional · PNG shown in mini player)</label>
+                <div className="row" style={{ gap: '12px', alignItems: 'center' }}>
+                  {iconUrl && (
+                    <img
+                      src={iconUrl}
+                      alt="icon preview"
+                      style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8, border: '1px solid #ddd', flexShrink: 0 }}
+                    />
+                  )}
+                  <div className="stack" style={{ flex: 1, gap: '6px' }}>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      style={{ fontSize: '0.85rem' }}
+                      disabled={iconUploadProgress !== null}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        setIconUploadProgress(0)
+                        try {
+                          const res = await uploadImageToCloudinary(file, (p) => setIconUploadProgress(p))
+                          setIconUrl(res.secureUrl)
+                        } catch {
+                          setSaveError('Icon upload failed')
+                        } finally {
+                          setIconUploadProgress(null)
+                          e.target.value = ''
+                        }
+                      }}
+                    />
+                    {iconUploadProgress !== null && (
+                      <div className="upload-progress">
+                        <div className="upload-progress-fill" style={{ width: `${iconUploadProgress}%` }} />
+                      </div>
+                    )}
+                    {iconUrl && (
+                      <button
+                        className="secondary"
+                        style={{ fontSize: '0.75rem', padding: '2px 8px', alignSelf: 'flex-start' }}
+                        onClick={() => setIconUrl('')}
+                      >
+                        Remove icon
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

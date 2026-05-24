@@ -74,6 +74,14 @@ class MiniPlayerController extends GetxController with WidgetsBindingObserver {
     isActive.value = hasAudio;
   }
 
+  void dismiss() {
+    _player.pause();
+    isActive.value = false;
+    prayerTitle.value = '';
+    thumbnailUrl.value = '';
+    _navArgs = null;
+  }
+
   void toggleBackgroundPlay() {
     allowBackgroundPlay.value = !allowBackgroundPlay.value;
     SharedPrefsService.instance.setBool(_kBgPlay, allowBackgroundPlay.value);

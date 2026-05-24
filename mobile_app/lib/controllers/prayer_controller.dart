@@ -231,6 +231,32 @@ class PrayerController extends GetxController {
     String? currentLang,
   }) async {
     if (_contentLoaded) return;
+
+    // skipAudio=true means the audio is already running in the player (same
+    // prayer re-opened from mini bar). We still need to load the transcript.
+    bool skipAudio = false;
+
+    if (Get.isRegistered<MiniPlayerController>()) {
+      final mini = Get.find<MiniPlayerController>();
+      if (mini.isActive.value) {
+        if (mini.navArgs?.audioPath == audioPath) {
+          if (segments.isNotEmpty) {
+            // Controller is fully intact — nothing to do.
+            _contentLoaded = true;
+            isLoading.value = false;
+            hasAudio.value = true;
+            return;
+          }
+          // Controller was recreated by GetX — transcript is gone but audio
+          // is still playing. Load transcript only, skip setAudioSource.
+          skipAudio = true;
+        } else {
+          // Different prayer — stop old audio immediately.
+          mini.dismiss();
+        }
+      }
+    }
+
     isLoading.value = true;
     loadingMessage.value = 'Preparing prayer...';
 
@@ -280,8 +306,10 @@ class PrayerController extends GetxController {
 
       loadingMessage.value = 'Loading audio...';
       // 3. Load Audio
-      bool audioLoaded = false;
-      if (finalAudioPath.isNotEmpty) {
+      // Skip setAudioSource when resuming the same prayer — audio is already
+      // running in the singleton player, reloading it would restart from zero.
+      bool audioLoaded = skipAudio;
+      if (!skipAudio && finalAudioPath.isNotEmpty) {
         try {
           final artUri = await _resolveArtworkUri();
           final tag = MediaItem(
@@ -318,7 +346,7 @@ class PrayerController extends GetxController {
         Get.find<MiniPlayerController>().setCurrentPrayer(
           title: prayerTitle.value,
           hasAudio: hasAudio.value,
-          thumbnailUrl: item?.thumbnail,
+          thumbnailUrl: item?.iconUrl ?? item?.thumbnail,
           navArgs: PrayerNavArgs(
             title: prayerTitle.value,
             audioPath: audioPath,

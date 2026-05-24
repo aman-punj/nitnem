@@ -30,7 +30,11 @@
       "Bash(Get-ChildItem -Path \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\" -Directory)",
       "Bash(Select-Object Name)",
       "Bash(Copy-Item \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\assets\\\\images\\\\bani_sagar_logo_black_bg.png\" \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\android\\\\app\\\\src\\\\main\\\\res\\\\drawable\\\\ic_notification_large.png\" -Force)",
-      "Bash(mkdir -p \"C:\\\\Users\\\\apsin\\\\.claude\\\\projects\\\\d--Dev-Projects-flutter-projects-nitnem\\\\memory\")"
+      "Bash(mkdir -p \"C:\\\\Users\\\\apsin\\\\.claude\\\\projects\\\\d--Dev-Projects-flutter-projects-nitnem\\\\memory\")",
+      "WebSearch",
+      "WebFetch(domain:www.banidb.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.gurbaninow.com)"
     ],
     "additionalDirectories": [
       "C:\\Users\\apsin\\.claude\\projects\\d--Dev-Projects-flutter-projects-nitnem\\memory"

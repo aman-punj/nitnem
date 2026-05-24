@@ -42,14 +42,19 @@ class PrayerPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = SacredColors.of(context);
-    final controller = Get.put<PrayerController>(
-      PrayerController(
-        transcriptSyncEngine: const TranscriptSyncEngine(),
-        syncService: Get.find<TranscriptSyncService>(),
-        localContentService: Get.find<LocalContentService>(),
-      ),
-      tag: title,
-    );
+    // Never replace an existing controller — it carries _contentLoaded = true
+    // and the live audio state. Replacing it (which Get.put does on re-builds
+    // during page transition animations) resets that flag and restarts audio.
+    final controller = Get.isRegistered<PrayerController>(tag: title)
+        ? Get.find<PrayerController>(tag: title)
+        : Get.put<PrayerController>(
+            PrayerController(
+              transcriptSyncEngine: const TranscriptSyncEngine(),
+              syncService: Get.find<TranscriptSyncService>(),
+              localContentService: Get.find<LocalContentService>(),
+            ),
+            tag: title,
+          );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.prayerTitle.value = title;

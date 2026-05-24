@@ -30,6 +30,7 @@ export type PrayerContentData = {
   enabled: boolean
   active_track: string
   tracks: Record<string, PrayerTrack>
+  iconUrl?: string
   categoryId?: string
   displayOrder: number
   updated_at?: unknown

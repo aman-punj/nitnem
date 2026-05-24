@@ -114,6 +114,7 @@ class ContentItem {
   final Map<String, PrayerTrack> tracks;
   final String? youtubeUrl;
   final String? thumbnail;
+  final String? iconUrl;
   final String categoryId;
   final int displayOrder;
 
@@ -126,6 +127,7 @@ class ContentItem {
     this.tracks = const {},
     this.youtubeUrl,
     this.thumbnail,
+    this.iconUrl,
     this.categoryId = 'uncategorized',
     this.displayOrder = 100,
   });
@@ -152,6 +154,7 @@ class ContentItem {
       tracks: trackMap,
       youtubeUrl: map['youtube_url'],
       thumbnail: map['thumbnail'],
+      iconUrl: map['iconUrl'] as String?,
       categoryId: map['categoryId'] ?? 'uncategorized',
       displayOrder: map['displayOrder'] ?? 100,
     );
@@ -167,6 +170,7 @@ class ContentItem {
       'tracks': tracks.map((key, value) => MapEntry(key, value.toMap())),
       'youtube_url': youtubeUrl,
       'thumbnail': thumbnail,
+      if (iconUrl != null) 'iconUrl': iconUrl,
       'categoryId': categoryId,
       'displayOrder': displayOrder,
     };

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../tokens/colors.dart';
 import '../tokens/radius.dart';
@@ -6,6 +7,7 @@ import '../tokens/typography.dart';
 
 class BaniListTile extends StatefulWidget {
   final IconData icon;
+  final String? iconUrl;
   final String gurmukhiTitle;
   final String englishTitle;
   final VoidCallback onTap;
@@ -16,6 +18,7 @@ class BaniListTile extends StatefulWidget {
   const BaniListTile({
     super.key,
     this.icon = Icons.auto_stories_outlined,
+    this.iconUrl,
     required this.gurmukhiTitle,
     required this.englishTitle,
     required this.onTap,
@@ -115,7 +118,8 @@ class _BaniListTileState extends State<BaniListTile>
                 children: [
                   // Leading Icon
                   Container(
-                    padding: const EdgeInsets.all(SacredSpacing.base),
+                    width: 46,
+                    height: 46,
                     decoration: BoxDecoration(
                       color: c.surfaceSecondary,
                       borderRadius: BorderRadius.circular(SacredRadius.def),
@@ -124,11 +128,21 @@ class _BaniListTileState extends State<BaniListTile>
                         width: 1,
                       ),
                     ),
-                    child: Icon(
-                      widget.icon,
-                      color: c.primaryAccent,
-                      size: 22,
-                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: widget.iconUrl != null && widget.iconUrl!.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: widget.iconUrl!,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => Center(
+                              child: Icon(widget.icon, color: c.primaryAccent, size: 22),
+                            ),
+                            errorWidget: (_, __, ___) => Center(
+                              child: Icon(widget.icon, color: c.primaryAccent, size: 22),
+                            ),
+                          )
+                        : Center(
+                            child: Icon(widget.icon, color: c.primaryAccent, size: 22),
+                          ),
                   ),
 
                   const SizedBox(width: SacredSpacing.sm),
