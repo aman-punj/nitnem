@@ -6,6 +6,7 @@ import 'package:home_widget/home_widget.dart';
 import '../models/hukamnama_model.dart';
 import '../services/hukamnama_service.dart';
 import '../services/shared_prefs_service.dart';
+import 'app_info_controller.dart';
 
 class HukamnamaController extends GetxController {
   final HukamnamaService _service;
@@ -39,7 +40,10 @@ class HukamnamaController extends GetxController {
       // Default to enabled if config can't be fetched
     }
 
-    final data = await _service.fetchToday();
+    final backendUrl = Get.isRegistered<AppInfoController>()
+        ? Get.find<AppInfoController>().appConfig.value?.backendUrl ?? ''
+        : '';
+    final data = await _service.fetchToday(backendUrl: backendUrl);
     if (data == null) return;
     hukamnama.value = data;
     await _pushToWidget(data);

@@ -135,6 +135,8 @@ class NotificationService extends GetxService {
 
   // ── Local notifications ──────────────────────────────────────────────────
 
+  static const _largeIcon = DrawableResourceAndroidBitmap('ic_notification_large');
+
   Future<void> scheduleDailyNotification({
     required int id,
     required String title,
@@ -161,6 +163,7 @@ class NotificationService extends GetxService {
           _channelName,
           importance: Importance.max,
           priority: Priority.high,
+          largeIcon: _largeIcon,
         ),
         iOS: const DarwinNotificationDetails(
           presentAlert: true,
@@ -195,6 +198,7 @@ class NotificationService extends GetxService {
           _channelName,
           importance: Importance.max,
           priority: Priority.high,
+          largeIcon: _largeIcon,
         ),
       ),
       payload: payload,

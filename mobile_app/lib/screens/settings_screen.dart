@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
 import 'package:nitnem/controllers/font_size_controller.dart';
 import 'package:nitnem/controllers/language_controller.dart';
+import 'package:nitnem/controllers/quote_controller.dart';
 import 'package:nitnem/controllers/theme_controller.dart';
 import 'package:nitnem/controllers/settings_controller.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
@@ -33,6 +34,7 @@ class SettingsScreen extends StatelessWidget {
     final languageController = Get.find<LanguageController>();
     final themeController = Get.find<ThemeController>();
     final settingsController = Get.find<SettingsController>();
+    final quoteController = Get.find<QuoteController>();
     final enabledIds = appInfoController.menuConfig.value?.enabledItems ?? [];
 
     final groupedItems = <SettingsSection, List<DrawerMenuItem>>{};
@@ -204,23 +206,58 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: SacredSpacing.md),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.xxl),
-                child: Text(
-                  '"Truth is the highest virtue, but higher still is truthful living."',
-                  textAlign: TextAlign.center,
-                  style: SacredTypography.bodyMd.copyWith(
-                    color: c.primary,
-                    fontStyle: FontStyle.italic,
-                    shadows: [
-                      Shadow(
-                        color: c.primaryAccent.withValues(alpha: 0.5),
-                        blurRadius: 10,
+              Obx(() {
+                final q = quoteController.quote;
+                if (q.text.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.xl),
+                  child: Container(
+                    padding: const EdgeInsets.all(SacredSpacing.gutter),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(SacredRadius.md),
+                      border: Border.all(color: c.primaryAccent.withValues(alpha: 0.2)),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          c.primaryAccent.withValues(alpha: 0.06),
+                          c.surfaceContainerLow.withValues(alpha: 0.4),
+                        ],
                       ),
-                    ],
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '“${q.text}”',
+                          textAlign: TextAlign.center,
+                          style: SacredTypography.bodyMd.copyWith(
+                            color: c.primary,
+                            fontStyle: FontStyle.italic,
+                            height: 1.55,
+                            shadows: [
+                              Shadow(
+                                color: c.primaryAccent.withValues(alpha: 0.35),
+                                blurRadius: 10,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (q.author != null) ...[
+                          const SizedBox(height: SacredSpacing.sm),
+                          Text(
+                            '— ${q.author}',
+                            textAlign: TextAlign.center,
+                            style: SacredTypography.meta.copyWith(
+                              color: c.textSecondary.withValues(alpha: 0.7),
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              }),
               const SizedBox(height: SacredSpacing.lg),
             ],
           );

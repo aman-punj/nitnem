@@ -39,8 +39,10 @@ import { SupportAdminPanel } from '../components/admin/SupportAdminPanel'
 import { fetchNotificationSettings, saveNotificationSettings } from '../lib/notificationsService'
 import { DEFAULT_NOTIFICATION_SETTINGS, type NotificationSettings } from '../lib/notificationsTypes'
 import { NotificationsEditor } from '../components/admin/NotificationsEditor'
+import { fetchQuotes, saveQuotes, type QuotesConfig } from '../lib/quotesService'
+import { QuotesEditor } from '../components/admin/QuotesEditor'
 
-type AdminSection = 'config' | 'content' | 'menu' | 'notifications' | 'support'
+type AdminSection = 'config' | 'content' | 'menu' | 'notifications' | 'quotes' | 'support'
 
 function SortableItem({ item, onEdit, onDelete }: { item: ContentItem; onEdit: () => void; onDelete: () => void }) {
   const {
@@ -97,6 +99,11 @@ export function AdminApp() {
   const [notifError, setNotifError] = useState('')
   const [dirtyNotif, setDirtyNotif] = useState(false)
 
+  const [quotesConfig, setQuotesConfig] = useState<QuotesConfig>({ quotes: [] })
+  const [quotesLoading, setQuotesLoading] = useState(false)
+  const [quotesError, setQuotesError] = useState('')
+  const [dirtyQuotes, setDirtyQuotes] = useState(false)
+
   const [publishing, setPublishing] = useState(false)
 
   const sensors = useSensors(
@@ -128,6 +135,7 @@ export function AdminApp() {
     void loadRemoteConfig()
     void loadMenuSettings()
     void loadNotifSettings()
+    void loadQuotes()
   }, [])
 
   async function loadContentList(): Promise<void> {
@@ -154,6 +162,20 @@ export function AdminApp() {
       setRemoteConfigError(error instanceof Error ? error.message : 'Failed to load remote config.')
     } finally {
       setRemoteConfigLoading(false)
+    }
+  }
+
+  async function loadQuotes(): Promise<void> {
+    setQuotesLoading(true)
+    setQuotesError('')
+    try {
+      const data = await fetchQuotes()
+      setQuotesConfig(data)
+      setDirtyQuotes(false)
+    } catch (error) {
+      setQuotesError(error instanceof Error ? error.message : 'Failed to load quotes.')
+    } finally {
+      setQuotesLoading(false)
     }
   }
 
@@ -202,6 +224,11 @@ export function AdminApp() {
         const saved = await saveNotificationSettings(notifSettings)
         setNotifSettings(saved)
         setDirtyNotif(false)
+      }
+      if (dirtyQuotes) {
+        const saved = await saveQuotes(quotesConfig)
+        setQuotesConfig(saved)
+        setDirtyQuotes(false)
       }
     } catch (error) {
       console.error('Failed to publish changes:', error)
@@ -308,14 +335,14 @@ export function AdminApp() {
               Last Config Update: {formatTimestampLabel(remoteConfig.updatedAt)} | 
               Last Menu Update: {formatTimestampLabel(menuSettings.updatedAt)}
             </span>
-            {(dirtyRemoteConfig || dirtyMenu || dirtyNotif) && <span className="badge accent">Unsaved changes</span>}
+            {(dirtyRemoteConfig || dirtyMenu || dirtyNotif || dirtyQuotes) && <span className="badge accent">Unsaved changes</span>}
           </div>
         </div>
         <div className="row" style={{ gap: '12px', flexWrap: 'wrap' }}>
-          <button className="secondary" onClick={() => { void loadRemoteConfig(); void loadMenuSettings(); void loadNotifSettings() }} disabled={remoteConfigLoading || menuLoading || notifLoading || publishing}>
+          <button className="secondary" onClick={() => { void loadRemoteConfig(); void loadMenuSettings(); void loadNotifSettings(); void loadQuotes() }} disabled={remoteConfigLoading || menuLoading || notifLoading || quotesLoading || publishing}>
             Refresh
           </button>
-          <button onClick={() => void publishChanges()} disabled={(!dirtyRemoteConfig && !dirtyMenu && !dirtyNotif) || publishing || remoteConfigLoading || menuLoading || notifLoading}>
+          <button onClick={() => void publishChanges()} disabled={(!dirtyRemoteConfig && !dirtyMenu && !dirtyNotif && !dirtyQuotes) || publishing || remoteConfigLoading || menuLoading || notifLoading || quotesLoading}>
             {publishing ? 'Publishing...' : 'Publish Changes'}
           </button>
         </div>
@@ -346,6 +373,12 @@ export function AdminApp() {
             onClick={() => setSection('notifications')}
           >
             Notifications
+          </button>
+          <button
+            className={section === 'quotes' ? '' : 'secondary'}
+            onClick={() => setSection('quotes')}
+          >
+            Quotes
           </button>
           <button
             className={section === 'support' ? '' : 'secondary'}
@@ -449,6 +482,22 @@ export function AdminApp() {
                   saving={publishing}
                   dirty={dirtyNotif}
                   lastPublishedLabel={formatTimestampLabel(notifSettings.updatedAt)}
+                />
+              )}
+            </div>
+          )}
+          {section === 'quotes' && (
+            <div className="stack">
+              {quotesError && <div className="card error-text">{quotesError}</div>}
+              {quotesLoading ? (
+                <div className="card empty-state">Loading quotes…</div>
+              ) : (
+                <QuotesEditor
+                  config={quotesConfig}
+                  onChange={next => { setQuotesConfig(next); setDirtyQuotes(true) }}
+                  saving={publishing}
+                  dirty={dirtyQuotes}
+                  lastPublishedLabel={formatTimestampLabel(quotesConfig.updatedAt)}
                 />
               )}
             </div>

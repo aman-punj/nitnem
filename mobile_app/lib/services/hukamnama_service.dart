@@ -1,26 +1,108 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/hukamnama_model.dart';
 import 'shared_prefs_service.dart';
 
 class HukamnamaService {
-  static const _cacheKey = 'hukamnama_sgpc_cache';
-  static const _cacheDateKey = 'hukamnama_sgpc_cache_date';
+  static const _cacheKey = 'hukamnama_cache';
+  static const _cacheDateKey = 'hukamnama_cache_date';
 
   static const _months = [
     'january', 'february', 'march', 'april', 'may', 'june',
     'july', 'august', 'september', 'october', 'november', 'december',
   ];
 
-  Future<HukamnamaModel?> fetchToday() async {
+  final FirebaseFirestore _firestore;
+
+  HukamnamaService({FirebaseFirestore? firestoreInstance})
+      : _firestore = firestoreInstance ?? FirebaseFirestore.instance;
+
+  /// Fallback chain:
+  /// 1. Firestore hukamnama/today  → return even if it's yesterday's (most recent available)
+  /// 2. Local SharedPrefs cache    → avoids a blank screen on Firestore error
+  /// 3. Direct SGPC scrape         → emergency only
+  ///
+  /// When Firestore has data but it's not today's, a fire-and-forget POST to
+  /// the backend is made so the cron catch-up runs immediately.
+  Future<HukamnamaModel?> fetchToday({String backendUrl = ''}) async {
     final today = _todayKey();
 
-    final cached = _loadFromCache(today);
-    if (cached != null) return cached;
+    // ── 1. Firestore ─────────────────────────────────────────────────────────
+    try {
+      final doc = await _firestore
+          .collection('hukamnama')
+          .doc('today')
+          .get()
+          .timeout(const Duration(seconds: 10));
 
+      if (doc.exists && doc.data() != null) {
+        final model = HukamnamaModel.fromMap(doc.data()!);
+        await _saveToCache(model);
+
+        if (model.date != today && backendUrl.isNotEmpty) {
+          // Firestore has yesterday's data — cron hasn't run yet.
+          // Nudge the backend in the background; don't await.
+          _triggerBackendSync(backendUrl);
+        }
+
+        return model;
+      }
+    } catch (e) {
+      log('HukamnamaService: Firestore unavailable: $e');
+    }
+
+    // ── 2. Local cache ────────────────────────────────────────────────────────
+    final cached = _loadFromCache();
+    if (cached != null) {
+      log('HukamnamaService: serving from local cache (${cached.date})');
+      return cached;
+    }
+
+    // ── 3. Emergency SGPC scrape ──────────────────────────────────────────────
+    log('HukamnamaService: falling back to direct SGPC scrape');
+    return _scrapeSgpc(today);
+  }
+
+  // ── Backend trigger (fire-and-forget) ────────────────────────────────────
+
+  void _triggerBackendSync(String backendUrl) {
+    final url = backendUrl.endsWith('/')
+        ? '${backendUrl}sync-hukamnama'
+        : '$backendUrl/sync-hukamnama';
+
+    http
+        .post(Uri.parse(url))
+        .timeout(const Duration(seconds: 30))
+        .then((_) => log('HukamnamaService: backend sync triggered'))
+        .catchError((e) => log('HukamnamaService: backend trigger failed: $e'));
+  }
+
+  // ── Cache ─────────────────────────────────────────────────────────────────
+
+  HukamnamaModel? _loadFromCache() {
+    try {
+      final prefs = SharedPrefsService.instance;
+      final json = prefs.getString(_cacheKey);
+      if (json == null) return null;
+      return HukamnamaModel.fromMap(jsonDecode(json) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _saveToCache(HukamnamaModel model) async {
+    final prefs = SharedPrefsService.instance;
+    await prefs.setString(_cacheDateKey, model.date);
+    await prefs.setString(_cacheKey, jsonEncode(model.toMap()));
+  }
+
+  // ── SGPC emergency scrape ─────────────────────────────────────────────────
+
+  Future<HukamnamaModel?> _scrapeSgpc(String date) async {
     try {
       final now = DateTime.now();
       final url =
@@ -37,38 +119,17 @@ class HukamnamaService {
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode != 200) {
-        log('HukamnamaService: HTTP ${response.statusCode}');
+        log('HukamnamaService SGPC: HTTP ${response.statusCode}');
         return null;
       }
 
-      final model = _parseHtml(response.body, today);
-      if (model != null) await _saveToCache(today, model);
+      final model = _parseHtml(response.body, date);
+      if (model != null) await _saveToCache(model);
       return model;
     } catch (e) {
-      log('HukamnamaService.fetchToday error: $e');
+      log('HukamnamaService SGPC scrape error: $e');
       return null;
     }
-  }
-
-  // ── cache helpers ──────────────────────────────────────────────────────────
-
-  HukamnamaModel? _loadFromCache(String date) {
-    try {
-      final prefs = SharedPrefsService.instance;
-      if (prefs.getString(_cacheDateKey) != date) return null;
-      final json = prefs.getString(_cacheKey);
-      if (json == null) return null;
-      return HukamnamaModel.fromMap(
-          jsonDecode(json) as Map<String, dynamic>);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> _saveToCache(String date, HukamnamaModel model) async {
-    final prefs = SharedPrefsService.instance;
-    await prefs.setString(_cacheDateKey, date);
-    await prefs.setString(_cacheKey, jsonEncode(model.toMap()));
   }
 
   String _todayKey() {
@@ -78,7 +139,7 @@ class HukamnamaService {
         '${now.day.toString().padLeft(2, '0')}';
   }
 
-  // ── HTML parsing ───────────────────────────────────────────────────────────
+  // ── HTML parsing (mirrors backend logic) ─────────────────────────────────
 
   HukamnamaModel? _parseHtml(String html, String date) {
     final articleStart = html.indexOf('<article class="small single">');
@@ -106,8 +167,7 @@ class HukamnamaService {
 
     for (final p in paragraphs) {
       if (p.startsWith('ਪੰਜਾਬੀ ਵਿਆਖਿਆ:')) {
-        translationPunjabi =
-            p.replaceFirst('ਪੰਜਾਬੀ ਵਿਆਖਿਆ:', '').trim();
+        translationPunjabi = p.replaceFirst('ਪੰਜਾਬੀ ਵਿਆਖਿਆ:', '').trim();
         inEnglish = false;
       } else if (p.contains('English Translation')) {
         inEnglish = true;
@@ -118,9 +178,12 @@ class HukamnamaService {
       }
     }
 
-    // First line of gurmukhi block = raag / author (e.g. "ਧਨਾਸਰੀ ਭਗਤ ਰਵਿਦਾਸ ਜੀ ਕੀ")
-    final gurLines = gurmukhi.split('\n');
-    final source = gurLines.isNotEmpty ? gurLines.first.trim() : '';
+    if (gurmukhi.isEmpty) return null;
+
+    final sourceLine = gurmukhi.split('\n').first.trim();
+    final source = sourceLine.isNotEmpty
+        ? 'Sri Darbar Sahib, Amritsar — $sourceLine'
+        : 'Sri Darbar Sahib, Amritsar';
 
     return HukamnamaModel(
       date: date,
@@ -132,7 +195,6 @@ class HukamnamaService {
   }
 
   bool _isDateLine(String text) {
-    // The final date paragraph contains month names and year — skip it
     return RegExp(
             r'(January|February|March|April|May|June|July|August|September'
             r'|October|November|December)',
@@ -148,7 +210,7 @@ class HukamnamaService {
         .replaceAll('&amp;', '&')
         .replaceAll('&lt;', '<')
         .replaceAll('&gt;', '>')
-        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&nbsp;', ' ')
         .replaceAll('&#8211;', '–')
         .replaceAll('&#8217;', "'")
         .replaceAll('&#038;', '&')

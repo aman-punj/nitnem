@@ -4,6 +4,7 @@ class AppConfig {
   final Maintenance maintenance;
   final StoreUrl storeUrl;
   final Features features;
+  final String backendUrl;
 
   const AppConfig({
     required this.versions,
@@ -11,6 +12,7 @@ class AppConfig {
     required this.maintenance,
     required this.storeUrl,
     required this.features,
+    this.backendUrl = '',
   });
 
   factory AppConfig.fromMap(Map<String, dynamic> map) {
@@ -20,6 +22,7 @@ class AppConfig {
       maintenance: Maintenance.fromMap(map['maintenance'] ?? {}),
       storeUrl: StoreUrl.fromMap(map['storeUrl'] ?? {}),
       features: Features.fromMap(map['features'] ?? {}),
+      backendUrl: (map['backendUrl'] as String?) ?? '',
     );
   }
 }

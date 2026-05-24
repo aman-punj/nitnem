@@ -14,8 +14,12 @@ try {
 
     Write-Host "Deploying to Firebase Hosting..." -ForegroundColor Yellow
     firebase deploy --only hosting
-    
+
     Write-Host "Deployment complete!" -ForegroundColor Green
+
+    Write-Host "Cleaning up build artifacts..." -ForegroundColor Yellow
+    Remove-Item -Recurse -Force "dist" -ErrorAction SilentlyContinue
+    Write-Host "Cleanup done." -ForegroundColor Green
 }
 finally {
     Pop-Location
