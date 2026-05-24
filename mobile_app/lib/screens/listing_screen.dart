@@ -172,16 +172,16 @@ class ListingScreen extends StatelessWidget {
                   return BaniListTile(
                     gurmukhiTitle: primaryTitle,
                     englishTitle: subtitleTitle,
-                    icon: Icons.live_tv_rounded,
+                    iconAsset: 'assets/icons/ic_live.svg',
                     onTap: () => controller.onContentTap(item),
                   );
                 }
 
+                final resolvedIconKey = item.iconKey ?? iconKey;
                 return BaniListTile(
                   gurmukhiTitle: primaryTitle,
                   englishTitle: subtitleTitle,
-                  icon: _getIconForCategory(iconKey),
-                  iconAsset: _getSvgAssetForCategory(iconKey),
+                  iconAsset: _getSvgAsset(resolvedIconKey),
                   iconUrl: item.iconUrl,
                   onTap: () => controller.onContentTap(item),
                 );
@@ -198,48 +198,30 @@ class ListingScreen extends StatelessWidget {
     return sections;
   }
 
-  IconData _getIconForCategory(String? iconKey) {
-    if (iconKey == null) return Icons.auto_stories_outlined;
-
-    switch (iconKey.toLowerCase()) {
-      case 'sun':
-        return Icons.wb_sunny_outlined;
-      case 'star':
-        return Icons.auto_awesome_rounded;
-      case 'moon':
-        return Icons.nights_stay_rounded;
-      case 'shield':
-        return Icons.shield_outlined;
-      case 'heart':
-        return Icons.favorite_border_outlined;
-      case 'book':
-        return Icons.menu_book_rounded;
-      case 'live':
-        return Icons.live_tv_rounded;
-      default:
-        return Icons.auto_stories_outlined;
-    }
-  }
-
-  String? _getSvgAssetForCategory(String? iconKey) {
-    if (iconKey == null) return 'assets/icons/ic_bani.svg';
-    switch (iconKey.toLowerCase()) {
-      case 'sun':
-        return 'assets/icons/ic_sun.svg';
-      case 'moon':
-        return 'assets/icons/ic_moon.svg';
-      case 'star':
-        return 'assets/icons/ic_star.svg';
-      case 'shield':
-        return 'assets/icons/ic_shield.svg';
-      case 'heart':
-        return 'assets/icons/ic_heart.svg';
-      case 'book':
-        return 'assets/icons/ic_book.svg';
-      case 'live':
-        return 'assets/icons/ic_live.svg';
-      default:
-        return 'assets/icons/ic_bani.svg';
+  String _getSvgAsset(String? iconKey) {
+    switch (iconKey?.toLowerCase()) {
+      // Per-prayer icons
+      case 'japji':       return 'assets/icons/ic_japji.svg';
+      case 'jaap':        return 'assets/icons/ic_jaap.svg';
+      case 'tav-prasad':  return 'assets/icons/ic_tav_prasad.svg';
+      case 'chaupai':     return 'assets/icons/ic_chaupai.svg';
+      case 'anand':       return 'assets/icons/ic_anand.svg';
+      case 'rehras':      return 'assets/icons/ic_rehras.svg';
+      case 'sohila':      return 'assets/icons/ic_sohila.svg';
+      // Category icons
+      case 'morning':     return 'assets/icons/ic_morning.svg';
+      case 'evening':     return 'assets/icons/ic_evening.svg';
+      case 'daily':       return 'assets/icons/ic_daily.svg';
+      case 'nitnem':      return 'assets/icons/ic_nitnem_cat.svg';
+      case 'live':        return 'assets/icons/ic_live.svg';
+      // Legacy category icons (backward compat)
+      case 'sun':         return 'assets/icons/ic_sun.svg';
+      case 'moon':        return 'assets/icons/ic_moon.svg';
+      case 'star':        return 'assets/icons/ic_star.svg';
+      case 'shield':      return 'assets/icons/ic_shield.svg';
+      case 'heart':       return 'assets/icons/ic_heart.svg';
+      case 'book':        return 'assets/icons/ic_book.svg';
+      default:            return 'assets/icons/ic_bani.svg';
     }
   }
 }
