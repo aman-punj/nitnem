@@ -45,10 +45,6 @@ class FrostedSettingsCard extends StatelessWidget {
             ? c.surfaceContainerLow.withValues(alpha: 0.5)
             : c.surfaceContainerLow,
         borderRadius: BorderRadius.circular(SacredRadius.xl),
-        border: Border.all(
-          color: c.borderGold.withValues(alpha: isDark ? 0.12 : 0.18),
-          width: 1,
-        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.04),

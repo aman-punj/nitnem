@@ -118,9 +118,6 @@ class SettingsScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: c.surfaceContainerLow,
                             borderRadius: BorderRadius.circular(SacredRadius.md),
-                            border: Border.all(
-                              color: c.borderGold.withValues(alpha: 0.25),
-                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

@@ -303,19 +303,19 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
             </div>
             {contentType === 'prayer' && (
               <div className="label-group">
-                <label>Prayer Icon (Optional · PNG shown in mini player)</label>
+                <label>Prayer Icon (Optional · PNG or SVG · shown in listing &amp; mini player)</label>
                 <div className="row" style={{ gap: '12px', alignItems: 'center' }}>
                   {iconUrl && (
                     <img
                       src={iconUrl}
                       alt="icon preview"
-                      style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8, border: '1px solid #ddd', flexShrink: 0 }}
+                      style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 8, border: '1px solid #ddd', flexShrink: 0, background: '#f5f5f5', padding: '4px' }}
                     />
                   )}
                   <div className="stack" style={{ flex: 1, gap: '6px' }}>
                     <input
                       type="file"
-                      accept="image/png,image/jpeg,image/webp"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
                       style={{ fontSize: '0.85rem' }}
                       disabled={iconUploadProgress !== null}
                       onChange={async (e) => {

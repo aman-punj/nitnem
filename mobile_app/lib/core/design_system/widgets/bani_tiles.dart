@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../tokens/colors.dart';
 import '../tokens/radius.dart';
 import '../tokens/spacing.dart';
@@ -8,6 +9,7 @@ import '../tokens/typography.dart';
 class BaniListTile extends StatefulWidget {
   final IconData icon;
   final String? iconUrl;
+  final String? iconAsset;
   final String gurmukhiTitle;
   final String englishTitle;
   final VoidCallback onTap;
@@ -19,6 +21,7 @@ class BaniListTile extends StatefulWidget {
     super.key,
     this.icon = Icons.auto_stories_outlined,
     this.iconUrl,
+    this.iconAsset,
     required this.gurmukhiTitle,
     required this.englishTitle,
     required this.onTap,
@@ -75,6 +78,45 @@ class _BaniListTileState extends State<BaniListTile>
     return '${minutes}min';
   }
 
+  Widget _buildLeadingIcon(SacredColors c) {
+    // Priority: network iconUrl > bundled SVG asset > fallback Material icon
+    final url = widget.iconUrl;
+    if (url != null && url.isNotEmpty) {
+      if (url.toLowerCase().endsWith('.svg')) {
+        // SVG from Cloudinary — tinted with theme accent, single file for both modes
+        return Padding(
+          padding: const EdgeInsets.all(11),
+          child: SvgPicture.network(
+            url,
+            colorFilter: ColorFilter.mode(c.primaryAccent, BlendMode.srcIn),
+            placeholderBuilder: (_) => _svgOrIcon(c),
+          ),
+        );
+      }
+      // Raster image (PNG/JPEG) — cached to disk, works offline after first load
+      return CachedNetworkImage(
+        imageUrl: url,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => _svgOrIcon(c),
+        errorWidget: (_, __, ___) => _svgOrIcon(c),
+      );
+    }
+    return _svgOrIcon(c);
+  }
+
+  Widget _svgOrIcon(SacredColors c) {
+    if (widget.iconAsset != null) {
+      return Padding(
+        padding: const EdgeInsets.all(11),
+        child: SvgPicture.asset(
+          widget.iconAsset!,
+          colorFilter: ColorFilter.mode(c.primaryAccent, BlendMode.srcIn),
+        ),
+      );
+    }
+    return Center(child: Icon(widget.icon, color: c.primaryAccent, size: 22));
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = SacredColors.of(context);
@@ -100,17 +142,12 @@ class _BaniListTileState extends State<BaniListTile>
               decoration: BoxDecoration(
                 color: c.surfacePrimary,
                 borderRadius: BorderRadius.circular(SacredRadius.def),
-                border: Border.all(
-                  color: widget.isCompleted
-                      ? c.primaryAccent.withValues(alpha: 0.4)
-                      : c.borderGold.withValues(alpha: isDark ? 0.1 : 0.2),
-                  width: 1.5,
-                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
-                    blurRadius: isDark ? 8 : 3,
-                    offset: const Offset(0, 1),
+                    color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.04),
+                    blurRadius: isDark ? 12 : 6,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -123,26 +160,9 @@ class _BaniListTileState extends State<BaniListTile>
                     decoration: BoxDecoration(
                       color: c.surfaceSecondary,
                       borderRadius: BorderRadius.circular(SacredRadius.def),
-                      border: Border.all(
-                        color: c.borderGold.withValues(alpha: 0.1),
-                        width: 1,
-                      ),
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: widget.iconUrl != null && widget.iconUrl!.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: widget.iconUrl!,
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => Center(
-                              child: Icon(widget.icon, color: c.primaryAccent, size: 22),
-                            ),
-                            errorWidget: (_, __, ___) => Center(
-                              child: Icon(widget.icon, color: c.primaryAccent, size: 22),
-                            ),
-                          )
-                        : Center(
-                            child: Icon(widget.icon, color: c.primaryAccent, size: 22),
-                          ),
+                    child: _buildLeadingIcon(c),
                   ),
 
                   const SizedBox(width: SacredSpacing.sm),
@@ -209,10 +229,6 @@ class _BaniListTileState extends State<BaniListTile>
                           decoration: BoxDecoration(
                             color: c.primaryAccent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(SacredRadius.md),
-                            border: Border.all(
-                              color: c.primaryAccent.withValues(alpha: 0.3),
-                              width: 1,
-                            ),
                           ),
                           child: Icon(
                             Icons.check_rounded,

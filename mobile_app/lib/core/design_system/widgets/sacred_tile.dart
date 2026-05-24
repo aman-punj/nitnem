@@ -22,7 +22,6 @@ class SacredTile extends StatelessWidget {
       tileColor: c.surfacePrimary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SacredRadius.md),
-        side: BorderSide(color: c.borderSoft),
       ),
       title: Text(title),
       subtitle: Text(subtitle, style: TextStyle(color: c.textSecondary)),

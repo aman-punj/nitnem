@@ -96,8 +96,8 @@ class ListingScreen extends StatelessWidget {
             // ),
 
             // ─── Content Sections ─────────────────────────────────────────
-            ..._buildCategorySections(
-                sortedCategoryIds, categoryMap, groupedContent, controller, c, currentLang),
+            ..._buildCategorySections(sortedCategoryIds, categoryMap,
+                groupedContent, controller, c, currentLang),
 
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
@@ -165,7 +165,8 @@ class ListingScreen extends StatelessWidget {
                 final item = items[index];
 
                 final primaryTitle = item.titles.getForLanguage(currentLang);
-                final subtitleTitle = currentLang != 'pa' ? item.titles.pa : item.titles.en;
+                final subtitleTitle =
+                    currentLang != 'pa' ? item.titles.pa : item.titles.en;
 
                 if (item.type == ContentType.youtube_live) {
                   return BaniListTile(
@@ -180,6 +181,7 @@ class ListingScreen extends StatelessWidget {
                   gurmukhiTitle: primaryTitle,
                   englishTitle: subtitleTitle,
                   icon: _getIconForCategory(iconKey),
+                  iconAsset: _getSvgAssetForCategory(iconKey),
                   iconUrl: item.iconUrl,
                   onTap: () => controller.onContentTap(item),
                 );
@@ -200,14 +202,44 @@ class ListingScreen extends StatelessWidget {
     if (iconKey == null) return Icons.auto_stories_outlined;
 
     switch (iconKey.toLowerCase()) {
-      case 'sun':    return Icons.wb_sunny_outlined;
-      case 'star':   return Icons.auto_awesome_rounded;
-      case 'moon':   return Icons.nights_stay_rounded;
-      case 'shield': return Icons.shield_outlined;
-      case 'heart':  return Icons.favorite_border_outlined;
-      case 'book':   return Icons.menu_book_rounded;
-      case 'live':   return Icons.live_tv_rounded;
-      default:       return Icons.auto_stories_outlined;
+      case 'sun':
+        return Icons.wb_sunny_outlined;
+      case 'star':
+        return Icons.auto_awesome_rounded;
+      case 'moon':
+        return Icons.nights_stay_rounded;
+      case 'shield':
+        return Icons.shield_outlined;
+      case 'heart':
+        return Icons.favorite_border_outlined;
+      case 'book':
+        return Icons.menu_book_rounded;
+      case 'live':
+        return Icons.live_tv_rounded;
+      default:
+        return Icons.auto_stories_outlined;
+    }
+  }
+
+  String? _getSvgAssetForCategory(String? iconKey) {
+    if (iconKey == null) return 'assets/icons/ic_bani.svg';
+    switch (iconKey.toLowerCase()) {
+      case 'sun':
+        return 'assets/icons/ic_sun.svg';
+      case 'moon':
+        return 'assets/icons/ic_moon.svg';
+      case 'star':
+        return 'assets/icons/ic_star.svg';
+      case 'shield':
+        return 'assets/icons/ic_shield.svg';
+      case 'heart':
+        return 'assets/icons/ic_heart.svg';
+      case 'book':
+        return 'assets/icons/ic_book.svg';
+      case 'live':
+        return 'assets/icons/ic_live.svg';
+      default:
+        return 'assets/icons/ic_bani.svg';
     }
   }
 }
@@ -229,7 +261,9 @@ class _HukamnamaCard extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
         child: GestureDetector(
-          onTap: data != null ? () => Get.to(() => HukamnamaScreen(data: data)) : null,
+          onTap: data != null
+              ? () => Get.to(() => HukamnamaScreen(data: data))
+              : null,
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -291,10 +325,8 @@ class _HukamnamaCard extends StatelessWidget {
   }
 
   Widget _buildContent(SacredColors c, HukamnamaModel data) {
-    final lines = data.gurmukhi
-        .split('\n')
-        .where((l) => l.trim().isNotEmpty)
-        .toList();
+    final lines =
+        data.gurmukhi.split('\n').where((l) => l.trim().isNotEmpty).toList();
     final preview = lines.take(2).join('\n');
 
     return Column(
@@ -333,7 +365,7 @@ class _HukamnamaCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Text(
-              'Read full Hukamnama',
+              'Read full',
               style: SacredTypography.bodySm.copyWith(color: c.primaryAccent),
             ),
             const SizedBox(width: 4),

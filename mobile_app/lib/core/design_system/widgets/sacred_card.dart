@@ -18,7 +18,6 @@ class SacredCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: c.surfacePrimary,
         borderRadius: BorderRadius.circular(SacredRadius.md),
-        border: Border.all(color: c.borderSoft),
         boxShadow: SacredElevation.soft,
       ),
       child: child,
