@@ -13,6 +13,13 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('FCM background: ${message.messageId}');
 }
 
+/// Required by flutter_local_notifications v18 so the plugin can route
+/// notification interaction events when the app is terminated.
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse response) {
+  debugPrint('Notification tap background: id=${response.id} payload=${response.payload}');
+}
+
 class NotificationService extends GetxService {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -46,6 +53,7 @@ class NotificationService extends GetxService {
           onHukamnamaTap?.call();
         }
       },
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
 
     final session = await AudioSession.instance;
