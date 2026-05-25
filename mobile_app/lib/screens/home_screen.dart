@@ -14,6 +14,7 @@ import 'package:nitnem/screens/listing_screen.dart';
 import 'package:nitnem/screens/settings_screen.dart';
 import 'package:nitnem/core/design_system/widgets/mini_player_bar.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
+import 'package:nitnem/controllers/notification_settings_controller.dart';
 import 'package:nitnem/services/notification_service.dart';
 import 'package:nitnem/services/share_service.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
@@ -130,7 +131,11 @@ class _HomeScreenState extends State<HomeScreen> {
         onPrimaryPressed: () {
           prefs.setBool(_kPermAccepted, true);
           Navigator.pop(context);
-          Get.find<NotificationService>().requestPermissions();
+          Get.find<NotificationService>().requestBasicPermissions().then((_) {
+            if (Get.isRegistered<NotificationSettingsController>()) {
+              Get.find<NotificationSettingsController>().rescheduleAll();
+            }
+          });
         },
         onSecondaryPressed: () {
           final next = openCount + 10 + Random().nextInt(11);

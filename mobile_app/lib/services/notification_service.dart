@@ -76,14 +76,22 @@ class NotificationService extends GetxService {
 
   // ── Permissions ──────────────────────────────────────────────────────────
 
-  Future<void> requestPermissions() async {
+  /// Requests only the basic notification permissions (FCM + POST_NOTIFICATIONS).
+  /// Does NOT request exact alarm — that is requested contextually via [openAlarmSettings].
+  Future<void> requestBasicPermissions() async {
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
     final android = _plugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
     await android?.requestNotificationsPermission();
-    // Request exact alarm permission on Android 12+ so reminders fire on time.
-    await android?.requestExactAlarmsPermission();
+  }
+
+  /// Returns true when the user has permanently denied notification permission
+  /// (i.e. "Don't ask again" on Android, or denied twice on iOS).
+  /// In this state only [openAppSettings] can re-enable notifications.
+  Future<bool> isNotificationPermissionPermanentlyDenied() async {
+    final status = await ph.Permission.notification.status;
+    return status.isPermanentlyDenied;
   }
 
   Future<bool> canScheduleExact() async {

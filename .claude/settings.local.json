@@ -39,7 +39,13 @@
       "Bash(Select-Object -First 30)",
       "Bash(npm run *)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
-      "PowerShell(Get-ChildItem \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\android\\\\app\\\\src\\\\main\" -Recurse | Where-Object { -not $_.PSIsContainer } | Select-Object FullName)"
+      "PowerShell(Get-ChildItem \"d:\\\\Dev\\\\Projects\\\\flutter_projects\\\\nitnem\\\\mobile_app\\\\android\\\\app\\\\src\\\\main\" -Recurse | Where-Object { -not $_.PSIsContainer } | Select-Object FullName)",
+      "Bash(gh run *)",
+      "PowerShell($response = Invoke-RestMethod -Uri \"https://api.github.com/repos/aman-punj/nitnem/actions/runs?per_page=10\" -Headers @{ \"User-Agent\" = \"Mozilla/5.0\" } 2>&1; $response.workflow_runs | Select-Object -Property name, status, conclusion, created_at, html_url | Format-List)",
+      "PowerShell($jobs = Invoke-RestMethod -Uri \"https://api.github.com/repos/aman-punj/nitnem/actions/runs/26354853007/jobs\" -Headers @{ \"User-Agent\" = \"Mozilla/5.0\" }; $jobs.jobs | ForEach-Object { Write-Host \"Job: $\\($_.name\\) | $\\($_.conclusion\\)\"; $_.steps | ForEach-Object { Write-Host \"  Step: $\\($_.name\\) | $\\($_.conclusion\\)\" } })",
+      "PowerShell($jobs = Invoke-RestMethod -Uri \"https://api.github.com/repos/aman-punj/nitnem/actions/runs/26354853007/jobs\" -Headers @{ \"User-Agent\" = \"Mozilla/5.0\" }; $logUrl = $jobs.jobs[0].id; $log = Invoke-RestMethod -Uri \"https://api.github.com/repos/aman-punj/nitnem/actions/jobs/$logUrl/logs\" -Headers @{ \"User-Agent\" = \"Mozilla/5.0\" } -ErrorAction SilentlyContinue; Write-Host $log)",
+      "PowerShell($r = Invoke-RestMethod -Uri \"https://api.github.com/repos/aman-punj/nitnem/actions/runs?per_page=15\" -Headers @{ \"User-Agent\" = \"Mozilla/5.0\" }; $r.workflow_runs | Select-Object name, status, conclusion, @{n='created_at_ist';e={\\([datetime]$_.created_at\\).AddHours\\(5\\).AddMinutes\\(30\\).ToString\\(\"yyyy-MM-dd HH:mm IST\"\\)}}, event | Format-Table -AutoSize)",
+      "Bash(dart analyze *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\apsin\\.claude\\projects\\d--Dev-Projects-flutter-projects-nitnem\\memory"
