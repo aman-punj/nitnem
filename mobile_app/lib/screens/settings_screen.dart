@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
 import 'package:nitnem/controllers/font_size_controller.dart';
@@ -70,7 +71,7 @@ class SettingsScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Theme', style: SacredTypography.meta.copyWith(color: c.textSecondary)),
+                            _IconLabel(asset: 'assets/icons/ic_theme.svg', text: 'Theme', c: c),
                             const SizedBox(height: SacredSpacing.base),
                             SacredSegmentedControl<String>(
                               segments: const {'auto': 'Auto', 'light': 'Light', 'dark': 'Dark'},
@@ -87,7 +88,7 @@ class SettingsScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Language', style: SacredTypography.meta.copyWith(color: c.textSecondary)),
+                            _IconLabel(asset: 'assets/icons/ic_language.svg', text: 'Language', c: c),
                             const SizedBox(height: SacredSpacing.base),
                             SacredSegmentedControl<String>(
                               segments: const {'pa': 'ਪੰਜਾਬੀ', 'en': 'English', 'hi': 'हिन्दी'},
@@ -99,10 +100,16 @@ class SettingsScreen extends StatelessWidget {
                       ));
                     }
                     if (item.id == 'keep_awake') {
-                      return Obx(() => SwitchListTile(
-                        title: Text(item.title, style: TextStyle(color: c.textPrimary)),
-                        value: settingsController.isKeepAwakeEnabled.value,
-                        onChanged: settingsController.toggleKeepAwake,
+                      return Obx(() => SettingsTile(
+                        title: item.title,
+                        icon: item.icon,
+                        iconAsset: item.iconAsset,
+                        onTap: () => settingsController.toggleKeepAwake(!settingsController.isKeepAwakeEnabled.value),
+                        trailing: Switch(
+                          value: settingsController.isKeepAwakeEnabled.value,
+                          onChanged: settingsController.toggleKeepAwake,
+                          activeThumbColor: c.primaryAccent,
+                        ),
                       ));
                     }
                     if (item.id == 'clear_cache') {
@@ -155,7 +162,7 @@ class SettingsScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item.title, style: SacredTypography.meta.copyWith(color: c.textSecondary)),
+                            _IconLabel(asset: 'assets/icons/ic_fontsize.svg', text: item.title, c: c),
                             const SizedBox(height: SacredSpacing.base),
                             Container(
                               padding: const EdgeInsets.all(SacredSpacing.gutter),
@@ -180,6 +187,7 @@ class SettingsScreen extends StatelessWidget {
                     return SettingsTile(
                       title: item.title,
                       icon: item.icon,
+                      iconAsset: item.iconAsset,
                       onTap: () => _handleMenuAction(context, item),
                     );
                   }).toList(),
@@ -294,5 +302,30 @@ class SettingsScreen extends StatelessWidget {
       default:
         break;
     }
+  }
+}
+
+class _IconLabel extends StatelessWidget {
+  final String asset;
+  final String text;
+  final SacredColors c;
+
+  const _IconLabel({required this.asset, required this.text, required this.c});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SvgPicture.asset(
+          asset,
+          width: 13,
+          height: 13,
+          colorFilter: ColorFilter.mode(c.textSecondary, BlendMode.srcIn),
+        ),
+        const SizedBox(width: 5),
+        Text(text, style: SacredTypography.meta.copyWith(color: c.textSecondary)),
+      ],
+    );
   }
 }

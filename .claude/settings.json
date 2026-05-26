@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(gh run list --limit 10 2>&1)",
+      "Bash(git remote *)"
+    ]
+  }
+}

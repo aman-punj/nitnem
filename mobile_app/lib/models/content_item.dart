@@ -115,6 +115,7 @@ class ContentItem {
   final String? youtubeUrl;
   final String? thumbnail;
   final String? iconUrl;
+  final String? iconKey;
   final String categoryId;
   final int displayOrder;
 
@@ -128,6 +129,7 @@ class ContentItem {
     this.youtubeUrl,
     this.thumbnail,
     this.iconUrl,
+    this.iconKey,
     this.categoryId = 'uncategorized',
     this.displayOrder = 100,
   });
@@ -155,6 +157,7 @@ class ContentItem {
       youtubeUrl: map['youtube_url'],
       thumbnail: map['thumbnail'],
       iconUrl: map['iconUrl'] as String?,
+      iconKey: map['iconKey'] as String?,
       categoryId: map['categoryId'] ?? 'uncategorized',
       displayOrder: map['displayOrder'] ?? 100,
     );
@@ -171,6 +174,7 @@ class ContentItem {
       'youtube_url': youtubeUrl,
       'thumbnail': thumbnail,
       if (iconUrl != null) 'iconUrl': iconUrl,
+      if (iconKey != null) 'iconKey': iconKey,
       'categoryId': categoryId,
       'displayOrder': displayOrder,
     };

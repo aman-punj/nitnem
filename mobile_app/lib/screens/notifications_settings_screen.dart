@@ -24,6 +24,7 @@ class _NotificationsSettingsScreenState
   NotificationService get _svc => Get.find<NotificationService>();
 
   bool _notificationsEnabled = true;
+  bool _permPermanentlyDenied = false;
   bool _canScheduleExact = true;
 
   @override
@@ -47,12 +48,24 @@ class _NotificationsSettingsScreenState
   Future<void> _checkPermissions() async {
     final notifOk = await _svc.areNotificationsEnabled();
     final alarmOk = await _svc.canScheduleExact();
+    final permanentlyDenied = !notifOk
+        ? await _svc.isNotificationPermissionPermanentlyDenied()
+        : false;
     if (mounted) {
       setState(() {
         _notificationsEnabled = notifOk;
         _canScheduleExact = alarmOk;
+        _permPermanentlyDenied = permanentlyDenied;
       });
     }
+  }
+
+  Future<void> _requestPermission() async {
+    await _svc.requestBasicPermissions();
+    if (Get.isRegistered<NotificationSettingsController>()) {
+      await Get.find<NotificationSettingsController>().rescheduleAll();
+    }
+    await _checkPermissions();
   }
 
   @override
@@ -73,10 +86,13 @@ class _NotificationsSettingsScreenState
             _PermissionBanner(
               icon: Icons.notifications_off_rounded,
               title: 'Notifications Disabled',
-              body:
-                  'Reminders cannot be delivered. Enable notifications for Nitnem in your device settings.',
-              actionLabel: 'Open Settings',
-              onAction: _svc.openAppSettings,
+              body: _permPermanentlyDenied
+                  ? 'Reminders cannot be delivered. Enable notifications for Nitnem in your device settings.'
+                  : 'Allow notifications so prayer reminders and alerts are delivered on time.',
+              actionLabel:
+                  _permPermanentlyDenied ? 'Open Settings' : 'Enable Notifications',
+              onAction:
+                  _permPermanentlyDenied ? _svc.openAppSettings : _requestPermission,
             ),
           if (_notificationsEnabled && !_canScheduleExact)
             _PermissionBanner(
@@ -92,7 +108,7 @@ class _NotificationsSettingsScreenState
             children: [
               Obx(() => _NotifTile(
                     icon: Icons.wb_sunny_rounded,
-                    title: 'Morning Nitnem',
+                    title: 'Japji Sahib',
                     time: controller.morningTime.value,
                     enabled: controller.morningEnabled.value,
                     onToggle: controller.setMorningEnabled,
@@ -105,7 +121,7 @@ class _NotificationsSettingsScreenState
               _Divider(c: c),
               Obx(() => _NotifTile(
                     icon: Icons.nights_stay_rounded,
-                    title: 'Evening Nitnem',
+                    title: 'Rehras Sahib',
                     time: controller.eveningTime.value,
                     enabled: controller.eveningEnabled.value,
                     onToggle: controller.setEveningEnabled,
@@ -118,14 +134,30 @@ class _NotificationsSettingsScreenState
             ],
           ),
           FrostedSettingsCard(
-            title: 'HUKAMNAMA ALERTS',
+            title: 'PUSH NOTIFICATIONS',
             children: [
               Obx(() => _SimpleTile(
-                    icon: Icons.campaign_rounded,
+                    icon: Icons.menu_book_rounded,
                     title: 'Daily Hukamnama',
-                    subtitle: 'Receive updates sent by the admin',
+                    subtitle: 'Receive the daily Hukamnama from Harmandir Sahib',
                     enabled: controller.kumnaamaEnabled.value,
                     onToggle: controller.setKumnaamaEnabled,
+                  )),
+              _Divider(c: c),
+              Obx(() => _SimpleTile(
+                    icon: Icons.campaign_rounded,
+                    title: 'Announcements',
+                    subtitle: 'Important updates and news from the team',
+                    enabled: controller.announcementEnabled.value,
+                    onToggle: controller.setAnnouncementEnabled,
+                  )),
+              _Divider(c: c),
+              Obx(() => _SimpleTile(
+                    icon: Icons.live_tv_rounded,
+                    title: 'YouTube Live',
+                    subtitle: 'Get notified when live kirtan stream starts',
+                    enabled: controller.liveEnabled.value,
+                    onToggle: controller.setLiveEnabled,
                   )),
             ],
           ),

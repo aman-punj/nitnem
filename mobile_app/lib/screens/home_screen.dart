@@ -10,13 +10,11 @@ import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_sheet.dart';
 import 'package:nitnem/models/hukamnama_model.dart';
 import 'package:nitnem/screens/hukamnama_screen.dart';
-import 'package:nitnem/controllers/quote_controller.dart';
-import 'package:nitnem/core/design_system/tokens/spacing.dart';
-import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:nitnem/screens/listing_screen.dart';
 import 'package:nitnem/screens/settings_screen.dart';
 import 'package:nitnem/core/design_system/widgets/mini_player_bar.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_bar.dart';
+import 'package:nitnem/controllers/notification_settings_controller.dart';
 import 'package:nitnem/services/notification_service.dart';
 import 'package:nitnem/services/share_service.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
@@ -133,7 +131,11 @@ class _HomeScreenState extends State<HomeScreen> {
         onPrimaryPressed: () {
           prefs.setBool(_kPermAccepted, true);
           Navigator.pop(context);
-          Get.find<NotificationService>().requestPermissions();
+          Get.find<NotificationService>().requestBasicPermissions().then((_) {
+            if (Get.isRegistered<NotificationSettingsController>()) {
+              Get.find<NotificationSettingsController>().rescheduleAll();
+            }
+          });
         },
         onSecondaryPressed: () {
           final next = openCount + 10 + Random().nextInt(11);
@@ -165,7 +167,6 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         children: [
           const Expanded(child: ListingScreen()),
-          _HomeQuoteStrip(),
           const MiniPlayerBar(),
         ],
       ),
@@ -174,62 +175,5 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void onShareApp() {
     Get.find<ShareService>().shareApp(context);
-  }
-}
-
-class _HomeQuoteStrip extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final c = SacredColors.of(context);
-    return Obx(() {
-      final q = Get.find<QuoteController>().homeQuote;
-      if (q.text.isEmpty) return const SizedBox.shrink();
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: SacredSpacing.xl,
-          vertical: SacredSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: c.primaryAccent.withValues(alpha: 0.12)),
-          ),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              c.primaryAccent.withValues(alpha: 0.04),
-              Colors.transparent,
-            ],
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '"${q.text}"',
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: SacredTypography.bodySm.copyWith(
-                color: c.textSecondary.withValues(alpha: 0.75),
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            if (q.author != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                '— ${q.author}',
-                textAlign: TextAlign.center,
-                style: SacredTypography.meta.copyWith(
-                  color: c.textSecondary.withValues(alpha: 0.5),
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ],
-        ),
-      );
-    });
   }
 }

@@ -41,17 +41,11 @@ async function syncHukamnama(req, res) {
     const duration = Date.now() - start;
     logger.info('Hukamnama sync completed', { date: data.date, duration, fcmAlreadySent });
 
-    res.json({
-      success: true,
-      date: data.date,
-      fcmMessageId,
-      fcmAlreadySent,
-      durationMs: duration,
-    });
+    res.json({ success: true });
   } catch (err) {
     const duration = Date.now() - start;
     logger.error('Hukamnama sync failed', { error: err.message, duration });
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false });
   }
 }
 

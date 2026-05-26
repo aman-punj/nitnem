@@ -21,6 +21,7 @@ enum DrawerMenuItem {
     id: 'theme',
     title: 'Theme',
     icon: Icons.palette,
+    iconAsset: 'assets/icons/ic_theme.svg',
     section: SettingsSection.appearance,
     itemType: SettingsItemType.navigation,
   ),
@@ -28,6 +29,7 @@ enum DrawerMenuItem {
     id: 'language',
     title: 'Change Language',
     icon: Icons.language,
+    iconAsset: 'assets/icons/ic_language.svg',
     section: SettingsSection.appearance,
     itemType: SettingsItemType.navigation,
   ),
@@ -35,6 +37,7 @@ enum DrawerMenuItem {
     id: 'typography',
     title: 'Reading Size',
     icon: Icons.format_size,
+    iconAsset: 'assets/icons/ic_fontsize.svg',
     section: SettingsSection.appearance,
     itemType: SettingsItemType.slider,
   ),
@@ -42,6 +45,7 @@ enum DrawerMenuItem {
     id: 'notifications',
     title: 'Notifications',
     icon: Icons.notifications,
+    iconAsset: 'assets/icons/ic_bell.svg',
     section: SettingsSection.notifications,
     itemType: SettingsItemType.navigation,
   ),
@@ -49,6 +53,7 @@ enum DrawerMenuItem {
     id: 'clear_cache',
     title: 'Clear Cache',
     icon: Icons.delete_outline,
+    iconAsset: 'assets/icons/ic_storage.svg',
     section: SettingsSection.storage,
     itemType: SettingsItemType.action,
   ),
@@ -56,6 +61,7 @@ enum DrawerMenuItem {
     id: 'keep_awake',
     title: 'Keep Screen Awake',
     icon: Icons.visibility,
+    iconAsset: 'assets/icons/ic_lock.svg',
     section: SettingsSection.experience,
     itemType: SettingsItemType.toggle,
   ),
@@ -77,6 +83,7 @@ enum DrawerMenuItem {
     id: 'feedback',
     title: 'Feedback',
     icon: Icons.feedback,
+    iconAsset: 'assets/icons/ic_quote.svg',
     section: SettingsSection.support,
     itemType: SettingsItemType.navigation,
   ),
@@ -84,6 +91,7 @@ enum DrawerMenuItem {
     id: 'faq',
     title: 'FAQ',
     icon: Icons.help_outline,
+    iconAsset: 'assets/icons/ic_faq.svg',
     section: SettingsSection.support,
     itemType: SettingsItemType.navigation,
   ),
@@ -91,6 +99,7 @@ enum DrawerMenuItem {
     id: 'privacy_policy',
     title: 'Privacy Policy',
     icon: Icons.privacy_tip,
+    iconAsset: 'assets/icons/ic_hukamnama.svg',
     section: SettingsSection.support,
     itemType: SettingsItemType.navigation,
   );
@@ -98,6 +107,7 @@ enum DrawerMenuItem {
   final String id;
   final String title;
   final IconData icon;
+  final String? iconAsset;
   final SettingsSection section;
   final SettingsItemType itemType;
 
@@ -105,6 +115,7 @@ enum DrawerMenuItem {
     required this.id,
     required this.title,
     required this.icon,
+    this.iconAsset,
     required this.section,
     required this.itemType,
   });

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/design_system/tokens/colors.dart';
@@ -79,6 +80,54 @@ class _HukamnamaScreenState extends State<HukamnamaScreen>
     if (await canLaunchUrl(url)) launchUrl(url);
   }
 
+  Future<void> _shareHukamnama() async {
+    final d = widget.data;
+    final buf = StringBuffer();
+
+    buf.writeln('ੴ ਸਤਿ ਨਾਮੁ ਕਰਤਾ ਪੁਰਖੁ ॥');
+    buf.writeln();
+    buf.writeln('🙏 ਹੁਕਮਨਾਮਾ ਸਾਹਿਬ');
+    buf.writeln('📅 ${_formatDate(d.date)}');
+    if (d.source.isNotEmpty) buf.writeln('📍 ${d.source}');
+    buf.writeln();
+    buf.writeln('━━━━━━━━━━━━━━━━━━━━');
+    buf.writeln();
+    buf.writeln(d.gurmukhi.trim());
+
+    if (d.translationPunjabi.isNotEmpty) {
+      buf.writeln();
+      buf.writeln('━━━━━━━━━━━━━━━━━━━━');
+      buf.writeln('ਵਿਆਖਿਆ');
+      buf.writeln('━━━━━━━━━━━━━━━━━━━━');
+      buf.writeln();
+      buf.writeln(d.translationPunjabi.trim());
+    }
+
+    if (d.translationEnglish.isNotEmpty) {
+      buf.writeln();
+      buf.writeln('━━━━━━━━━━━━━━━━━━━━');
+      buf.writeln('English Translation');
+      buf.writeln('━━━━━━━━━━━━━━━━━━━━');
+      buf.writeln();
+      buf.writeln(d.translationEnglish.trim());
+    }
+
+    buf.writeln();
+    buf.writeln('─────────────────────');
+    buf.writeln('Shared via Bani Sagar 🙏');
+
+    final box = context.findRenderObject() as RenderBox?;
+    final rect = box != null ? box.localToGlobal(Offset.zero) & box.size : null;
+
+    await SharePlus.instance.share(
+      ShareParams(
+        text: buf.toString(),
+        subject: 'ਹੁਕਮਨਾਮਾ ਸਾਹਿਬ — ${_formatDate(d.date)}',
+        sharePositionOrigin: rect,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = SacredColors.of(context);
@@ -89,6 +138,11 @@ class _HukamnamaScreenState extends State<HukamnamaScreen>
       appBar: SacredDsAppBar(
         title: 'ਹੁਕਮਨਾਮਾ ਸਾਹਿਬ',
         actions: [
+          IconButton(
+            icon: Icon(Icons.share_rounded, color: c.primary),
+            tooltip: 'Share Hukamnama',
+            onPressed: _shareHukamnama,
+          ),
           IconButton(
             icon: Icon(Icons.open_in_browser_rounded, color: c.primary),
             tooltip: 'Open on SGPC.net',

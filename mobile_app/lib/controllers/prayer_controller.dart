@@ -104,7 +104,7 @@ class PrayerController extends GetxController {
   Future<Uri?> _resolveArtworkUri() async {
     if (_artworkFileUri != null) return _artworkFileUri;
     try {
-      final bytes = await rootBundle.load('assets/images/bani_sagar_logo.png');
+      final bytes = await rootBundle.load('assets/images/bani_sagar_logo_black_bg.png');
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/bani_sagar_logo_notification.png');
       await file.writeAsBytes(

@@ -1,10 +1,8 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:nitnem/core/utils/app_logs.dart';
 import 'package:nitnem/services/analytics_service.dart';
 import 'package:nitnem/services/notification_service.dart';
 import 'package:nitnem/services/shared_prefs_service.dart';
@@ -63,10 +61,14 @@ class NotificationSettingsController extends GetxService {
   static const _kEveningMsg = 'notif_evening_msg';
   static const _kEveningUserSet = 'notif_evening_user_set';
   static const _kKumnaamaEnabled = 'notif_kumnama_enabled';
+  static const _kAnnouncementEnabled = 'notif_announcement_enabled';
+  static const _kLiveEnabled = 'notif_live_enabled';
   static const _kCustomReminders = 'notif_custom_reminders';
   static const _kCustomIdCounter = 'notif_custom_id_counter';
 
   static const _fcmTopic = 'hukamnama';
+  static const _fcmTopicAnnouncement = 'announcement';
+  static const _fcmTopicLive = 'live_kirtan';
   // Legacy topic name used before the fix — unsubscribe once on upgrade.
   static const _fcmTopicLegacy = 'kumnama';
   static const _kLegacyTopicCleaned = 'notif_legacy_topic_cleaned';
@@ -79,6 +81,8 @@ class NotificationSettingsController extends GetxService {
   final eveningTime = const TimeOfDay(hour: 18, minute: 30).obs;
   final eveningUserSetTime = false.obs;
   final kumnaamaEnabled = true.obs;
+  final announcementEnabled = true.obs;
+  final liveEnabled = true.obs;
   final customReminders = <CustomReminder>[].obs;
 
   // Server-controlled message text (not user-editable)
@@ -108,6 +112,10 @@ class NotificationSettingsController extends GetxService {
         SharedPrefsService.getBool(_kEveningEnabled, defaultValue: true);
     kumnaamaEnabled.value =
         SharedPrefsService.getBool(_kKumnaamaEnabled, defaultValue: true);
+    announcementEnabled.value =
+        SharedPrefsService.getBool(_kAnnouncementEnabled, defaultValue: true);
+    liveEnabled.value =
+        SharedPrefsService.getBool(_kLiveEnabled, defaultValue: true);
     morningUserSetTime.value =
         SharedPrefsService.getBool(_kMorningUserSet, defaultValue: false);
     eveningUserSetTime.value =
@@ -195,12 +203,31 @@ class NotificationSettingsController extends GetxService {
     Get.find<AnalyticsService>().logReminderToggled(type: 'kumnama', enabled: val);
   }
 
+  Future<void> setAnnouncementEnabled(bool val) async {
+    announcementEnabled.value = val;
+    await SharedPrefsService.setBool(_kAnnouncementEnabled, val);
+    await _applyAnnouncement();
+  }
+
+  Future<void> setLiveEnabled(bool val) async {
+    liveEnabled.value = val;
+    await SharedPrefsService.setBool(_kLiveEnabled, val);
+    await _applyLive();
+  }
+
+  /// Re-applies all schedules and FCM subscriptions with current permissions.
+  /// Call this after the user grants notification permission so exact-alarm
+  /// mode kicks in and all subscriptions are confirmed.
+  Future<void> rescheduleAll() => _applyAllSchedules();
+
   // ── Schedule helpers ──────────────────────────────────────────────────────
 
   Future<void> _applyAllSchedules() async {
     await _applyMorning();
     await _applyEvening();
     await _applyKumnama();
+    await _applyAnnouncement();
+    await _applyLive();
     for (final r in customReminders) {
       await _applyCustomReminder(r);
     }
@@ -235,16 +262,6 @@ class NotificationSettingsController extends GetxService {
   }
 
   Future<void> _applyKumnama() async {
-    // Ensure FCM token is ready before subscribing — token may not exist yet
-    // on first launch when this runs before runApp().
-    try {
-      await FirebaseMessaging.instance.getToken()
-          .timeout(const Duration(seconds: 5));
-    } catch (e) {
-      appLogs('FCM getToken failed — skipping kumnama subscription',
-          tag: 'NOTIF', error: e, stackTrace: StackTrace.current);
-      return;
-    }
     // One-time migration: unsubscribe from the old mis-named topic.
     if (!SharedPrefsService.getBool(_kLegacyTopicCleaned)) {
       await _svc.unsubscribeFromTopic(_fcmTopicLegacy);
@@ -254,6 +271,22 @@ class NotificationSettingsController extends GetxService {
       await _svc.subscribeToTopic(_fcmTopic);
     } else {
       await _svc.unsubscribeFromTopic(_fcmTopic);
+    }
+  }
+
+  Future<void> _applyAnnouncement() async {
+    if (announcementEnabled.value) {
+      await _svc.subscribeToTopic(_fcmTopicAnnouncement);
+    } else {
+      await _svc.unsubscribeFromTopic(_fcmTopicAnnouncement);
+    }
+  }
+
+  Future<void> _applyLive() async {
+    if (liveEnabled.value) {
+      await _svc.subscribeToTopic(_fcmTopicLive);
+    } else {
+      await _svc.unsubscribeFromTopic(_fcmTopicLive);
     }
   }
 
