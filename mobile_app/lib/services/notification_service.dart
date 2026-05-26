@@ -84,14 +84,15 @@ class NotificationService extends GetxService {
 
   // ── Permissions ──────────────────────────────────────────────────────────
 
-  /// Requests only the basic notification permissions (FCM + POST_NOTIFICATIONS).
-  /// Does NOT request exact alarm — that is requested contextually via [openAlarmSettings].
+  /// Requests basic notification permissions (FCM + POST_NOTIFICATIONS + SCHEDULE_EXACT_ALARM).
+  /// Includes exact alarm since scheduled local notifications require it on Android 12+.
   Future<void> requestBasicPermissions() async {
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
     final android = _plugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
     await android?.requestNotificationsPermission();
+    await android?.requestExactAlarmsPermission();
   }
 
   /// Returns true when the user has permanently denied notification permission
@@ -161,37 +162,43 @@ class NotificationService extends GetxService {
     required int minute,
   }) async {
     await _plugin.cancel(id);
-    // Use exact alarms only when the OS has granted permission; fall back to
-    // inexact so scheduling never crashes (notification still fires, ±a few min).
     final useExact = await canScheduleExact();
     final scheduleMode = useExact
         ? AndroidScheduleMode.exactAllowWhileIdle
         : AndroidScheduleMode.inexactAllowWhileIdle;
 
-    await _plugin.zonedSchedule(
-      id,
-      title,
-      body,
-      _nextInstanceOfTime(hour, minute),
-      NotificationDetails(
-        android: const AndroidNotificationDetails(
-          _channelId,
-          _channelName,
-          importance: Importance.max,
-          priority: Priority.high,
-          largeIcon: _largeIcon,
+    final nextTime = _nextInstanceOfTime(hour, minute);
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        nextTime,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _channelId,
+            _channelName,
+            importance: Importance.max,
+            priority: Priority.high,
+            largeIcon: _largeIcon,
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: false,
+            presentSound: true,
+          ),
         ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: false,
-          presentSound: true,
-        ),
-      ),
-      androidScheduleMode: scheduleMode,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+        androidScheduleMode: scheduleMode,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+      debugPrint('Scheduled notification: id=$id, $title at ${nextTime.toString()}, '
+          'exact=$useExact, mode=$scheduleMode');
+    } catch (e) {
+      debugPrint('ERROR scheduling notification id=$id: $e');
+      rethrow;
+    }
   }
 
   Future<void> cancelNotification(int id) async {
@@ -219,6 +226,13 @@ class NotificationService extends GetxService {
       ),
       payload: payload,
     );
+  }
+
+  /// Returns a list of IDs of all pending scheduled notifications.
+  /// Useful for debugging whether notifications are actually scheduled.
+  Future<List<int>> getPendingNotifications() async {
+    final pending = await _plugin.pendingNotificationRequests();
+    return pending.map((n) => n.id).toList();
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
