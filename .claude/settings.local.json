@@ -46,7 +46,8 @@
       "PowerShell($jobs = Invoke-RestMethod -Uri \"https://api.github.com/repos/aman-punj/nitnem/actions/runs/26354853007/jobs\" -Headers @{ \"User-Agent\" = \"Mozilla/5.0\" }; $logUrl = $jobs.jobs[0].id; $log = Invoke-RestMethod -Uri \"https://api.github.com/repos/aman-punj/nitnem/actions/jobs/$logUrl/logs\" -Headers @{ \"User-Agent\" = \"Mozilla/5.0\" } -ErrorAction SilentlyContinue; Write-Host $log)",
       "PowerShell($r = Invoke-RestMethod -Uri \"https://api.github.com/repos/aman-punj/nitnem/actions/runs?per_page=15\" -Headers @{ \"User-Agent\" = \"Mozilla/5.0\" }; $r.workflow_runs | Select-Object name, status, conclusion, @{n='created_at_ist';e={\\([datetime]$_.created_at\\).AddHours\\(5\\).AddMinutes\\(30\\).ToString\\(\"yyyy-MM-dd HH:mm IST\"\\)}}, event | Format-Table -AutoSize)",
       "Bash(dart analyze *)",
-      "Bash(grep -A6 \"name: flutter_local_notifications$\" pubspec.lock)"
+      "Bash(grep -A6 \"name: flutter_local_notifications$\" pubspec.lock)",
+      "Bash(git commit *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\apsin\\.claude\\projects\\d--Dev-Projects-flutter-projects-nitnem\\memory"
