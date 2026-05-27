@@ -1,10 +1,7 @@
 name: Daily Hukamnama Sync
 
 on:
-  schedule:
-    # 04:00 UTC = 09:30 IST — after Hukamnama is published at Sri Harmandir Sahib
-    - cron: '0 4 * * *'
-  workflow_dispatch:
+  workflow_dispatch: # Triggered by cron-job.org external cron service
 
 jobs:
   sync:
