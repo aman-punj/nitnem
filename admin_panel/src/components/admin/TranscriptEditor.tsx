@@ -17,7 +17,7 @@ export function TranscriptEditor({ lrc, json, onChange }: TranscriptEditorProps)
     
     // Auto-parse to JSON
     try {
-      const segments = parseLrc(val)
+      const segments = parseLrc(val, activeTab)
       const nextJson = JSON.stringify({ segments }, null, 2)
       onChange(nextLrc, { ...json, [activeTab]: nextJson })
     } catch (err) {

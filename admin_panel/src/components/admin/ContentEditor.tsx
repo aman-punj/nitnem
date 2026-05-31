@@ -455,7 +455,7 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
                         if (!trackEditor) return
                         const nextLrc = { ...trackEditor.transcriptLrc, [lrcStudioLang]: lrc }
                         try {
-                          const segments = parseLrc(lrc)
+                          const segments = parseLrc(lrc, lrcStudioLang)
                           const nextJson = { ...trackEditor.transcriptJson, [lrcStudioLang]: JSON.stringify({ segments }, null, 2) }
                           setTrackEditor({ ...trackEditor, transcriptLrc: nextLrc, transcriptJson: nextJson })
                         } catch {
