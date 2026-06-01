@@ -1,5 +1,10 @@
 # ---------------- Flutter ----------------
 
+# Play Core split-install classes are referenced by the Flutter embedding but
+# unused (no deferred components). The library is removed for targetSdk 34
+# compatibility, so tell R8 to ignore the dangling references.
+-dontwarn com.google.android.play.core.**
+
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 -keep class io.flutter.embedding.** { *; }
