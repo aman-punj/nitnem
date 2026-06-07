@@ -20,7 +20,7 @@ import 'package:nitnem/screens/developer_support_screen.dart';
 import 'package:nitnem/screens/faq_screen.dart';
 import 'package:nitnem/screens/feedback_screen.dart';
 import 'package:nitnem/screens/notifications_settings_screen.dart';
-import 'package:nitnem/screens/privacy_policy_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:nitnem/services/share_service.dart';
 
@@ -297,7 +297,10 @@ class SettingsScreen extends StatelessWidget {
         Get.to(() => FaqScreen());
         break;
       case DrawerMenuItem.privacy_policy:
-        Get.to(() => PrivacyPolicyScreen());
+        launchUrl(
+          Uri.parse('https://sites.google.com/view/bani-sagar-privacy-policy'),
+          mode: LaunchMode.externalApplication,
+        );
         break;
       default:
         break;

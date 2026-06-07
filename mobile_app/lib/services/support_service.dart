@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:nitnem/models/faq_item.dart';
-import 'package:nitnem/models/privacy_policy_content.dart';
 import 'package:nitnem/models/support_request_model.dart';
 
 class SupportService {
@@ -37,18 +36,5 @@ class SupportService {
       items.sort((a, b) => a.order.compareTo(b.order));
       return items;
     }
-  }
-
-  Future<PrivacyPolicyContent> fetchPrivacyPolicy() async {
-    final doc = await _firestore
-        .collection('app_content')
-        .doc('privacy_policy')
-        .get();
-
-    if (!doc.exists || doc.data() == null) {
-      return const PrivacyPolicyContent(title: 'Privacy Policy', content: '');
-    }
-
-    return PrivacyPolicyContent.fromMap(doc.data()!);
   }
 }
