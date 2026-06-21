@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'cached_svg_image.dart';
 import '../tokens/colors.dart';
 import '../tokens/radius.dart';
 import '../tokens/spacing.dart';
@@ -86,10 +87,11 @@ class _BaniListTileState extends State<BaniListTile>
         // SVG from Cloudinary — tinted with theme accent, single file for both modes
         return Padding(
           padding: const EdgeInsets.all(11),
-          child: SvgPicture.network(
-            url,
+          child: CachedSvgImage(
+            url: url,
             colorFilter: ColorFilter.mode(c.primaryAccent, BlendMode.srcIn),
             placeholderBuilder: (_) => _svgOrIcon(c),
+            errorWidget: _svgOrIcon(c),
           ),
         );
       }
