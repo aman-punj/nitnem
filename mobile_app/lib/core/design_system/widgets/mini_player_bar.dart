@@ -8,6 +8,7 @@ import '../tokens/colors.dart';
 import '../tokens/radius.dart';
 import '../tokens/spacing.dart';
 import '../tokens/typography.dart';
+import 'cached_svg_image.dart';
 
 class MiniPlayerBar extends StatelessWidget {
   const MiniPlayerBar({super.key});
@@ -232,12 +233,22 @@ class _Thumbnail extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: url.isNotEmpty
-          ? CachedNetworkImage(
-              imageUrl: url,
-              fit: BoxFit.cover,
-              placeholder: (_, __) => _FallbackIcon(c: c),
-              errorWidget: (_, __, ___) => _FallbackIcon(c: c),
-            )
+          ? (url.toLowerCase().endsWith('.svg')
+              ? Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: CachedSvgImage(
+                    url: url,
+                    colorFilter: ColorFilter.mode(c.primaryAccent, BlendMode.srcIn),
+                    placeholderBuilder: (_) => _FallbackIcon(c: c),
+                    errorWidget: _FallbackIcon(c: c),
+                  ),
+                )
+              : CachedNetworkImage(
+                  imageUrl: url,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => _FallbackIcon(c: c),
+                  errorWidget: (_, __, ___) => _FallbackIcon(c: c),
+                ))
           : _FallbackIcon(c: c),
     );
   }
