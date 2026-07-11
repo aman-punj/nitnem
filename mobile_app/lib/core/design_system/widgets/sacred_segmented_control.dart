@@ -41,7 +41,7 @@ class SacredSegmentedControl<T> extends StatelessWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: SacredMotion.normal),
                 padding: EdgeInsets.symmetric(
-                  horizontal: isSecondary ? 12 : 24,
+                  horizontal: isSecondary ? 12 : 16,
                   vertical: isSecondary ? 4 : 8,
                 ),
                 decoration: BoxDecoration(
@@ -58,11 +58,16 @@ class SacredSegmentedControl<T> extends StatelessWidget {
                       : null,
                 ),
                 child: Center(
-                  child: Text(
-                    entry.value,
-                    style: (isSecondary ? SacredTypography.labelSm : SacredTypography.bodyMd).copyWith(
-                      color: isSelected ? c.onPrimary : c.textSecondary,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      entry.value,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: (isSecondary ? SacredTypography.labelSm : SacredTypography.bodyMd).copyWith(
+                        color: isSelected ? c.onPrimary : c.textSecondary,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      ),
                     ),
                   ),
                 ),

@@ -1,13 +1,16 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:nitnem/controllers/app_info_controller.dart';
 import 'package:nitnem/controllers/hukamnama_controller.dart';
 import 'package:nitnem/core/design_system/tokens/colors.dart';
 import 'package:nitnem/core/design_system/widgets/sacred_app_sheet.dart';
+import 'package:nitnem/core/design_system/widgets/sacred_update_sheet.dart';
 import 'package:nitnem/models/hukamnama_model.dart';
 import 'package:nitnem/screens/hukamnama_screen.dart';
 import 'package:nitnem/screens/listing_screen.dart';
@@ -42,8 +45,9 @@ class _HomeScreenState extends State<HomeScreen> {
     Get.find<NotificationService>().onHukamnamaTap = _openHukamnamaDetail;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _maybeShowPermissionSheet();
-      _maybeOpenHukamnamaScreen();
+      // Wait for the splash screen's 800ms fade transition to complete
+      await Future.delayed(const Duration(milliseconds: 1000));
+      await _runStartupSequence();
 
       // Widget cold-start (app launched by tapping the home widget)
       final widgetUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
@@ -86,28 +90,38 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Opens Hukamnama screen directly on the first daily launch (no sheet).
-  void _maybeOpenHukamnamaScreen() {
-    final ctrl = Get.find<HukamnamaController>();
-    if (!ctrl.isEnabled.value) return;
-    if (!ctrl.shouldShowTodaySheet()) return;
-
-    if (ctrl.hukamnama.value != null) {
-      ctrl.markSheetShown();
-      Get.to(() => HukamnamaScreen(data: ctrl.hukamnama.value!));
-      return;
-    }
-
-    once(ctrl.hukamnama, (HukamnamaModel? data) {
-      if (data == null) return;
-      if (!ctrl.isEnabled.value) return;
-      if (!ctrl.shouldShowTodaySheet()) return;
-      ctrl.markSheetShown();
-      Get.to(() => HukamnamaScreen(data: data));
-    });
+  Future<void> _runStartupSequence() async {
+    if (!mounted) return;
+    await _maybeOpenHukamnamaScreen();
+    if (!mounted) return;
+    await _maybeShowPermissionSheet();
+    if (!mounted) return;
+    await _maybeShowMinorUpdateSheet();
   }
 
-  void _maybeShowPermissionSheet() {
+  /// Opens Hukamnama screen directly on the first daily launch (no sheet).
+  Future<void> _maybeOpenHukamnamaScreen() async {
+    final ctrl = Get.find<HukamnamaController>();
+    if (!ctrl.isEnabled.value) return;
+    
+    // Wait for the data to be fetched first
+    if (ctrl.hukamnama.value == null) {
+      try {
+        await Future.any([
+          ctrl.hukamnama.stream.firstWhere((data) => data != null),
+          Future.delayed(const Duration(seconds: 3)),
+        ]);
+      } catch (_) {}
+    }
+
+    if (!ctrl.shouldShowTodaySheet()) return;
+    if (ctrl.hukamnama.value == null) return;
+
+    ctrl.markSheetShown();
+    await Get.to(() => HukamnamaScreen(data: ctrl.hukamnama.value!));
+  }
+
+  Future<void> _maybeShowPermissionSheet() async {
     final prefs = SharedPrefsService.instance;
 
     if (prefs.getBool(_kPermAccepted) ?? false) return;
@@ -118,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final nextOpen = prefs.getInt(_kPermNextOpen);
     if (nextOpen != null && openCount < nextOpen) return;
 
-    showModalBottomSheet<void>(
+    await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -144,6 +158,31 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _maybeShowMinorUpdateSheet() async {
+    final controller = Get.find<AppInfoController>();
+    if (await controller.shouldRecommendUpdate()) {
+      final config = controller.appConfig.value;
+      final message = config?.messages.minorUpdate;
+      if (message != null && mounted) {
+        final storeUrl = Platform.isIOS
+            ? config?.storeUrl.ios ?? ''
+            : config?.storeUrl.android ?? '';
+        await showModalBottomSheet<void>(
+          context: context,
+          backgroundColor: Colors.transparent,
+          isScrollControlled: true,
+          builder: (_) => SacredUpdateSheet(
+            title: message.title,
+            body: message.body,
+            primaryButtonText: message.primaryButton,
+            secondaryButtonText: message.secondaryButton,
+            storeUrl: storeUrl,
+          ),
+        );
+      }
+    }
   }
 
   @override

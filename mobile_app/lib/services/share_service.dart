@@ -8,8 +8,8 @@ class ShareService {
   Future<void> shareApp(BuildContext context) async {
     try {
       const imageAssetPath = 'assets/images/bani_sagar_logo.png';
-      const fallbackApkUrl =
-          'https://drive.google.com/file/d/your_apk_id/view?usp=sharing';
+      const playStoreUrl =
+          'https://play.google.com/store/apps/details?id=com.banisagar.app';
 
       final byteData = await rootBundle.load(imageAssetPath);
       final buffer = byteData.buffer;
@@ -28,7 +28,7 @@ class ShareService {
       // This implementation also handles iPad support via sharePositionOrigin.
       await SharePlus.instance.share(
         ShareParams(
-          text: '🌟 Check out the Bani Sagar app!\n\n🔗 $fallbackApkUrl\n\nFeel the divine connection daily 🙏',
+          text: '🌟 Check out the Bani Sagar app!\n\n🔗 Play Store: $playStoreUrl\n\nFeel the divine connection daily 🙏',
           subject: 'Bani Sagar - Daily Nitnem & Bani App',
           files: [XFile(tempImageFile.path)],
           sharePositionOrigin: rect,

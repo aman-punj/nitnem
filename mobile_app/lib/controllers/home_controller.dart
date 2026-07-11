@@ -1,10 +1,6 @@
-import 'dart:io';
-
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:nitnem/controllers/app_info_controller.dart';
 import 'package:nitnem/controllers/language_controller.dart';
-import 'package:nitnem/core/design_system/tokens/typography.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/content_category.dart';
 import '../models/content_item.dart';
@@ -21,7 +17,6 @@ class HomeController extends GetxController {
   final FirebaseCategoryService _firebaseCategoryService;
   final LocalContentService _localContentService;
   final TranscriptSyncService _syncService;
-  final AppInfoController _appInfoController;
 
   HomeController({
     required FirebaseContentService firebaseContentService,
@@ -32,8 +27,7 @@ class HomeController extends GetxController {
   })  : _firebaseContentService = firebaseContentService,
         _firebaseCategoryService = firebaseCategoryService,
         _localContentService = localContentService,
-        _syncService = syncService,
-        _appInfoController = appInfoController;
+        _syncService = syncService;
 
   final RxList<ContentItem> contentItems = <ContentItem>[].obs;
   final RxList<ContentCategory> categories = <ContentCategory>[].obs;
@@ -44,59 +38,6 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     _loadInitialContent();
-    _checkUpdate();
-  }
-
-  Future<void> _checkUpdate() async {
-    if (await _appInfoController.shouldRecommendUpdate()) {
-      _showUpdateDialog();
-    }
-  }
-
-  void _showUpdateDialog() {
-    final config = _appInfoController.appConfig.value;
-    if (config == null || config.messages.minorUpdate == null) return;
-
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: const Color(0xFF201F1F),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          config.messages.minorUpdate!.title,
-          style: SacredTypography.headlineMd
-              .copyWith(color: const Color(0xFFF2CA50)),
-        ),
-        content: Text(
-          config.messages.minorUpdate!.body,
-          style: SacredTypography.bodyMd,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text(config.messages.minorUpdate!.secondaryButton ?? "Later",
-                style: const TextStyle(color: Color(0xFFD0C5AF))),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF2CA50),
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () async {
-              Get.back();
-              final storeUrl =
-                  Platform.isIOS ? config.storeUrl.ios : config.storeUrl.android;
-              final url = Uri.parse(storeUrl);
-              if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
-              }
-            },
-            child: Text(config.messages.minorUpdate!.primaryButton),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _loadInitialContent() async {
@@ -158,7 +99,8 @@ class HomeController extends GetxController {
       final connectivity = Get.find<ConnectivityService>();
       if (!connectivity.isConnected) {
         connectivity.showOfflineSnackbar(
-          message: 'Connect to the internet to play "${item.titles.getForLanguage('en')}".',
+          message:
+              'Connect to the internet to play "${item.titles.getForLanguage('en')}".',
         );
         return;
       }

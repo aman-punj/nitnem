@@ -267,26 +267,31 @@ class _SplashScreenState extends State<SplashScreen>
 
             // Footer
             Positioned(
-              bottom: 32,
+              bottom: 0,
               left: 0,
               right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 14,
-                    color: c.textSecondary.withValues(alpha: 0.3),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 32),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 14,
+                        color: c.textSecondary.withValues(alpha: 0.3),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Crafted for Mindfulness',
+                        style: SacredTypography.bodySm.copyWith(
+                          fontSize: 11,
+                          color: c.textSecondary.withValues(alpha: 0.3),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Crafted for Mindfulness',
-                    style: SacredTypography.bodySm.copyWith(
-                      fontSize: 11,
-                      color: c.textSecondary.withValues(alpha: 0.3),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ],
@@ -340,20 +345,5 @@ class _SplashScreenState extends State<SplashScreen>
       return;
     }
 
-    if (await controller.shouldRecommendUpdate()) {
-      final message = config?.messages.minorUpdate;
-      if (message != null && mounted) {
-        showModalBottomSheet(
-          context: context,
-          builder: (_) => SacredUpdateSheet(
-            title: message.title,
-            body: message.body,
-            primaryButtonText: message.primaryButton,
-            secondaryButtonText: message.secondaryButton,
-            storeUrl: storeUrl,
-          ),
-        );
-      }
     }
   }
-}
