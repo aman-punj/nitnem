@@ -49,6 +49,10 @@ class HukamnamaController extends GetxController {
     await _pushToWidget(data);
   }
 
+  Future<void> refreshHukamnama() async {
+    await _fetchAndSync();
+  }
+
   /// Returns true if the daily sheet hasn't been shown yet today.
   bool shouldShowTodaySheet() {
     final stored = SharedPrefsService.instance.getString(_kShownDate) ?? '';

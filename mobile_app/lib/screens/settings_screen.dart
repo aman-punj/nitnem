@@ -215,8 +215,9 @@ class SettingsScreen extends StatelessWidget {
                 final q = quoteController.quote;
                 if (q.text.isEmpty) return const SizedBox.shrink();
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: SacredSpacing.xl),
+                  padding: EdgeInsets.zero,
                   child: Container(
+                    width: double.infinity,
                     padding: const EdgeInsets.all(SacredSpacing.gutter),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(SacredRadius.md),

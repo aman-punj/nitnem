@@ -9,4 +9,4 @@ const bool kUseMockData = true;
 
 /// Whether the app should use local JSON mock data.
 /// Always `false` in release builds regardless of [kUseMockData].
-bool get useMockData => kDebugMode && kUseMockData;
+bool get useMockData => false ?? kDebugMode && kUseMockData;

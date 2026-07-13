@@ -34,4 +34,8 @@ class QuoteController extends GetxController {
       _settingsQuote.value = shuffled[1];
     }
   }
+
+  Future<void> refreshQuotes() async {
+    await _load();
+  }
 }

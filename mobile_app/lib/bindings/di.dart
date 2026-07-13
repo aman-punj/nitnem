@@ -32,8 +32,15 @@ import 'package:nitnem/services/support_service.dart';
 import '../controllers/home_controller.dart';
 import '../controllers/mini_player_controller.dart';
 import '../controllers/quote_controller.dart';
+import '../core/utils/mock_config.dart';
 import '../services/connectivity_service.dart';
 import '../services/firebase_service.dart';
+import '../services/mock/mock_app_info_service.dart';
+import '../services/mock/mock_category_service.dart';
+import '../services/mock/mock_content_service.dart';
+import '../services/mock/mock_hukamnama_service.dart';
+import '../services/mock/mock_quote_service.dart';
+import '../services/mock/mock_support_service.dart';
 import '../services/quote_service.dart';
 import '../services/transcript_path_service.dart';
 
@@ -69,11 +76,21 @@ class DependencyInjection {
 
     Get.put(PrayerStorageService());
     Get.put(PrayerAssetService());
-    Get.put(FirebaseContentService());
-    Get.put(FirebaseCategoryService());
+
+    // Data services — swap Firebase for mock when developing locally
+    if (useMockData) {
+      debugPrint('[DI] 🧪 Using MOCK data services (local JSON fixtures)');
+      Get.put<FirebaseContentService>(MockContentService());
+      Get.put<FirebaseCategoryService>(MockCategoryService());
+      Get.put<SupportService>(MockSupportService());
+    } else {
+      Get.put(FirebaseContentService());
+      Get.put(FirebaseCategoryService());
+      Get.put(SupportService());
+    }
+
     Get.put(LocalContentService(SharedPrefsService.instance));
     Get.put(ShareService());
-    Get.put(SupportService());
     Get.put(AnalyticsService());
 
     // Domain layer
@@ -82,10 +99,16 @@ class DependencyInjection {
 
     // Controllers
     Get.put(AppInfoController(
-      service: FirebaseAppInfoService(firestoreInstance: FirebaseFirestore.instance),
+      service: useMockData
+          ? MockAppInfoService()
+          : FirebaseAppInfoService(firestoreInstance: FirebaseFirestore.instance),
     ));
-    Get.put(HukamnamaController(service: HukamnamaService()));
-    Get.put(QuoteController(service: QuoteService()));
+    Get.put(HukamnamaController(
+      service: useMockData ? MockHukamnamaService() : HukamnamaService(),
+    ));
+    Get.put(QuoteController(
+      service: useMockData ? MockQuoteService() : QuoteService(),
+    ));
     Get.put(HomeController(
       firebaseContentService: Get.find(),
       firebaseCategoryService: Get.find(),

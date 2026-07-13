@@ -51,60 +51,77 @@ class ListingScreen extends StatelessWidget {
       return GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.translucent,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // ─── Hukamnama Card ───────────────────────────────────────────
-            SliverToBoxAdapter(child: _HukamnamaCard()),
+        child: RefreshIndicator(
+          color: c.primaryAccent,
+          backgroundColor: c.surfacePrimary,
+          onRefresh: () async {
+            final futures = <Future>[];
+            futures.add(controller.refreshContent());
+            if (Get.isRegistered<HukamnamaController>()) {
+              futures.add(Get.find<HukamnamaController>().refreshHukamnama());
+            }
+            if (Get.isRegistered<QuoteController>()) {
+              futures.add(Get.find<QuoteController>().refreshQuotes());
+            }
+            await Future.wait(futures);
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            slivers: [
+              // ─── Hukamnama Card ───────────────────────────────────────────
+              SliverToBoxAdapter(child: _HukamnamaCard()),
 
-            // ─── Search Bar ───────────────────────────────────────────────
-            // SliverToBoxAdapter(
-            //   child: Padding(
-            //     padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-            //     child: Container(
-            //       decoration: BoxDecoration(
-            //         color: c.surfaceContainerLow.withValues(alpha: 0.5),
-            //         borderRadius: BorderRadius.circular(25),
-            //         border: Border.all(
-            //           color: c.borderGold.withValues(alpha: 0.1),
-            //         ),
-            //         boxShadow: [
-            //           BoxShadow(
-            //             color: c.primaryAccent.withValues(alpha: 0.05),
-            //             blurRadius: 20,
-            //           ),
-            //         ],
-            //       ),
-            //       child: TextField(
-            //         style: TextStyle(color: c.textPrimary),
-            //         decoration: InputDecoration(
-            //           hintText: 'Search for a Bani or Shabad...',
-            //           hintStyle: TextStyle(
-            //             color: c.textSecondary.withValues(alpha: 0.4),
-            //           ),
-            //           prefixIcon: Icon(
-            //             Icons.search,
-            //             color: c.primaryAccent,
-            //             size: 20,
-            //           ),
-            //           border: InputBorder.none,
-            //           contentPadding: const EdgeInsets.symmetric(vertical: 16),
-            //         ),
-            //         onChanged: (val) {
-            //           controller.searchQuery.value = val;
-            //         },
-            //       ),
-            //     ),
-            //   ),
-            // ),
+              // ─── Search Bar ───────────────────────────────────────────────
+              // SliverToBoxAdapter(
+              //   child: Padding(
+              //     padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              //     child: Container(
+              //       decoration: BoxDecoration(
+              //         color: c.surfaceContainerLow.withValues(alpha: 0.5),
+              //         borderRadius: BorderRadius.circular(25),
+              //         border: Border.all(
+              //           color: c.borderGold.withValues(alpha: 0.1),
+              //         ),
+              //         boxShadow: [
+              //           BoxShadow(
+              //             color: c.primaryAccent.withValues(alpha: 0.05),
+              //             blurRadius: 20,
+              //           ),
+              //         ],
+              //       ),
+              //       child: TextField(
+              //         style: TextStyle(color: c.textPrimary),
+              //         decoration: InputDecoration(
+              //           hintText: 'Search for a Bani or Shabad...',
+              //           hintStyle: TextStyle(
+              //             color: c.textSecondary.withValues(alpha: 0.4),
+              //           ),
+              //           prefixIcon: Icon(
+              //             Icons.search,
+              //             color: c.primaryAccent,
+              //             size: 20,
+              //           ),
+              //           border: InputBorder.none,
+              //           contentPadding: const EdgeInsets.symmetric(vertical: 16),
+              //         ),
+              //         onChanged: (val) {
+              //           controller.searchQuery.value = val;
+              //         },
+              //       ),
+              //     ),
+              //   ),
+              // ),
 
-            // ─── Content Sections ─────────────────────────────────────────
-            ..._buildCategorySections(sortedCategoryIds, categoryMap,
-                groupedContent, controller, c, currentLang),
+              // ─── Content Sections ─────────────────────────────────────────
+              ..._buildCategorySections(sortedCategoryIds, categoryMap,
+                  groupedContent, controller, c, currentLang),
 
-            SliverToBoxAdapter(child: _QuoteCard()),
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
-          ],
+              SliverToBoxAdapter(child: _QuoteCard()),
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            ],
+          ),
         ),
       );
     });
@@ -241,10 +258,11 @@ class _QuoteCard extends StatelessWidget {
       if (q.text.isEmpty) return const SizedBox.shrink();
       return Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: SacredSpacing.xl,
+          horizontal: SacredSpacing.md,
           vertical: SacredSpacing.md,
         ),
         child: Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(SacredSpacing.gutter),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(SacredRadius.md),

@@ -15,6 +15,7 @@ import 'package:nitnem/services/shared_prefs_service.dart';
 import 'package:nitnem/core/design_system/models/theme_config.dart';
 import 'package:nitnem/core/design_system/theme/app_theme.dart';
 import 'package:nitnem/bindings/di.dart';
+import 'package:nitnem/core/utils/mock_config.dart';
 import 'package:nitnem/firebase_options.dart';
 
 Future<void> main() async {
@@ -28,16 +29,20 @@ Future<void> main() async {
         options: DefaultFirebaseOptions.currentPlatform,
       );
 
-      await FirebaseCrashlytics.instance
-          .setCrashlyticsCollectionEnabled(!kDebugMode);
-      FlutterError.onError =
-          FirebaseCrashlytics.instance.recordFlutterFatalError;
-      PlatformDispatcher.instance.onError = (error, stack) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-        return true;
-      };
+      if (!useMockData) {
+        await FirebaseCrashlytics.instance
+            .setCrashlyticsCollectionEnabled(!kDebugMode);
+        FlutterError.onError =
+            FirebaseCrashlytics.instance.recordFlutterFatalError;
+        PlatformDispatcher.instance.onError = (error, stack) {
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+          return true;
+        };
 
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+        FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+      } else {
+        debugPrint('[Main] \u{1F9EA} Mock mode — Crashlytics and FCM disabled');
+      }
 
       await SharedPrefsService.init();
       await DependencyInjection.init();
@@ -49,8 +54,13 @@ Future<void> main() async {
         DependencyInjection.initNotificationSettings(),
       ]);
     },
-    (error, stack) =>
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true),
+    (error, stack) {
+        if (useMockData) {
+          debugPrint('[MockMode] Uncaught error: $error\n$stack');
+        } else {
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        }
+      },
   );
 }
 
