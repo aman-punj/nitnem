@@ -12,6 +12,7 @@ import 'package:nitnem/controllers/preference_controller.dart';
 import 'package:nitnem/controllers/language_controller.dart';
 import 'package:nitnem/controllers/theme_controller.dart';
 import 'package:nitnem/controllers/settings_controller.dart';
+import 'package:nitnem/services/audio_playback_service.dart';
 import 'package:nitnem/services/cache_service.dart';
 import 'package:nitnem/services/firebase_content_service.dart';
 import 'package:nitnem/services/firebase_category_service.dart';
@@ -140,6 +141,9 @@ class DependencyInjection {
       // Create player only after background initialization attempt.
       if (!Get.isRegistered<AudioPlayer>()) {
         Get.put(AudioPlayer(), permanent: true);
+      }
+      if (!Get.isRegistered<AudioPlaybackService>()) {
+        Get.put(AudioPlaybackService(), permanent: true);
       }
       if (!Get.isRegistered<MiniPlayerController>()) {
         Get.put(MiniPlayerController(), permanent: true);

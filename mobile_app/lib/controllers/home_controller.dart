@@ -43,6 +43,7 @@ class HomeController extends GetxController {
   Future<void> _loadInitialContent() async {
     // 1. Load from cache first
     contentItems.value = _localContentService.getCachedContentCatalog();
+    _syncService.runGarbageCollection();
 
     // 2. Fetch from Firebase
     await refreshContent();
@@ -79,6 +80,7 @@ class HomeController extends GetxController {
         await _syncService.syncContent(item);
       }
     }
+    await _syncService.runGarbageCollection();
   }
 
   void onContentTap(ContentItem item) async {

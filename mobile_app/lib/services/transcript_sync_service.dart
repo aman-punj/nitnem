@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/content_item.dart';
 import '../models/local_sync_metadata.dart';
@@ -116,13 +117,47 @@ class TranscriptSyncService {
 
       // 4. Cleanup old track audio if track changed
       if (local.activeTrackId.isNotEmpty && local.activeTrackId != remote.activeTrackId) {
-        // Optional: Implement cleanup of old track files
-        // For now, they stay in the 'prayers' directory under different track IDs
+        await runGarbageCollection();
       }
 
     } catch (e) {
       print('Sync failed for ${remote.id}: $e');
       // We don't update metadata, so it will retry next time
+    }
+  }
+
+  Future<void> runGarbageCollection() async {
+    try {
+      final rootDir = await _assetService.root();
+      if (!rootDir.existsSync()) return;
+
+      final entities = await rootDir.list().toList();
+      for (final entity in entities) {
+        if (entity is Directory) {
+          final prayerId = entity.path.split(Platform.pathSeparator).last;
+          final localMetadata = _localContentService.getSyncMetadata(prayerId);
+
+          if (localMetadata == null) {
+            // No metadata exists for this prayer ID locally, clean up the directory
+            await entity.delete(recursive: true);
+            continue;
+          }
+
+          final activeTrackId = localMetadata.activeTrackId;
+          final trackEntities = await entity.list().toList();
+          for (final trackEntity in trackEntities) {
+            if (trackEntity is Directory) {
+              final trackId = trackEntity.path.split(Platform.pathSeparator).last;
+              if (trackId != activeTrackId) {
+                // Delete obsolete track directory
+                await trackEntity.delete(recursive: true);
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Garbage collection failed: $e');
     }
   }
 }

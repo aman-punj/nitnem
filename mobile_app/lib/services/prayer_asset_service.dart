@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 class PrayerAssetService {
-  Future<Directory> _root() async {
+  Future<Directory> root() async {
     final dir = await getApplicationDocumentsDirectory();
     return Directory('${dir.path}/prayers');
   }
@@ -13,13 +13,13 @@ class PrayerAssetService {
     required String languageCode,
     required String trackId,
   }) async {
-    final root = await _root();
-    return '${root.path}/$prayerId/$trackId/transcript_$languageCode.json';
+    final rootDir = await root();
+    return '${rootDir.path}/$prayerId/$trackId/transcript_$languageCode.json';
   }
 
   Future<String> audioPath({required String prayerId, required String trackId}) async {
-    final root = await _root();
-    return '${root.path}/$prayerId/$trackId/audio.mp3';
+    final rootDir = await root();
+    return '${rootDir.path}/$prayerId/$trackId/audio.mp3';
   }
 
   Future<File?> existingTranscript({

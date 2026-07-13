@@ -17,6 +17,7 @@ import '../services/local_content_service.dart';
 import '../services/transcript_parser.dart';
 import '../services/transcript_sync_engine.dart';
 import '../services/transcript_sync_service.dart';
+import '../services/audio_playback_service.dart';
 
 enum PrimaryMode { audio, focus }
 
@@ -33,7 +34,7 @@ class PrayerController extends GetxController {
   final LocalContentService? _localContentService;
 
   // Shared singleton player from DI — NOT disposed by this controller.
-  late final AudioPlayer _player;
+  late final AudioPlaybackService _playbackService;
   final List<StreamSubscription<dynamic>> _subs = [];
   Uri? _artworkFileUri;
 
@@ -68,34 +69,33 @@ class PrayerController extends GetxController {
 
   bool _contentLoaded = false;
 
-  AudioPlayer get player => _player;
+  AudioPlayer get player => _playbackService.player;
 
   @override
   void onInit() {
     super.onInit();
 
-    // Resolve the shared player. DI.initAudioBackground() always puts one;
-    // the fallback creates a fresh player if somehow called before that.
-    _player = Get.isRegistered<AudioPlayer>()
-        ? Get.find<AudioPlayer>()
-        : AudioPlayer();
+    _playbackService = Get.find<AudioPlaybackService>();
 
-    _subs.add(_player.positionStream.listen((position) {
+    _subs.add(_playbackService.currentPosition.listen((position) {
       currentPosition.value = position;
       if (!isUserSeeking.value && primaryMode.value == PrimaryMode.audio && hasTimings.value) {
         _updateCurrentSegment(position);
       }
     }));
-    _subs.add(_player.durationStream.listen((duration) {
-      if (duration != null) totalDuration.value = duration;
+    _subs.add(_playbackService.totalDuration.listen((duration) {
+      totalDuration.value = duration;
     }));
-    _subs.add(_player.playingStream.listen((playing) {
+    _subs.add(_playbackService.isPlaying.listen((playing) {
       isPlaying.value = playing;
       if (playing) {
         _startHeaderHideTimer();
       } else {
         showHeader();
       }
+    }));
+    _subs.add(_playbackService.playbackSpeed.listen((speed) {
+      playbackSpeed.value = speed;
     }));
 
     itemPositionsListener.itemPositions.addListener(_onScroll);
@@ -196,8 +196,8 @@ class PrayerController extends GetxController {
       _updateCurrentSegment(currentPosition.value);
     } else {
       // Pause audio when entering Focus mode
-      if (_player.playing) {
-        _player.pause();
+      if (_playbackService.isPlaying.value) {
+        _playbackService.pause();
       }
       // Sync focus to what was playing in Audio mode
       if (currentSegmentIndex.value != -1) {
@@ -310,22 +310,14 @@ class PrayerController extends GetxController {
       // running in the singleton player, reloading it would restart from zero.
       bool audioLoaded = skipAudio;
       if (!skipAudio && finalAudioPath.isNotEmpty) {
-        try {
-          final artUri = await _resolveArtworkUri();
-          final tag = MediaItem(
-            id: 'prayer_${item?.id ?? audioPath}',
-            title: prayerTitle.value,
-            artist: 'Nitnem',
-            artUri: artUri,
-          );
-          final audioSource = finalAudioIsLocal
-              ? AudioSource.file(finalAudioPath, tag: tag)
-              : AudioSource.uri(Uri.parse('asset:///$finalAudioPath'), tag: tag);
-          await _player.setAudioSource(audioSource);
-          audioLoaded = true;
-        } catch (e) {
-          debugPrint('Error loading audio: $e');
-        }
+        final artUri = await _resolveArtworkUri();
+        audioLoaded = await _playbackService.loadAudio(
+          audioPath: finalAudioPath,
+          isLocalFile: finalAudioIsLocal,
+          title: prayerTitle.value,
+          artworkUri: artUri,
+          contentId: item?.id,
+        );
       }
       hasAudio.value = audioLoaded;
 
@@ -411,7 +403,7 @@ class PrayerController extends GetxController {
   void seekToWithDebounce(Duration position) {
     if (primaryMode.value == PrimaryMode.focus && !hasAudio.value) return;
     isUserSeeking.value = true;
-    _player.seek(position);
+    _playbackService.seek(position);
     _seekDebounce?.cancel();
     _seekDebounce = Timer(const Duration(milliseconds: 250), () {
       _updateCurrentSegment(position);
@@ -432,27 +424,22 @@ class PrayerController extends GetxController {
 
   void togglePlayback() {
     if (!hasAudio.value) return;
-    if (_player.playing) {
-      _player.pause();
-    } else {
-      _player.play();
-    }
+    _playbackService.togglePlayback();
   }
 
   void skipForward() {
     if (!hasAudio.value) return;
-    seekToWithDebounce(currentPosition.value + const Duration(seconds: 10));
+    _playbackService.skipForward();
   }
 
   void skipBackward() {
     if (!hasAudio.value) return;
-    final candidate = currentPosition.value - const Duration(seconds: 10);
-    seekToWithDebounce(candidate.isNegative ? Duration.zero : candidate);
+    _playbackService.skipBackward();
   }
 
   void changePlaybackSpeed(double speed) {
     playbackSpeed.value = speed;
-    _player.setSpeed(speed);
+    _playbackService.changePlaybackSpeed(speed);
   }
 
   String formatDuration(Duration duration) {
