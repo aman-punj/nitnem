@@ -450,6 +450,7 @@ export function ContentEditor({ item, onSave, onClose }: ContentEditorProps) {
                       audioUrl={tracks[trackEditor.id]?.audio?.url}
                       initialLrc={trackEditor.transcriptLrc[lrcStudioLang]}
                       lang={lrcStudioLang}
+                      draftKey={`lrc_draft:${contentId}:${trackEditor.id}:${lrcStudioLang}`}
                       onClose={() => setLrcStudioLang(null)}
                       onSave={(lrc) => {
                         if (!trackEditor) return

@@ -1,0 +1,180 @@
+[
+  {
+    "id": "japji-sahib",
+    "type": "prayer",
+    "titles": {
+      "en": "Japji Sahib",
+      "pa": "ਜਪੁਜੀ ਸਾਹਿਬ",
+      "hi": "जपुजी साहिब"
+    },
+    "enabled": true,
+    "active_track": "track_default",
+    "tracks": {
+      "track_default": {
+        "id": "track_default",
+        "title": "Default",
+        "audio": {
+          "url": "https://mock.local/audio/japji-sahib.mp3",
+          "version": 1
+        },
+        "transcripts": {
+          "pa": {
+            "url": "https://mock.local/transcripts/japji-sahib-pa.json",
+            "version": 1
+          }
+        }
+      }
+    },
+    "thumbnail": null,
+    "iconUrl": null,
+    "iconKey": "khanda",
+    "categoryId": "nitnem",
+    "displayOrder": 1
+  },
+  {
+    "id": "jaap-sahib",
+    "type": "prayer",
+    "titles": {
+      "en": "Jaap Sahib",
+      "pa": "ਜਾਪੁ ਸਾਹਿਬ",
+      "hi": "जाप साहिब"
+    },
+    "enabled": true,
+    "active_track": "track_default",
+    "tracks": {
+      "track_default": {
+        "id": "track_default",
+        "title": "Default",
+        "audio": {
+          "url": "https://mock.local/audio/jaap-sahib.mp3",
+          "version": 1
+        },
+        "transcripts": {
+          "pa": {
+            "url": "https://mock.local/transcripts/jaap-sahib-pa.json",
+            "version": 1
+          }
+        }
+      }
+    },
+    "thumbnail": null,
+    "iconUrl": null,
+    "iconKey": "khanda",
+    "categoryId": "nitnem",
+    "displayOrder": 2
+  },
+  {
+    "id": "tav-prasaad-savaiye",
+    "type": "prayer",
+    "titles": {
+      "en": "Tav Prasaad Savaiye",
+      "pa": "ਤ੍ਵ ਪ੍ਰਸਾਦਿ ਸਵੱਯੇ",
+      "hi": "त्व प्रसादि सवैये"
+    },
+    "enabled": true,
+    "active_track": "track_default",
+    "tracks": {
+      "track_default": {
+        "id": "track_default",
+        "title": "Default",
+        "audio": {
+          "url": "https://mock.local/audio/tav-prasaad-savaiye.mp3",
+          "version": 1
+        },
+        "transcripts": {
+          "pa": {
+            "url": "https://mock.local/transcripts/tav-prasaad-savaiye-pa.json",
+            "version": 1
+          }
+        }
+      }
+    },
+    "thumbnail": null,
+    "iconUrl": null,
+    "iconKey": "khanda",
+    "categoryId": "nitnem",
+    "displayOrder": 3
+  },
+  {
+    "id": "rehras-sahib",
+    "type": "prayer",
+    "titles": {
+      "en": "Rehras Sahib",
+      "pa": "ਰਹਿਰਾਸ ਸਾਹਿਬ",
+      "hi": "रहिरास साहिब"
+    },
+    "enabled": true,
+    "active_track": "track_default",
+    "tracks": {
+      "track_default": {
+        "id": "track_default",
+        "title": "Default",
+        "audio": {
+          "url": "https://mock.local/audio/rehras-sahib.mp3",
+          "version": 1
+        },
+        "transcripts": {
+          "pa": {
+            "url": "https://mock.local/transcripts/rehras-sahib-pa.json",
+            "version": 1
+          }
+        }
+      }
+    },
+    "thumbnail": null,
+    "iconUrl": null,
+    "iconKey": "khanda",
+    "categoryId": "evening",
+    "displayOrder": 1
+  },
+  {
+    "id": "kirtan-sohila",
+    "type": "prayer",
+    "titles": {
+      "en": "Kirtan Sohila",
+      "pa": "ਕੀਰਤਨ ਸੋਹਿਲਾ",
+      "hi": "कीर्तन सोहिला"
+    },
+    "enabled": true,
+    "active_track": "track_default",
+    "tracks": {
+      "track_default": {
+        "id": "track_default",
+        "title": "Default",
+        "audio": {
+          "url": "https://mock.local/audio/kirtan-sohila.mp3",
+          "version": 1
+        },
+        "transcripts": {
+          "pa": {
+            "url": "https://mock.local/transcripts/kirtan-sohila-pa.json",
+            "version": 1
+          }
+        }
+      }
+    },
+    "thumbnail": null,
+    "iconUrl": null,
+    "iconKey": "khanda",
+    "categoryId": "evening",
+    "displayOrder": 2
+  },
+  {
+    "id": "golden-temple-live",
+    "type": "youtube_live",
+    "titles": {
+      "en": "Golden Temple Live",
+      "pa": "ਹਰਿਮੰਦਰ ਸਾਹਿਬ ਲਾਈਵ",
+      "hi": "हरिमंदर साहिब लाइव"
+    },
+    "enabled": true,
+    "active_track": "",
+    "tracks": {},
+    "youtube_url": "https://www.youtube.com/watch?v=mock_live_id",
+    "thumbnail": null,
+    "iconUrl": null,
+    "iconKey": null,
+    "categoryId": "live",
+    "displayOrder": 1
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "faq-1",
+    "question": "How do I download prayers for offline use?",
+    "answer": "Prayers are automatically downloaded when you first play them while connected to the internet. Once downloaded, they remain available offline.",
+    "order": 1,
+    "enabled": true
+  },
+  {
+    "id": "faq-2",
+    "question": "Can I change the notification time?",
+    "answer": "Yes! Go to Settings > Notifications to customize the time for Japji Sahib (morning) and Rehras Sahib (evening) reminders.",
+    "order": 2,
+    "enabled": true
+  },
+  {
+    "id": "faq-3",
+    "question": "How do I switch languages?",
+    "answer": "Go to Settings > Language to switch between Punjabi, Hindi, and English for prayer text and transcripts.",
+    "order": 3,
+    "enabled": true
+  },
+  {
+    "id": "faq-disabled",
+    "question": "This FAQ should not appear (disabled)",
+    "answer": "If you see this, the enabled filter is broken.",
+    "order": 99,
+    "enabled": false
+  }
+]

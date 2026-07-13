@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bani Sagar — Timing Studio Manual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --surface: #121216;
+      --surface-card: #181820;
+      --border: #2c2c35;
+      --text: #e2e2e9;
+      --text-muted: #9a9aab;
+      --gold: #d4af37;
+      --gold-hover: #f3cf65;
+      --accent: #3b82f6;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      --font-sans: 'Inter', -apple-system, sans-serif;
+      --font-serif: 'Cinzel', serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: linear-gradient(135deg, #16161e 0%, #0a0a0c 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 60px 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 150px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .app-icon {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 15px;
+      filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.4));
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: 2.4rem;
+      color: #ffffff;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      background: linear-gradient(to right, #fff, var(--gold));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto;
+      font-weight: 300;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px 80px;
+    }
+
+    section {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 35px;
+      margin-bottom: 30px;
+      box-shadow: var(--shadow);
+    }
+
+    h2 {
+      font-family: var(--font-serif);
+      color: #ffffff;
+      font-size: 1.6rem;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h2 span {
+      color: var(--gold);
+    }
+
+    h3 {
+      font-size: 1.2rem;
+      color: #ffffff;
+      margin: 24px 0 12px;
+    }
+
+    p {
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      font-size: 1rem;
+      font-weight: 300;
+    }
+
+    /* Code Blocks */
+    pre {
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--gold);
+    }
+
+    /* Alerts */
+    .alert {
+      padding: 16px;
+      border-radius: 12px;
+      margin: 20px 0;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      border-left: 4px solid transparent;
+    }
+
+    .alert-info {
+      background-color: rgba(59, 130, 246, 0.08);
+      border-color: var(--accent);
+    }
+
+    .alert-info .alert-icon { color: var(--accent); }
+
+    .alert-success {
+      background-color: rgba(16, 185, 129, 0.08);
+      border-color: var(--success);
+    }
+
+    .alert-success .alert-icon { color: var(--success); }
+
+    .alert-icon {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .alert-content h4 {
+      color: #ffffff;
+      margin-bottom: 4px;
+      font-size: 1rem;
+    }
+
+    .alert-content p {
+      margin-bottom: 0;
+      font-size: 0.9rem;
+    }
+
+    kbd {
+      background-color: #24242e;
+      border: 1px solid #444;
+      border-radius: 6px;
+      box-shadow: 0 2px 0 rgba(0,0,0,0.5);
+      color: #fff;
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 2px 6px;
+      white-space: nowrap;
+    }
+
+    .shortcut-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .shortcut-item {
+      background-color: var(--surface-card);
+      border: 1px solid var(--border);
+      padding: 12px 16px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .shortcut-label {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* Steps list */
+    .step-list {
+      margin: 20px 0;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .step-number {
+      width: 28px;
+      height: 28px;
+      background-color: rgba(212, 175, 55, 0.1);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .step-content h4 {
+      color: #ffffff;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .step-content p {
+      font-size: 0.9rem;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-gold { background: rgba(212, 175, 55, 0.1); color: var(--gold); border: 1px solid var(--gold); }
+    .badge-blue { background: rgba(59, 130, 246, 0.1); color: var(--accent); border: 1px solid var(--accent); }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .shortcut-list {
+        grid-template-columns: 1fr;
+      }
+      section {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <svg class="app-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M50 15C30.67 15 15 30.67 15 50C15 69.33 30.67 85 50 85C69.33 85 85 69.33 85 50C85 30.67 69.33 15 50 15ZM50 78C34.56 78 22 65.44 22 50C22 34.56 34.56 22 50 22C65.44 22 78 34.56 78 50C78 65.44 65.44 78 50 78Z" fill="#d4af37"/>
+      <path d="M50 35C41.72 35 35 41.72 35 50C35 58.28 41.72 65 50 65C58.28 65 65 58.28 65 50C65 41.72 58.28 35 50 35ZM50 58C45.58 58 42 54.42 42 50C42 45.58 45.58 42 50 42C54.42 42 58 45.58 58 50C58 54.42 54.42 58 50 58Z" fill="#d4af37"/>
+    </svg>
+    <h1>Timing Studio Guide</h1>
+    <div class="subtitle">Quick reference manual for synchronizing transcripts, mapping timestamps, and using shortcut hotkeys.</div>
+  </header>
+
+  <div class="container">
+    <!-- Section 1 -->
+    <section>
+      <h2><span>01</span> The Syncing Workflow</h2>
+      <p>The Timing Studio allows you to align audio tracks with prayer text stanzas, generating synchronized subtitles (LRC format) for the mobile app.</p>
+      
+      <div class="step-list">
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>Import Text</h4>
+            <p>Click **Import** in the top bar. Paste the raw stanzas (one line per verse) and apply them to load the text slots.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>Record Timestamps</h4>
+            <p>Click **Record**. As you listen, press <kbd>Enter</kbd> (when cursor is focused in input) or click the line row when each line begins. The active line will capture the timing stamp and jump to the next input block.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>Refine Segments</h4>
+            <p>If you miss a stamp, enter start/end times in the **Redo range** panel, then click **Record range** to retake only that specific segment.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section>
+      <h2><span>02</span> Keyboard Shortcuts</h2>
+      <p>Shortcuts adjust depending on whether you are editing lyric text or controlling the audio playback.</p>
+
+      <h3>Editing Mode <span class="badge badge-gold">Active</span></h3>
+      <p>When the typing cursor is inside a lyric text input field:</p>
+      <div class="shortcut-list">
+        <div class="shortcut-item">
+          <span class="shortcut-label">Save stamp &amp; move down</span>
+          <kbd>Enter</kbd>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Play / Pause audio (prevents typing space)</span>
+          <kbd>Space</kbd>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Insert a space character in text</span>
+          <kbd>Shift</kbd> / <kbd>Ctrl</kbd> + <kbd>Space</kbd>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Navigate to previous input</span>
+          <kbd>↑ Arrow</kbd>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Navigate to next input</span>
+          <kbd>↓ Arrow</kbd>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Create new line (on last line)</span>
+          <kbd>Enter</kbd>
+        </div>
+      </div>
+
+      <h3>Control Mode <span class="badge badge-blue">Active</span></h3>
+      <p>When no text field is focused (focus on background/body):</p>
+      <div class="shortcut-list">
+        <div class="shortcut-item">
+          <span class="shortcut-label">Start editing active line input</span>
+          <kbd>Enter</kbd>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Stamp current playhead time &amp; move down</span>
+          <kbd>Enter</kbd>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Play / Pause audio</span>
+          <kbd>Space</kbd>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Rewind 2 seconds</span>
+          <kbd>← Arrow</kbd>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Forward 2 seconds</span>
+          <kbd>→ Arrow</kbd>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Rewind 5 seconds</span>
+          <kbd>Shift</kbd> + <kbd>← Arrow</kbd>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Forward 5 seconds</span>
+          <kbd>Shift</kbd> + <kbd>→ Arrow</kbd>
+        </div>
+        <div class="shortcut-item">
+          <span class="shortcut-label">Undo previous timing stamp (if recording)</span>
+          <kbd>Backspace</kbd>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3 -->
+    <section>
+      <h2><span>03</span> Auto-Saves &amp; Backups</h2>
+      <p>The studio backs up your timing progress to protect against page refreshes or connection drops.</p>
+
+      <div class="alert alert-success">
+        <div class="alert-icon">✓</div>
+        <div class="alert-content">
+          <h4>Debounced Auto-Saves</h4>
+          <p>Every edit automatically triggers a debounced save to <code>localStorage</code> after 2 seconds of inactivity. If the window closes, reopening will present a banner to **Resume** your work.</p>
+        </div>
+      </div>
+
+      <div class="alert alert-info">
+        <div class="alert-icon">💾</div>
+        <div class="alert-content">
+          <h4>Downloadable Backups</h4>
+          <p>Click the **↓ Draft** button at the top right to download your current stanzas and timing timestamps immediately as a <code>.json</code> file.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+</body>
+</html>

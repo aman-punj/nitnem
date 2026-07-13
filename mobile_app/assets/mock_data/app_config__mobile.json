@@ -1,0 +1,24 @@
+{
+  "versions": {
+    "latest": 26,
+    "minorUpdate": null,
+    "forceUpdate": null
+  },
+  "messages": {
+    "minorUpdate": null,
+    "forceUpdate": null,
+    "maintenance": null
+  },
+  "maintenance": {
+    "enabled": false
+  },
+  "storeUrl": {
+    "android": "https://play.google.com/store/apps/details?id=com.banisagar.nitnem",
+    "ios": ""
+  },
+  "features": {
+    "hukamnamaEnabled": true,
+    "kofiEnabled": true
+  },
+  "backendUrl": "https://mock.local/api/"
+}

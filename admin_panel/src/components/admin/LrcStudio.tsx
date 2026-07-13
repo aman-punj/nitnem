@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { saveDraft, loadDraft, deleteDraft, exportDraftAsFile, timeAgo, type DraftData } from '../../lib/draftService'
 
 type Line = { id: string; text: string; startTime: number | null }
 type Props = {
@@ -6,6 +7,7 @@ type Props = {
   audioUrl?: string
   initialLrc: string
   lang: 'pa' | 'hi' | 'en'
+  draftKey?: string
   onClose: () => void
   onSave: (lrc: string) => void
 }
@@ -53,7 +55,95 @@ function toLrc(lines: Line[]): string {
     .join('\n')
 }
 
-export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSave }: Props) {
+const tooltipStyles = `
+  .studio-tooltip {
+    position: relative;
+  }
+  .studio-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 135%;
+    left: 50%;
+    transform: translateX(-50%) translateY(4px) scale(0.95);
+    background-color: #121216;
+    color: #e2e2e9;
+    border: 1px solid #d4af37;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+  }
+  .studio-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    border-width: 5px;
+    border-style: solid;
+    border-color: #d4af37 transparent transparent transparent;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    z-index: 9999;
+  }
+  .studio-tooltip:hover::after,
+  .studio-tooltip:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+
+  .studio-tooltip-bottom {
+    position: relative;
+  }
+  .studio-tooltip-bottom::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 135%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px) scale(0.95);
+    background-color: #121216;
+    color: #e2e2e9;
+    border: 1px solid #d4af37;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+  }
+  .studio-tooltip-bottom::before {
+    content: '';
+    position: absolute;
+    top: 120%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent #d4af37 transparent;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    z-index: 9999;
+  }
+  .studio-tooltip-bottom:hover::after,
+  .studio-tooltip-bottom:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+`;
+
+export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, draftKey: draftKeyProp, onClose, onSave }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const activeLineRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -75,6 +165,13 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
   const [rangeEndDraft, setRangeEndDraft] = useState('01:35.00')
   const [rangeMode, setRangeMode] = useState(false)
 
+  // Draft state
+  const [draftBanner, setDraftBanner] = useState<DraftData | null>(null)
+  const [draftStatus, setDraftStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const draftStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hasMountedRef = useRef(false)
+
   const isRecordingRef = useRef(false)
   const rangeModeRef = useRef(false)
   const rangeEndRef = useRef<number | null>(null)
@@ -82,6 +179,69 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
   useEffect(() => { isRecordingRef.current = isRecording }, [isRecording])
   useEffect(() => { rangeModeRef.current = rangeMode }, [rangeMode])
   useEffect(() => { rangeEndRef.current = parseTime(rangeEndDraft) }, [rangeEndDraft])
+
+  // On mount — check for existing draft
+  useEffect(() => {
+    if (!draftKeyProp) return
+    const existing = loadDraft(draftKeyProp)
+    if (existing && existing.lines.length > 0) {
+      setDraftBanner(existing)
+    }
+    hasMountedRef.current = true
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-save draft on lines change (debounced 2s)
+  useEffect(() => {
+    if (!draftKeyProp || !hasMountedRef.current) return
+    // Don't auto-save while the resume banner is still showing
+    if (draftBanner) return
+
+    if (draftTimerRef.current) clearTimeout(draftTimerRef.current)
+    setDraftStatus('saving')
+
+    draftTimerRef.current = setTimeout(() => {
+      saveDraft(draftKeyProp, {
+        lines,
+        activeIndex,
+        timestamp: Date.now(),
+        lang,
+      })
+      setDraftStatus('saved')
+      if (draftStatusTimerRef.current) clearTimeout(draftStatusTimerRef.current)
+      draftStatusTimerRef.current = setTimeout(() => setDraftStatus('idle'), 3000)
+    }, 2000)
+
+    return () => {
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current)
+    }
+  }, [lines, activeIndex, draftKeyProp, lang, draftBanner])
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (draftTimerRef.current) clearTimeout(draftTimerRef.current)
+      if (draftStatusTimerRef.current) clearTimeout(draftStatusTimerRef.current)
+    }
+  }, [])
+
+  const resumeDraft = useCallback(() => {
+    if (!draftBanner) return
+    setLines(draftBanner.lines.map(l => ({ ...l, id: uid() })))
+    setActiveIndex(draftBanner.activeIndex)
+    setDraftBanner(null)
+  }, [draftBanner])
+
+  const discardDraft = useCallback(() => {
+    if (draftKeyProp) deleteDraft(draftKeyProp)
+    setDraftBanner(null)
+  }, [draftKeyProp])
+
+  const handleDownloadDraft = useCallback(() => {
+    if (!draftKeyProp) return
+    // Save the current state first so the download is fresh
+    saveDraft(draftKeyProp, { lines, activeIndex, timestamp: Date.now(), lang })
+    exportDraftAsFile(draftKeyProp)
+  }, [draftKeyProp, lines, activeIndex, lang])
 
   useEffect(() => {
     if (!audioFile) return
@@ -202,18 +362,28 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
     setActiveIndex(nextIndex)
   }
 
-  const stamp = useCallback(() => {
+  const stamp = useCallback((indexToStamp?: number) => {
     const audio = audioRef.current
-    if (!audio) return
+    console.log('TimingStudio stamp called. audio:', audio, 'indexToStamp:', indexToStamp, 'activeIndex:', activeIndex)
+    if (!audio) {
+      console.warn('TimingStudio stamp aborted: audio is null/undefined')
+      return
+    }
     const stampedTime = audio.currentTime
+    console.log('TimingStudio stampedTime:', stampedTime)
     let shouldStop = false
+
+    const targetIndex = indexToStamp !== undefined ? indexToStamp : activeIndex
 
     setLines(prev => {
       const next = [...prev]
-      if (activeIndex >= 0 && activeIndex < next.length) {
-        next[activeIndex] = { ...next[activeIndex], startTime: stampedTime }
+      if (targetIndex >= 0 && targetIndex < next.length) {
+        next[targetIndex] = { ...next[targetIndex], startTime: stampedTime }
+        console.log('TimingStudio updated line at index', targetIndex, 'to:', next[targetIndex])
+      } else {
+        console.warn('TimingStudio targetIndex out of bounds:', targetIndex, 'lines length:', next.length)
       }
-      const following = next[activeIndex + 1]
+      const following = next[targetIndex + 1]
       const end = rangeEndRef.current
       shouldStop = !!(rangeModeRef.current && end !== null && (!following || (following.startTime !== null && following.startTime > end)))
       return next
@@ -224,7 +394,7 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
       audio.pause()
       return
     }
-    setActiveIndex(prev => Math.min(prev + 1, lines.length - 1))
+    setActiveIndex(prev => Math.min(targetIndex + 1, lines.length - 1))
   }, [activeIndex, lines.length])
 
   useEffect(() => {
@@ -239,6 +409,32 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
         e.preventDefault()
         if (isRecording) stamp()
         else audio.paused ? audio.play().catch(() => {}) : audio.pause()
+      }
+      if (e.key === 'Enter' && !isInput) {
+        e.preventDefault()
+        stamp()
+        setTimeout(() => {
+          const nextInput = document.getElementById(`lyric-input-${activeIndex + 1}`) as HTMLInputElement | null
+          nextInput?.focus()
+        }, 50)
+      }
+      if (e.key === 'ArrowDown' && !isInput) {
+        e.preventDefault()
+        const nextIndex = Math.min(activeIndex + 1, lines.length - 1)
+        setActiveIndex(nextIndex)
+        setTimeout(() => {
+          const input = document.getElementById(`lyric-input-${nextIndex}`) as HTMLInputElement | null
+          input?.focus()
+        }, 50)
+      }
+      if (e.key === 'ArrowUp' && !isInput) {
+        e.preventDefault()
+        const prevIndex = Math.max(activeIndex - 1, 0)
+        setActiveIndex(prevIndex)
+        setTimeout(() => {
+          const input = document.getElementById(`lyric-input-${prevIndex}`) as HTMLInputElement | null
+          input?.focus()
+        }, 50)
       }
       if (isInput) return
       if (e.code === 'Backspace' && isRecording) {
@@ -261,7 +457,7 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [stamp, isRecording, showImport, editTsId, seek, onClose])
+  }, [stamp, isRecording, showImport, editTsId, seek, onClose, activeIndex, lines.length])
 
   const handleSeekBar = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!audioRef.current || duration === 0) return
@@ -325,6 +521,7 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#080808', display: 'flex', flexDirection: 'column', color: '#ccc' }}>
+      <style dangerouslySetInnerHTML={{ __html: tooltipStyles }} />
       {audioSrc && <audio ref={audioRef} src={audioSrc} preload="metadata" crossOrigin="anonymous" style={{ display: 'none' }} />}
 
       <div style={{ background: '#0c0c0c', borderBottom: '1px solid #1e1e1e', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
@@ -335,9 +532,14 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
           <span style={{ color: '#555', fontSize: '0.75rem' }}>{timedCount} / {lines.length} timed</span>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
-          <button className="secondary" style={{ fontSize: '0.8rem', padding: '5px 12px' }} onClick={() => setShowImport(value => !value)}>{showImport ? 'Done' : 'Import'}</button>
-          <button style={{ padding: '5px 18px' }} onClick={() => { onSave(toLrc(lines)); onClose() }} disabled={lines.length === 0}>Save</button>
-          <button className="secondary" style={{ padding: '5px 10px' }} onClick={onClose}>Close</button>
+          <button className="secondary studio-tooltip-bottom" data-tooltip="Import plain text lyrics" style={{ fontSize: '0.8rem', padding: '5px 12px' }} onClick={() => setShowImport(value => !value)}>{showImport ? 'Done' : 'Import'}</button>
+          {draftKeyProp && (
+            <button className="secondary studio-tooltip-bottom" data-tooltip="Download current draft as JSON file" style={{ fontSize: '0.78rem', padding: '5px 10px' }} onClick={handleDownloadDraft}>↓ Draft</button>
+          )}
+          {draftStatus === 'saving' && <span style={{ color: '#888', fontSize: '0.72rem' }}>Saving…</span>}
+          {draftStatus === 'saved' && <span style={{ color: '#5b8f63', fontSize: '0.72rem' }}>Draft saved ✓</span>}
+          <button className="studio-tooltip-bottom" data-tooltip="Save timed lyrics & exit" style={{ padding: '5px 18px' }} onClick={() => { if (draftKeyProp) deleteDraft(draftKeyProp); onSave(toLrc(lines)); onClose() }} disabled={lines.length === 0}>Save</button>
+          <button className="secondary studio-tooltip-bottom" data-tooltip="Close Timing Studio (keeps draft)" style={{ padding: '5px 10px' }} onClick={onClose}>Close</button>
         </div>
       </div>
 
@@ -348,19 +550,19 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
           <p style={{ color: '#cc4444', fontSize: '0.85rem', margin: 0 }}>{audioError}</p>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <button className="secondary" onClick={() => { if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0 } }} style={{ padding: '6px 10px', fontSize: '0.85rem' }}>Stop</button>
-            <button className="secondary" onClick={() => seek(currentTime - 5)} style={{ padding: '6px 10px', fontSize: '0.8rem' }}>-5s</button>
-            <button onClick={() => audioRef.current?.paused ? audioRef.current?.play().catch(() => {}) : audioRef.current?.pause()} style={{ minWidth: '80px', padding: '6px 12px' }}>{isPlaying ? 'Pause' : 'Play'}</button>
-            <button className="secondary" onClick={() => seek(currentTime + 5)} style={{ padding: '6px 10px', fontSize: '0.8rem' }}>+5s</button>
+            <button className="secondary studio-tooltip" data-tooltip="Stop audio (Reset playhead)" onClick={() => { if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0 } }} style={{ padding: '6px 10px', fontSize: '0.85rem' }}>Stop</button>
+            <button className="secondary studio-tooltip" data-tooltip="Rewind 2 seconds (ArrowLeft)" onClick={() => seek(currentTime - 2)} style={{ padding: '6px 10px', fontSize: '0.8rem' }}>-2s</button>
+            <button className="studio-tooltip" data-tooltip="Play / Pause audio (Space)" onClick={() => audioRef.current?.paused ? audioRef.current?.play().catch(() => {}) : audioRef.current?.pause()} style={{ minWidth: '80px', padding: '6px 12px' }}>{isPlaying ? 'Pause' : 'Play'}</button>
+            <button className="secondary studio-tooltip" data-tooltip="Forward 2 seconds (ArrowRight)" onClick={() => seek(currentTime + 2)} style={{ padding: '6px 10px', fontSize: '0.8rem' }}>+2s</button>
             <span style={{ fontFamily: 'monospace', color: '#bbb', fontSize: '0.9rem', minWidth: '70px' }}>{fmt(currentTime)}</span>
             <div onClick={handleSeekBar} style={{ flex: 1, minWidth: '100px', height: '6px', background: '#1e1e1e', borderRadius: '3px', cursor: 'pointer', position: 'relative' }}>
               <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${progressPercent}%`, background: 'var(--accent, #4455cc)', borderRadius: '3px' }} />
             </div>
             <span style={{ fontFamily: 'monospace', color: '#666', fontSize: '0.9rem', minWidth: '70px' }}>{fmt(duration)}</span>
             {[0.5, 0.75, 1, 1.25].map(rate => (
-              <button key={rate} className={playbackRate === rate ? '' : 'secondary'} style={{ padding: '4px 7px', fontSize: '0.72rem' }} onClick={() => setPlaybackRate(rate)}>{rate}x</button>
+              <button key={rate} className={playbackRate === rate ? 'studio-tooltip' : 'secondary studio-tooltip'} data-tooltip={`Set speed to ${rate}x`} style={{ padding: '4px 7px', fontSize: '0.72rem' }} onClick={() => setPlaybackRate(rate)}>{rate}x</button>
             ))}
-            <button style={{ padding: '6px 14px' }} onClick={() => isRecording ? setIsRecording(false) : startFullRecording()}>{isRecording ? 'Stop Rec' : 'Record'}</button>
+            <button className="studio-tooltip" data-tooltip="Record timing stamps (Space or Enter to stamp row, Backspace to undo)" style={{ padding: '6px 14px' }} onClick={() => isRecording ? setIsRecording(false) : startFullRecording()}>{isRecording ? 'Stop Rec' : 'Record'}</button>
           </div>
         )}
       </div>
@@ -370,10 +572,10 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
         <input value={rangeStartDraft} onChange={e => setRangeStartDraft(e.target.value)} style={{ width: '86px', background: '#141414', color: '#ddd', border: '1px solid #303030', borderRadius: '4px', padding: '5px 7px', fontFamily: 'monospace' }} />
         <span style={{ color: '#555' }}>to</span>
         <input value={rangeEndDraft} onChange={e => setRangeEndDraft(e.target.value)} style={{ width: '86px', background: '#141414', color: '#ddd', border: '1px solid #303030', borderRadius: '4px', padding: '5px 7px', fontFamily: 'monospace' }} />
-        <button className="secondary" style={{ padding: '5px 10px', fontSize: '0.78rem' }} onClick={setRangeAroundPlayhead}>Use playhead +/-5s</button>
-        <button className="secondary" style={{ padding: '5px 10px', fontSize: '0.78rem' }} onClick={() => rangeStart !== null && seek(rangeStart)} disabled={!rangeIsValid}>Preview</button>
-        <button className="secondary" style={{ padding: '5px 10px', fontSize: '0.78rem' }} onClick={clearRangeTimings} disabled={!rangeIsValid}>Clear timings</button>
-        <button style={{ padding: '5px 12px', fontSize: '0.78rem' }} onClick={recordRange} disabled={!rangeIsValid || !audioSrc}>Record range</button>
+        <button className="secondary studio-tooltip" data-tooltip="Auto-populate times 5s before and after playhead" style={{ padding: '5px 10px', fontSize: '0.78rem' }} onClick={setRangeAroundPlayhead}>Use playhead +/-5s</button>
+        <button className="secondary studio-tooltip" data-tooltip="Seek to range start and play" style={{ padding: '5px 10px', fontSize: '0.78rem' }} onClick={() => rangeStart !== null && seek(rangeStart)} disabled={!rangeIsValid}>Preview</button>
+        <button className="secondary studio-tooltip" data-tooltip="Clear all timestamps within this range" style={{ padding: '5px 10px', fontSize: '0.78rem' }} onClick={clearRangeTimings} disabled={!rangeIsValid}>Clear timings</button>
+        <button className="studio-tooltip" style={{ padding: '5px 12px', fontSize: '0.78rem' }} data-tooltip="Start recording timestamps for this range only" onClick={recordRange} disabled={!rangeIsValid || !audioSrc}>Record range</button>
         <span style={{ color: rangeIsValid ? '#666' : '#aa5555', fontSize: '0.75rem' }}>
           {rangeIsValid ? `${rangeLineIndexes.length} timed lines in range` : 'Enter times like 01:25.00'}
         </span>
@@ -385,6 +587,20 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
           <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
             <button onClick={() => { setLines(parseLrcLines(importText)); setActiveIndex(0); setShowImport(false) }} disabled={!importText.trim()}>Apply</button>
             <button className="secondary" onClick={() => setShowImport(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Draft resume banner */}
+      {draftBanner && (
+        <div style={{ background: '#1a1810', borderBottom: '1px solid #2e2a1a', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: '#d4af37', fontSize: '1rem' }}>📝</span>
+            <span style={{ color: '#ccc', fontSize: '0.85rem' }}>Draft found from <strong style={{ color: '#d4af37' }}>{timeAgo(draftBanner.timestamp)}</strong> — {draftBanner.lines.length} lines, {draftBanner.lines.filter(l => l.startTime !== null).length} timed</span>
+          </div>
+          <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+            <button style={{ padding: '5px 14px', fontSize: '0.8rem' }} onClick={resumeDraft}>Resume</button>
+            <button className="secondary" style={{ padding: '5px 10px', fontSize: '0.8rem', color: '#bb6666' }} onClick={discardDraft}>Discard</button>
           </div>
         </div>
       )}
@@ -410,7 +626,7 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
           const tsColor = isTimed ? (isActive ? '#8899ff' : isPlayingLine ? '#55bb55' : '#5b8f63') : '#3a3a3a'
 
           return (
-            <div key={line.id} data-playing={isPlayingLine ? '1' : undefined} ref={isActive ? activeLineRef : undefined} onClick={() => setActiveIndex(index)} onDoubleClick={e => { if ((e.target as HTMLElement).tagName !== 'INPUT' && line.startTime !== null) seekAndPlay(line.startTime) }} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 20px 5px 16px', background: bg, borderLeft: `4px solid ${accentColor}`, cursor: 'default', minHeight: '36px' }}>
+            <div key={line.id} data-playing={isPlayingLine ? '1' : undefined} ref={isActive ? activeLineRef : undefined} onClick={() => { setActiveIndex(index); setTimeout(() => { const input = document.getElementById(`lyric-input-${index}`) as HTMLInputElement | null; input?.focus() }, 50) }} onDoubleClick={e => { if ((e.target as HTMLElement).tagName !== 'INPUT' && line.startTime !== null) seekAndPlay(line.startTime) }} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 20px 5px 16px', background: bg, borderLeft: `4px solid ${accentColor}`, cursor: 'default', minHeight: '36px' }}>
               <span style={{ fontFamily: 'monospace', fontSize: '0.68rem', color: '#444', minWidth: '24px', textAlign: 'right', flexShrink: 0 }}>{index + 1}</span>
               <span style={{ fontSize: '0.7rem', width: '10px', flexShrink: 0, color: isActive && isRecording ? '#cc4444' : isPlayingLine ? '#44aa44' : isTimed ? '#4a7a4a' : '#333' }}>{isActive && isRecording ? '*' : isPlayingLine ? '>' : isTimed ? 'ok' : '-'}</span>
               {editTsId === line.id ? (
@@ -418,12 +634,77 @@ export function LrcStudio({ audioFile, audioUrl, initialLrc, lang, onClose, onSa
               ) : (
                 <span onClick={e => openTsEdit(e, line)} onDoubleClick={e => e.stopPropagation()} title="Click to edit timestamp" style={{ fontFamily: 'monospace', fontSize: '0.8rem', minWidth: '90px', flexShrink: 0, color: tsColor, cursor: 'text', userSelect: 'none', padding: '2px 0' }}>{isTimed ? fmt(line.startTime!) : '--:--.--'}</span>
               )}
-              <input value={line.text} onChange={e => { updateLine(line.id, { text: e.target.value }); setActiveIndex(index) }} onClick={e => { e.stopPropagation(); setActiveIndex(index) }} onDoubleClick={e => e.stopPropagation()} placeholder="lyric..." style={{ flex: 1, background: 'transparent', outline: 'none', border: 'none', color: textColor, fontSize: '0.97rem', fontFamily: 'inherit', padding: '2px 0', cursor: 'text' }} />
+              <input
+                id={`lyric-input-${index}`}
+                value={line.text}
+                onChange={e => { updateLine(line.id, { text: e.target.value }); setActiveIndex(index) }}
+                onClick={e => { e.stopPropagation(); setActiveIndex(index) }}
+                onDoubleClick={e => e.stopPropagation()}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    stamp(index)
+                    if (index + 1 < lines.length) {
+                      setTimeout(() => {
+                        const nextInput = document.getElementById(`lyric-input-${index + 1}`) as HTMLInputElement | null
+                        nextInput?.focus()
+                      }, 50)
+                    } else {
+                      addLineAfter(index)
+                      setTimeout(() => {
+                        const nextInput = document.getElementById(`lyric-input-${index + 1}`) as HTMLInputElement | null
+                        nextInput?.focus()
+                      }, 50)
+                    }
+                  } else if (e.key === ' ' || e.code === 'Space') {
+                    if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
+                      // Insert space at current cursor position
+                      e.preventDefault()
+                      const input = e.currentTarget
+                      const start = input.selectionStart ?? 0
+                      const end = input.selectionEnd ?? 0
+                      const val = input.value
+                      const newVal = val.slice(0, start) + ' ' + val.slice(end)
+                      updateLine(line.id, { text: newVal })
+                      setTimeout(() => {
+                        input.selectionStart = input.selectionEnd = start + 1
+                      }, 0)
+                    } else {
+                      // Play/pause audio
+                      e.preventDefault()
+                      const audio = audioRef.current
+                      if (audio) {
+                        audio.paused ? audio.play().catch(() => {}) : audio.pause()
+                      }
+                    }
+                  } else if (e.key === 'ArrowDown') {
+                    if (index + 1 < lines.length) {
+                      e.preventDefault()
+                      setActiveIndex(index + 1)
+                      setTimeout(() => {
+                        const nextInput = document.getElementById(`lyric-input-${index + 1}`) as HTMLInputElement | null
+                        nextInput?.focus()
+                      }, 50)
+                    }
+                  } else if (e.key === 'ArrowUp') {
+                    if (index - 1 >= 0) {
+                      e.preventDefault()
+                      setActiveIndex(index - 1)
+                      setTimeout(() => {
+                        const prevInput = document.getElementById(`lyric-input-${index - 1}`) as HTMLInputElement | null
+                        prevInput?.focus()
+                      }, 50)
+                    }
+                  }
+                }}
+                placeholder="lyric..."
+                style={{ flex: 1, background: 'transparent', outline: 'none', border: 'none', color: textColor, fontSize: '0.97rem', fontFamily: 'inherit', padding: '2px 0', cursor: 'text' }}
+              />
               <div style={{ display: 'flex', gap: '2px', flexShrink: 0, opacity: isActive ? 1 : 0 }} onClick={e => e.stopPropagation()} onDoubleClick={e => e.stopPropagation()}>
-                <button className="secondary" style={{ padding: '2px 5px', fontSize: '0.7rem' }} onClick={() => moveLine(index, -1)} disabled={index === 0}>Up</button>
-                <button className="secondary" style={{ padding: '2px 5px', fontSize: '0.7rem' }} onClick={() => moveLine(index, 1)} disabled={index === lines.length - 1}>Down</button>
-                <button className="secondary" style={{ padding: '2px 5px', fontSize: '0.7rem' }} onClick={() => addLineAfter(index)}>Add</button>
-                <button className="secondary" style={{ padding: '2px 5px', fontSize: '0.7rem', color: '#bb6666' }} onClick={() => deleteLine(index)}>Del</button>
+                <button className="secondary studio-tooltip" data-tooltip="Move line up" style={{ padding: '2px 5px', fontSize: '0.7rem' }} onClick={() => moveLine(index, -1)} disabled={index === 0}>Up</button>
+                <button className="secondary studio-tooltip" data-tooltip="Move line down" style={{ padding: '2px 5px', fontSize: '0.7rem' }} onClick={() => moveLine(index, 1)} disabled={index === lines.length - 1}>Down</button>
+                <button className="secondary studio-tooltip" data-tooltip="Add empty line below" style={{ padding: '2px 5px', fontSize: '0.7rem' }} onClick={() => addLineAfter(index)}>Add</button>
+                <button className="secondary studio-tooltip" data-tooltip="Delete this line" style={{ padding: '2px 5px', fontSize: '0.7rem', color: '#bb6666' }} onClick={() => deleteLine(index)}>Del</button>
               </div>
             </div>
           )

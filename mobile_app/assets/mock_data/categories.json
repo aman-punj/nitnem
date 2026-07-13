@@ -1,0 +1,23 @@
+[
+  {
+    "id": "nitnem",
+    "title": "Nitnem",
+    "iconKey": "khanda",
+    "displayOrder": 1,
+    "enabled": true
+  },
+  {
+    "id": "evening",
+    "title": "Evening Banis",
+    "iconKey": "moon",
+    "displayOrder": 2,
+    "enabled": true
+  },
+  {
+    "id": "live",
+    "title": "Live",
+    "iconKey": "live",
+    "displayOrder": 3,
+    "enabled": true
+  }
+]
