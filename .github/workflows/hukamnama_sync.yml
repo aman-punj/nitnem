@@ -1,7 +1,10 @@
 name: Daily Hukamnama Sync
 
 on:
-  workflow_dispatch: # Triggered by cron-job.org external cron service
+  schedule:
+    # Run daily at 00:00 UTC (5:30 AM IST)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
 
 jobs:
   sync:
