@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../core/design_system/tokens/colors.dart';
 import '../core/design_system/tokens/typography.dart';
@@ -69,16 +68,16 @@ class _HukamnamaScreenState extends State<HukamnamaScreen>
     }
   }
 
-  Future<void> _openSgpc() async {
-    final now = DateTime.now();
-    final monthNames = [
-      'january', 'february', 'march', 'april', 'may', 'june',
-      'july', 'august', 'september', 'october', 'november', 'december',
-    ];
-    final url = Uri.parse(
-        'https://sgpc.net/${now.day}-${monthNames[now.month - 1]}-${now.year}/');
-    if (await canLaunchUrl(url)) launchUrl(url);
-  }
+  // Future<void> _openSgpc() async {
+  //   final now = DateTime.now();
+  //   final monthNames = [
+  //     'january', 'february', 'march', 'april', 'may', 'june',
+  //     'july', 'august', 'september', 'october', 'november', 'december',
+  //   ];
+  //   final url = Uri.parse(
+  //       'https://sgpc.net/${now.day}-${monthNames[now.month - 1]}-${now.year}/');
+  //   if (await canLaunchUrl(url)) launchUrl(url);
+  // }
 
   Future<void> _shareHukamnama() async {
     final d = widget.data;
@@ -143,11 +142,6 @@ class _HukamnamaScreenState extends State<HukamnamaScreen>
             tooltip: 'Share Hukamnama',
             onPressed: _shareHukamnama,
           ),
-          IconButton(
-            icon: Icon(Icons.open_in_browser_rounded, color: c.primary),
-            tooltip: 'Open on SGPC.net',
-            onPressed: _openSgpc,
-          ),
         ],
       ),
       body: Column(
@@ -200,8 +194,7 @@ class _HukamnamaScreenState extends State<HukamnamaScreen>
           ),
 
           // SGPC attribution footer
-          GestureDetector(
-            onTap: _openSgpc,
+          SafeArea(
             child: Container(
               color: c.surfaceContainerLow,
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
